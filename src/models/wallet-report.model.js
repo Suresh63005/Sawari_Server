@@ -1,8 +1,8 @@
 const sequelize = require("../config/db");
 const { DataTypes } = require("sequelize");
 
-const PaymentReports = sequelize.define(
-  "PaymentReports",
+const WalletReports = sequelize.define(
+  "WalletReports",
   {
     id: {
       type: DataTypes.UUID,
@@ -13,46 +13,37 @@ const PaymentReports = sequelize.define(
       type: DataTypes.UUID,
       allowNull: false,
     },
-    ride_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
+    transaction_type:{
+        type:DataTypes.ENUM("credit","debit"),
+        allowNull:false
     },
-    amount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
-    commission: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
-    payment_method: {
-      type: DataTypes.ENUM("bank_transfer", "upi"),
-      allowNull: false,
-    },
-    transaction_id: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-    },
-    payment_date: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    status: {
-      type: DataTypes.ENUM("pending", "completed", "failed"),
-      allowNull: false,
-      defaultValue: "pending",
-    },
-    notes: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
+     amount: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+      },
+      balance_after: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+      },
+      transaction_date: {
+        type: DataTypes.DATE,
+        allowNull: false,
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      status: {
+        type: DataTypes.ENUM('pending', 'completed', 'reversed'),
+        allowNull: false,
+        defaultValue: 'pending',
+      },
   },
   {
-    tableName: "PaymentReports",
+    tableName: "WalletReports",
     timestamps: true,
     paranoid: true,
   }
 );
 
-module.exports = PaymentReports;
+module.exports = WalletReports;
