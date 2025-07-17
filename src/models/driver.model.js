@@ -31,6 +31,10 @@ const Driver = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    profile_pic: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     otp_count: {
       type: DataTypes.INTEGER,
       allowNull: true,

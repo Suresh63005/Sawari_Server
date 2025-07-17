@@ -84,18 +84,12 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Database sync
 sequelize
-  .sync({ force: false })
-  .then(() => {
-    console.log('✅ Database & tables created!');
-  })
-  .catch((err) => {
-    console.error('❌ Unable to create the database:', err);
-  });
-
-// Error handling
-app.use((err, req, res, next) => {
-  console.error('Server error:', err);
-  res.status(500).json({ message: 'Internal server error' });
+.sync({alter:true})
+.then(() => {
+  console.log("Database & tables created!");
+})
+.catch((err) => {
+  console.error("Unable to create the database:", err);
 });
 
 app.listen(port, () => {
