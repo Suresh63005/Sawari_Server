@@ -40,6 +40,7 @@ app.use(hpp());
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:3002',
   'http://localhost',
 ];
 app.use(cors({

@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const { Admin } = require('../../models/admin.model');
-const { Permissions } = require('../../models/permissions.model');
+const Admin = require('../../models/admin.model');
+const Permissions = require('../../models/permissions.model');
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -33,13 +33,14 @@ const authMiddleware = async (req, res, next) => {
         hotels: permissions.manage_hotel,
         earnings: permissions.manage_earnings,
         support: permissions.manage_support_tickets,
-        notifications: permissions.manage_notitications,
+        notifications: permissions.manage_notitications, // Note: Typo in 'manage_notitications'
         admin_management: permissions.manage_admin,
       } : undefined,
     };
 
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error);
     res.clearCookie('token');
     return res.status(401).json({ message: 'Invalid token' });
   }
@@ -51,22 +52,9 @@ const permissionMiddleware = (requiredPermission) => {
       return res.status(403).json({ message: 'No permissions found' });
     }
 
-    const permissionMap = {
-      dashboard: 'dashboard_access',
-      drivers: 'manage_drivers',
-      vehicles: 'manage_vehicles',
-      rides: 'manage_ride',
-      hotels: 'manage_hotel',
-      earnings: 'manage_earnings',
-      support: 'manage_support_tickets',
-      notifications: 'manage_notitications',
-      admin_management: 'manage_admin',
-    };
-
-    const dbPermission = permissionMap[requiredPermission];
-
-    if (!dbPermission || !req.user.permissions[dbPermission]) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
+    // Check the permission directly using the requiredPermission (frontend key)
+    if (!req.user.permissions[requiredPermission]) {
+      return res.status(403).json({ message: `Insufficient permissions for ${requiredPermission}` });
     }
 
     next();

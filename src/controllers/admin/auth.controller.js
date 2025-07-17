@@ -69,7 +69,8 @@ const getRolePermissions = (role) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+    console.log(req.body,"req body")
+
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required' });
     }
@@ -103,22 +104,23 @@ const login = async (req, res) => {
     });
 
     return res.json({
-      id: admin.id,
-      name: `${admin.first_name} ${admin.last_name}`,
-      email: admin.email,
-      role: admin.role,
-      permissions: {
-        dashboard: permissions.dashboard_access,
-        drivers: permissions.manage_drivers,
-        vehicles: permissions.manage_vehicles,
-        rides: permissions.manage_ride,
-        hotels: permissions.manage_hotel,
-        earnings: permissions.manage_earnings,
-        support: permissions.manage_support_tickets,
-        notifications: permissions.manage_notitications,
-        admin_management: permissions.manage_admin,
-      },
-    });
+  id: admin.id,
+  name: `${admin.first_name} ${admin.last_name}`,
+  email: admin.email,
+  role: admin.role,
+  token: token, // Add token to response
+  permissions: {
+    dashboard: permissions.dashboard_access,
+    drivers: permissions.manage_drivers,
+    vehicles: permissions.manage_vehicles,
+    rides: permissions.manage_ride,
+    hotels: permissions.manage_hotel,
+    earnings: permissions.manage_earnings,
+    support: permissions.manage_support_tickets,
+    notifications: permissions.manage_notitications,
+    admin_management: permissions.manage_admin,
+  },
+});
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({ message: 'Internal server error' });
@@ -128,6 +130,7 @@ const login = async (req, res) => {
 const register = async (req, res) => {
   try {
     const { first_name, last_name, email, phone, role, granted_by } = req.body;
+    console.log(req.body, "req body in register");
 
     if (!first_name || !last_name || !email || !phone || !role) {
       return res.status(400).json({ message: 'All required fields must be provided' });
@@ -142,7 +145,13 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'Email already exists' });
     }
 
-    const password = await bcrypt.hash('defaultPassword123!', 10); // Default password, should be changed by admin
+   const rawPassword = req.body.password;
+if (!rawPassword) {
+  return res.status(400).json({ message: 'Password is required' });
+}
+const password = await bcrypt.hash(rawPassword, 10);
+console.log(password, "hashed password");
+ // Default password, should be changed by admin
     const admin = await AuthService.createAdmin({
       first_name,
       last_name,
