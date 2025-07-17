@@ -16,6 +16,7 @@ const compression=require("compression")
 const port = process.env.PORT || 4445;
 
 const loadRoutes = require('./routes/index');
+const { sequelize } = require('./models');
 
 
 
@@ -73,6 +74,15 @@ app.use(cors(corsOptions));
     process.exit(1);
   }
 })();
+
+sequelize
+.sync()
+.then(() => {
+  console.log("Database & tables created!");
+})
+.catch((err) => {
+  console.error("Unable to create the database:", err);
+});
 
 
 app.listen(port, () => {
