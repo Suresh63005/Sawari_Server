@@ -61,7 +61,7 @@ const Permissions = sequelize.define(
     },
     granted_by: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
     },
   },
   { tableName: "Permissions", timestamps: true, paranoid: true }

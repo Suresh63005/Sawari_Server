@@ -10,14 +10,10 @@ const CarPackageRate = sequelize.define("CarPackageRate", {
   car_details_id: {
     type: DataTypes.UUID,
     allowNull: false,
-    references: {
-      model: "CarDetails",
-      key: "id",
-    },
   },
-  package_type: {
-    type: DataTypes.ENUM("airport", "hourly", "full_day", "corporate"),
-    allowNull: false,
+  package_id:{
+    type:DataTypes.UUID,
+    allowNull:false,
   },
   sub_package: {
     type: DataTypes.STRING,
