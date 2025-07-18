@@ -25,8 +25,8 @@ Driver.belongsTo(Admin, { foreignKey: 'verified_by', as: 'VerifierAdmin', constr
 Admin.hasMany(Permissions, { foreignKey: 'granted_by', as: 'GrantedPermissions', onDelete: 'SET NULL', constraints: false });
 Permissions.belongsTo(Admin, { foreignKey: 'granted_by', as: 'GrantorAdmin', constraints: false });
 
-Admin.hasMany(Permissions, { foreignKey: 'user_id', as: 'AdminPermissions', constraints: false, scope: { user_type: 'admin' } });
-Permissions.belongsTo(Admin, { foreignKey: 'user_id', as: 'Admin', constraints: false, scope: { user_type: 'admin' } });
+Admin.hasMany(Permissions, { foreignKey: 'user_id', as: 'AdminPermissions', constraints: false, });
+Permissions.belongsTo(Admin, { foreignKey: 'user_id', as: 'Admin', constraints: false, });
 
 // Driver associations
 Driver.hasMany(Ride, { foreignKey: 'initiated_by_driver_id', as: 'InitiatedRides', onDelete: 'SET NULL', constraints: false });

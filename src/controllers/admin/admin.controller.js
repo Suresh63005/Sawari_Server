@@ -1,29 +1,33 @@
 const AuthService  = require('../../services/auth.service');
+const { getRolePermissions } = require('./auth.controller');
 
 const getAdmins = async (req, res) => {
   try {
     const admins = await AuthService.getAllAdmins();
-    return res.json(admins.map(admin => ({
-      id: admin.id,
-      name: `${admin.first_name} ${admin.last_name}`,
-      email: admin.email,
-      phone: admin.phone,
-      role: admin.role,
-      status: admin.status,
-      created_by: admin.created_by,
-      created_at: admin.created_at.toISOString().split('T')[0],
-      permissions: {
-        dashboard: admin.permissions ? admin.permissions.dashboard_access : false,
-        drivers: admin.permissions ? admin.permissions.manage_drivers : false,
-        vehicles: admin.permissions ? admin.permissions.manage_vehicles : false,
-        rides: admin.permissions ? admin.permissions.manage_ride : false,
-        hotels: admin.permissions ? admin.permissions.manage_hotel : false,
-        earnings: admin.permissions ? admin.permissions.manage_earnings : false,
-        support: admin.permissions ? admin.permissions.manage_support_tickets : false,
-        notifications: admin.permissions ? admin.permissions.manage_notitications : false,
-        admin_management: admin.permissions ? admin.permissions.manage_admin : false,
-      },
-    })));
+    return res.json(admins.map(admin => {
+      const rolePermissions = getRolePermissions(admin.role); // Fallback to role-based permissions
+      return {
+        id: admin.id,
+        name: `${admin.first_name} ${admin.last_name}`,
+        email: admin.email,
+        phone: admin.phone,
+        role: admin.role,
+        status: admin.status,
+        created_by: admin.created_by,
+        createdAt: admin.createdAt ? admin.createdAt.toISOString() : null,
+        permissions: {
+          dashboard: admin.permissions ? admin.permissions.dashboard_access : rolePermissions.dashboard_access,
+          drivers: admin.permissions ? admin.permissions.manage_drivers : rolePermissions.manage_drivers,
+          vehicles: admin.permissions ? admin.permissions.manage_vehicles : rolePermissions.manage_vehicles,
+          rides: admin.permissions ? admin.permissions.manage_ride : rolePermissions.manage_ride,
+          hotels: admin.permissions ? admin.permissions.manage_hotel : rolePermissions.manage_hotel,
+          earnings: admin.permissions ? admin.permissions.manage_earnings : rolePermissions.manage_earnings,
+          support: admin.permissions ? admin.permissions.manage_support_tickets : rolePermissions.manage_support_tickets,
+          notifications: admin.permissions ? admin.permissions.manage_notifications : rolePermissions.manage_notifications,
+          admin_management: admin.permissions ? admin.permissions.manage_admin : rolePermissions.manage_admin,
+        },
+      };
+    }));
   } catch (error) {
     console.error('Get admins error:', error);
     return res.status(500).json({ message: 'Internal server error' });

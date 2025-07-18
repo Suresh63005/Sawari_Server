@@ -1,3 +1,4 @@
+// src/services/auth.service.js
 const Admin = require('../models/admin.model');
 const Permissions = require('../models/permissions.model');
 const { Op } = require('sequelize');
@@ -21,12 +22,12 @@ const createAdmin = async (data) => {
     role: data.role,
     password: data.password,
     status: data.status,
-    one_signal_id: `onesignal-${Date.now()}`, // Generate or replace with actual OneSignal ID
+    one_signal_id: `onesignal-${Date.now()}`,
   });
 };
 
 const getAdminPermissions = async (user_id) => {
-  return await Permissions.findOne({ where: { user_id } });
+  return await Permissions.findOne({ where: { user_id } }); // Removed user_type
 };
 
 const createPermissions = async (data) => {
@@ -45,12 +46,12 @@ const updateAdminStatus = async (id, status) => {
 
 const getAllAdmins = async () => {
   return await Admin.findAll({
-    include: [{ model: Permissions, as: 'permissions' }],
+    include: [{ model: Permissions, as: 'AdminPermissions', required: false }], // Removed user_type
   });
 };
 
 const updatePermissions = async (id, permissions) => {
-  const existingPermissions = await Permissions.findOne({ where: { user_id: id } });
+  const existingPermissions = await Permissions.findOne({ where: { user_id: id } }); // Removed user_type
   if (existingPermissions) {
     await existingPermissions.update(permissions);
   } else {

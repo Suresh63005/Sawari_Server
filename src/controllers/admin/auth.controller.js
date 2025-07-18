@@ -227,4 +227,4 @@ const getPermissions = async (req, res) => {
   }
 };
 
-module.exports = { login, register, logout, getPermissions };
+module.exports = { login, register, logout, getPermissions, getRolePermissions };
