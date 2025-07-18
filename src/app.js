@@ -84,6 +84,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
   }
 })();
 
+
 // Database sync
 // sequelize
 // .sync({alter:true})
