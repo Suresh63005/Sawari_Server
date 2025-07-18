@@ -75,14 +75,14 @@ app.use(cors(corsOptions));
   }
 })();
 
-sequelize
-.sync({alter:true})
-.then(() => {
-  console.log("Database & tables created!");
-})
-.catch((err) => {
-  console.error("Unable to create the database:", err);
-});
+// sequelize
+// .sync({alter:true})
+// .then(() => {
+//   console.log("Database & tables created!");
+// })
+// .catch((err) => {
+//   console.error("Unable to create the database:", err);
+// });
 
 
 app.listen(port, () => {

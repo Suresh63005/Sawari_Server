@@ -1,24 +1,24 @@
 const sequelize = require("../config/db");
 const { DataTypes } = require("sequelize");
 
-const CarPackageRate = sequelize.define("CarPackageRate", {
+const SubPackage = sequelize.define("SubPackage", {
   id: {
     type: DataTypes.UUID,
     primaryKey: true,
     defaultValue: DataTypes.UUIDV4,
   },
-  car_details_id: {
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    comment: "Descriptive name, e.g., 'Airport - Dubai City', 'Hourly - 3hr', 'Corporate Monthly - 12hr x 6 days/week'",
+  },
+  car_id: {
     type: DataTypes.UUID,
     allowNull: false,
   },
   package_id:{
     type:DataTypes.UUID,
     allowNull:false,
-  },
-  sub_package: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    comment: "Descriptive name, e.g., 'Airport - Dubai City', 'Hourly - 3hr', 'Corporate Monthly - 12hr x 6 days/week'",
   },
   hours: {
     type: DataTypes.INTEGER,
@@ -41,9 +41,9 @@ const CarPackageRate = sequelize.define("CarPackageRate", {
     comment: "Cost per hour for hourly packages or total cost for other packages, e.g., 120.00 for hourly, 20000.00 for corporate",
   },
 }, {
-  tableName: "CarPackageRates",
+  tableName: "SubPackages",
   timestamps: true,
   paranoid: true,
 });
 
-module.exports = CarPackageRate;
+module.exports = SubPackage;

@@ -34,11 +34,6 @@ const Permissions = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
-    manage_hotel: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
-    },
     manage_earnings: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
