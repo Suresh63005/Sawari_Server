@@ -1,0 +1,55 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sawari_backend
+    ports:
+      - "4444:4444"
+    volumes:
+      - .:/home/sawari/backend
+      - /home/sawari/backend/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - REDIS_URL=redis://redis:6379
+    command: npm run dev
+    restart: always
+    stdin_open: true
+    tty: true
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4445 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: sawari_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    build:
+      context: ./nginx
+    container_name: sawari_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - default
+
+volumes:
+  redis_data:
