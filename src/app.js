@@ -1,54 +1,52 @@
 require('module-alias/register');
 const express = require('express');
-const app = express();
 const morgan = require('morgan');
 const dotEnv = require('dotenv');
-const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-const cors= require('cors');
+const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
-const hpp = require("hpp")
-const helmet=require("helmet")
-const rateLimit=require("express-rate-limit")
-const compression=require("compression")
+const hpp = require('hpp');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const compression = require('compression');
+const { sequelize } = require('./models');
+const loadRoutes = require('./routes/index');
+const reddisConnect = require("./config/connectRedis");
+const CacheManager=require("./utils/cache-manager")
 
+const app = express();
 const port = process.env.PORT || 4445;
 
-const loadRoutes = require('./routes/index');
-const { sequelize } = require('./models');
-
-
-
-
-const limiter=rateLimit({
+// Rate limiter
+const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 100,
   message: 'Too many requests from this IP, please try again later',
-})
+});
 
-// Middlewares
+// Environment variables
 dotEnv.config();
-app.set("trust proxy", 1);
-app.use(express.json());
-app.use(morgan("dev"));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.urlencoded({ extended: true }));
+
+// Middleware
+app.set('trust proxy', 1);
+app.use(morgan('dev'));
+app.use(express.json()); // Parse JSON bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(cookieParser());
-app.use(helmet())
-app.use(limiter)
-app.use(compression()) // Compress responses
-app.use(hpp())
+app.use(helmet());
+app.use(limiter);
+app.use(compression());
+app.use(hpp());
+
+// CORS configuration
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://localhost:4444',
+  'http://localhost:3002',
   'http://localhost',
-  'https://kraft-my-event-admin.vercel.app',
 ];
-
-const corsOptions = {
-  origin: function (origin, callback) {
+app.use(cors({
+  origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -56,25 +54,38 @@ const corsOptions = {
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Disposition'],
+}));
 
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // ✅ include PATCH
-  allowedHeaders: ['Content-Type', 'Authorization'], // ✅ optionally specify allowed headers
-  exposedHeaders: ['Content-Disposition'], // ✅ expose headers if needed
+// Swagger setup
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Sawari API',
+      version: '1.0.0',
+    },
+  },
+  apis: ['./src/api/*.js'],
 };
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-
-app.use(cors(corsOptions));
-
-
+// Load routes
 (async () => {
   try {
     await loadRoutes(app);
+    console.log('✅ Routes loaded successfully');
   } catch (err) {
     console.error('❌ Failed to initialize routes:', err.message);
     process.exit(1);
   }
 })();
 
+
+// Database sync
 // sequelize
 // .sync({alter:true})
 // .then(() => {
@@ -84,13 +95,48 @@ app.use(cors(corsOptions));
 //   console.error("Unable to create the database:", err);
 // });
 
+const startServer = async () => {
+  if (process.env.NODE_ENV === 'test') {
+    console.log("🧪 Test mode: Skipping Redis and server startup");
+    return;
+  }
+  let redisClient;
+  try {
+    // await dbConnect();
+    redisClient = await reddisConnect();
+    app.locals.redisClient = redisClient;
 
-app.listen(port, () => {
+    app.locals.cacheManager =new CacheManager(redisClient)
+
+    const server = app.listen(port, () => {
       console.info(`🚀 Server running on port ${port}`);
       console.info(`Swagger UI available at http://localhost:${port}/api-docs`);
     });
 
+    const shutdown = async () => {
+      console.info('🛑 Shutting down server...');
+      try {
+        // await dbConnect.disconnect?.();
+        await redisClient.quit();
+        server.close(() => {
+          console.info('✅ Server shut down successfully');
+          process.exit(0);
+        });
+      } catch (err) {
+        console.error('❌ Error during shutdown:', err.message);
+        process.exit(1);
+      }
+    };
 
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+  } catch (err) {
+    console.error(`❌ Failed to start server: ${err.message}`);
+    if (redisClient) await redisClient.quit();
+    process.exit(1);
+  }
+};
 
+startServer()
 
 module.exports = app;
