@@ -1,8 +1,8 @@
 const sequelize = require("../config/db");
 const { DataTypes } = require("sequelize");
 
-const Vehicle = sequelize.define(
-  "Vehicle",
+const DriverCar = sequelize.define(
+  "DriverCar",
   {
     id: {
       type: DataTypes.UUID,
@@ -65,10 +65,10 @@ const Vehicle = sequelize.define(
     },
   },
   {
-    tableName: "Vehicle",
+    tableName: "DriverCars",
     timestamps: true,
     paranoid: true,
   }
 );
 
-module.exports = Vehicle;
+module.exports = DriverCar;

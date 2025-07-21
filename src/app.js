@@ -83,14 +83,14 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 })();
 
 // Database sync
-sequelize
-.sync({alter:true})
-.then(() => {
-  console.log("Database & tables created!");
-})
-.catch((err) => {
-  console.error("Unable to create the database:", err);
-});
+// sequelize
+// .sync({alter:true})
+// .then(() => {
+//   console.log("Database & tables created!");
+// })
+// .catch((err) => {
+//   console.error("Unable to create the database:", err);
+// });
 
 app.listen(port, () => {
   console.info(`🚀 Server running on port ${port}`);
