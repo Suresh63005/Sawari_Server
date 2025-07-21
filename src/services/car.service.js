@@ -31,7 +31,7 @@ const upsertCar = async(data)=>{
         // ID provided = Update flow
         const existingCar = await Car.findByPk(data.id);
         if(!existingCar){
-            throw new Error("Car not found with the give ID")
+            throw new Error("Car not found with the given ID")
         }
 
         // Check if another car with the same brand and model exists
