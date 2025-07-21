@@ -49,8 +49,8 @@ WalletReports.belongsTo(Driver, { foreignKey: 'driver_id', as: 'Driver', constra
 Driver.hasMany(Review, { foreignKey: 'driver_id', as: 'Reviews', onDelete: 'CASCADE', constraints: false });
 Review.belongsTo(Driver, { foreignKey: 'driver_id', as: 'Driver', constraints: false });
 
-Driver.hasMany(Permissions, { foreignKey: 'user_id', as: 'DriverPermissions', constraints: false, scope: { user_type: 'driver' } });
-Permissions.belongsTo(Driver, { foreignKey: 'user_id', as: 'Driver', constraints: false, scope: { user_type: 'driver' } });
+Driver.hasMany(Permissions, { foreignKey: 'user_id', as: 'DriverPermissions', constraints: false, });
+Permissions.belongsTo(Driver, { foreignKey: 'user_id', as: 'Driver', constraints: false, });
 
 // Ride associations
 Ride.hasMany(Earnings, { foreignKey: 'ride_id', as: 'Earnings', onDelete: 'CASCADE', constraints: false });
@@ -79,4 +79,8 @@ module.exports = {
   PaymentReports,
   Permissions,
   WalletReports,
+  Review,
+  Car,
+  Package,
+  SubPackage
 };
