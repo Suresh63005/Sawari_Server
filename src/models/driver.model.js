@@ -12,15 +12,15 @@ const Driver = sequelize.define(
     },
     first_name: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     last_name: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     email: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       unique: true,
     },
     password: {
@@ -30,6 +30,7 @@ const Driver = sequelize.define(
     phone: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique:true
     },
     profile_pic: {
       type: DataTypes.STRING,
@@ -42,11 +43,11 @@ const Driver = sequelize.define(
     },
     dob: {
       type: DataTypes.DATEONLY,
-      allowNull: false,
+      allowNull: true,
     },
     experience: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     emirates_id: {
       type: DataTypes.STRING,
@@ -68,29 +69,29 @@ const Driver = sequelize.define(
     },
     languages: {
       type: DataTypes.JSON,
-      allowNull: false,
+      allowNull: true,
     },
     license_front: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     license_back: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     license_verification_status: {
       type: DataTypes.ENUM("pending", "verified", "rejected"),
-      allowNull: false,
+      allowNull: true,
       defaultValue: "pending",
     },
     emirates_verification_status: {
       type: DataTypes.ENUM("pending", "verified", "rejected"),
-      allowNull: false,
+      allowNull: true,
       defaultValue: "pending",
     },
     is_approved: {
       type: DataTypes.BOOLEAN,
-      allowNull: false,
+      allowNull: true,
       defaultValue: false,
     },
     reason:{
@@ -103,12 +104,12 @@ const Driver = sequelize.define(
     },
     availability_status: {
       type: DataTypes.ENUM("online", "offline"),
-      allowNull: false,
+      allowNull: true,
       defaultValue: "offline",
     },
     wallet_balance: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
+      allowNull: true,
       defaultValue: 0.0,
     },
     ride_request: {
@@ -129,7 +130,7 @@ const Driver = sequelize.define(
     status: {
       type: DataTypes.ENUM("active", "inactive", "blocked"),
       allowNull: false,
-      defaultValue: "active",
+      defaultValue: "inactive",
     },
     ride_count: {
       type: DataTypes.INTEGER,

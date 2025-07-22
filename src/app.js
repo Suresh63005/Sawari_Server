@@ -84,6 +84,18 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
   }
 })();
 
+<<<<<<< HEAD
+// Database sync
+// sequelize
+// .sync({alter:true})
+// .then(() => {
+//   console.log("Database & tables created!");
+// })
+// .catch((err) => {
+//   console.error("Unable to create the database:", err);
+// });
+=======
+>>>>>>> 835e564e5ffcfd0dfb58bf60783b6e6915e0efc2
 
 // Database sync
 // sequelize
