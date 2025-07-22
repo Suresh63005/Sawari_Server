@@ -1,23 +1,22 @@
-const Admin = require('./admin.model');
-const Ride = require('./ride.model');
-const Vehicle = require('./vehicle.model');
-const Driver = require('./driver.model');
-const Earnings = require('./earnings.model');
-const PaymentReports = require('./payment-report.model');
-const Permissions = require('./permissions.model');
-const WalletReports = require('./wallet-report.model');
-const Review = require('./review.model');
-const CarDetails = require('./car-details.model');
-const CarPackageRate = require('./car-package-rate.model');
-const Package = require('./package.model');
-
+const Admin = require("./admin.model");
+const Ride = require("./ride.model");
+const DriverCar = require("./driver-cars.model");
+const Driver = require("./driver.model");
+const Earnings = require("./earnings.model");
+const PaymentReports = require("./payment-report.model");
+const Permissions = require("./permissions.model");
+const WalletReports = require("./wallet-report.model");
+const Review = require("./review.model");
+const Car = require("./cars.model");
+const Package = require("./package.model");
+const SubPackage = require("./sub-package.model");
 
 // Admin associations
 Admin.hasMany(Ride, { foreignKey: 'admin_id', as: 'CreatedRides', onDelete: 'SET NULL', constraints: false });
 Ride.belongsTo(Admin, { foreignKey: 'admin_id', as: 'CreatorAdmin', constraints: false });
 
-Admin.hasMany(Vehicle, { foreignKey: 'verified_by', as: 'VerifiedVehicles', onDelete: 'SET NULL', constraints: false });
-Vehicle.belongsTo(Admin, { foreignKey: 'verified_by', as: 'VerifierAdmin', constraints: false });
+Admin.hasMany(DriverCar, { foreignKey: 'verified_by', as: 'VerifiedVehicles', onDelete: 'SET NULL', constraints: false });
+DriverCar.belongsTo(Admin, { foreignKey: 'verified_by', as: 'VerifierAdmin', constraints: false });
 
 Admin.hasMany(Driver, { foreignKey: 'verified_by', as: 'VerifiedDrivers', onDelete: 'SET NULL', constraints: false });
 Driver.belongsTo(Admin, { foreignKey: 'verified_by', as: 'VerifierAdmin', constraints: false });
@@ -35,8 +34,8 @@ Ride.belongsTo(Driver, { foreignKey: 'initiated_by_driver_id', as: 'InitiatorDri
 Driver.hasMany(Ride, { foreignKey: 'driver_id', as: 'AssignedRides', onDelete: 'SET NULL', constraints: false });
 Ride.belongsTo(Driver, { foreignKey: 'driver_id', as: 'AssignedDriver', constraints: false });
 
-Driver.hasMany(Vehicle, { foreignKey: 'driver_id', as: 'Vehicles', onDelete: 'CASCADE', constraints: false });
-Vehicle.belongsTo(Driver, { foreignKey: 'driver_id', as: 'Driver', constraints: false });
+Driver.hasMany(DriverCar, { foreignKey: 'driver_id', as: 'Vehicles', onDelete: 'CASCADE', constraints: false });
+DriverCar.belongsTo(Driver, { foreignKey: 'driver_id', as: 'Driver', constraints: false });
 
 Driver.hasMany(Earnings, { foreignKey: 'driver_id', as: 'Earnings', onDelete: 'CASCADE', constraints: false });
 Earnings.belongsTo(Driver, { foreignKey: 'driver_id', as: 'Driver', constraints: false });
@@ -50,8 +49,8 @@ WalletReports.belongsTo(Driver, { foreignKey: 'driver_id', as: 'Driver', constra
 Driver.hasMany(Review, { foreignKey: 'driver_id', as: 'Reviews', onDelete: 'CASCADE', constraints: false });
 Review.belongsTo(Driver, { foreignKey: 'driver_id', as: 'Driver', constraints: false });
 
-Driver.hasMany(Permissions, { foreignKey: 'user_id', as: 'DriverPermissions', constraints: false, scope: { user_type: 'driver' } });
-Permissions.belongsTo(Driver, { foreignKey: 'user_id', as: 'Driver', constraints: false, scope: { user_type: 'driver' } });
+Driver.hasMany(Permissions, { foreignKey: 'user_id', as: 'DriverPermissions', constraints: false, });
+Permissions.belongsTo(Driver, { foreignKey: 'user_id', as: 'Driver', constraints: false, });
 
 // Ride associations
 Ride.hasMany(Earnings, { foreignKey: 'ride_id', as: 'Earnings', onDelete: 'CASCADE', constraints: false });
@@ -64,20 +63,24 @@ Ride.hasMany(Review, { foreignKey: 'ride_id', as: 'Reviews', onDelete: 'CASCADE'
 Review.belongsTo(Ride, { foreignKey: 'ride_id', as: 'Ride', constraints: false });
 
 // CarDetails associations
-CarDetails.hasMany(CarPackageRate, { foreignKey: 'car_details_id', as: 'PackageRates', onDelete: 'CASCADE', constraints: false });
-CarPackageRate.belongsTo(CarDetails, { foreignKey: 'car_details_id', as: 'CarDetails', constraints: false });
+Car.hasMany(SubPackage, { foreignKey: 'car_details_id', as: 'PackageRates', onDelete: 'CASCADE', constraints: false });
+SubPackage.belongsTo(Car, { foreignKey: 'car_details_id', as: 'CarDetails', constraints: false });
 
 // Package associations
-Package.hasMany(CarPackageRate, { foreignKey: 'package_id', as: 'PackageRates', onDelete: 'CASCADE', constraints: false });
-CarPackageRate.belongsTo(Package, { foreignKey: 'package_id', as: 'Package', constraints: false });
+Package.hasMany(SubPackage, { foreignKey: 'package_id', as: 'PackageRates', onDelete: 'CASCADE', constraints: false });
+SubPackage.belongsTo(Package, { foreignKey: 'package_id', as: 'Package', constraints: false });
 // Export models
 module.exports = {
   Admin,
   Driver,
-  Vehicle,
+  DriverCar,
   Ride,
   Earnings,
   PaymentReports,
   Permissions,
   WalletReports,
+  Review,
+  Car,
+  Package,
+  SubPackage
 };
