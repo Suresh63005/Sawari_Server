@@ -16,9 +16,9 @@ const isAuthenticated = async (req, res, next) => {
     // Find driver by ID from the token payload
     const driver = await Driver.findByPk(decoded.id);
     if (!driver) {
-  console.log("Driver not found for ID:", decoded.id);
-  return res.status(401).json({ message: 'Invalid or blocked account - Driver not found' });
-}
+      console.log("Driver not found for ID:", decoded.id);
+      return res.status(401).json({ message: 'Invalid or blocked account - Driver not found' });
+    }
 
     // Check if driver exists and is not blocked
     if (!driver || driver.status === 'blocked') {
