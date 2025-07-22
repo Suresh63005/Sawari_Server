@@ -30,6 +30,7 @@ const Driver = sequelize.define(
     phone: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique:true
     },
     profile_pic: {
       type: DataTypes.STRING,
@@ -108,7 +109,7 @@ const Driver = sequelize.define(
     },
     wallet_balance: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
+      allowNull: true,
       defaultValue: 0.0,
     },
     ride_request: {

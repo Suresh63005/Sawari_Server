@@ -24,7 +24,7 @@ Driver.belongsTo(Admin, { foreignKey: 'verified_by', as: 'VerifierAdmin', constr
 Admin.hasMany(Permissions, { foreignKey: 'granted_by', as: 'GrantedPermissions', onDelete: 'SET NULL', constraints: false });
 Permissions.belongsTo(Admin, { foreignKey: 'granted_by', as: 'GrantorAdmin', constraints: false });
 
-Admin.hasMany(Permissions, { foreignKey: 'user_id', as: 'AdminPermissions', constraints: false, });
+Admin.hasMany(Permissions, { foreignKey: 'user_id', as: 'AdminPermissions', constraints: false,  });
 Permissions.belongsTo(Admin, { foreignKey: 'user_id', as: 'Admin', constraints: false, });
 
 // Driver associations
