@@ -21,11 +21,19 @@ const Ride = sequelize.define(
     },
     customer_name: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
+    },
+    email:{
+      type:DataTypes.STRING,
+      allowNull:true
     },
     phone: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
+    },
+    pickup_address:{
+      type:DataTypes.STRING,
+      allowNull:true
     },
     pickup_location: {
       type: DataTypes.STRING,
@@ -41,7 +49,7 @@ const Ride = sequelize.define(
     },
     scheduled_time: {
       type: DataTypes.DATE,
-      allowNull: false,
+      allowNull: true,
     },
     driver_id: {
       type: DataTypes.UUID,
