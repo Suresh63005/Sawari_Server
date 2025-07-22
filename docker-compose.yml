@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: sawari_backend
     ports:
-      - "4444:4444"
+      - "4445:4445"
     volumes:
       - .:/home/sawari/backend
       - /home/sawari/backend/node_modules
