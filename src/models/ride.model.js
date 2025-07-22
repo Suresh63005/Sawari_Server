@@ -43,6 +43,14 @@ const Ride = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    ride_date:{
+      type:DataTypes.DATE,
+      allowNull:true
+    },
+    car_brand:{
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     car_model: {
       type: DataTypes.STRING,
       allowNull: false,
