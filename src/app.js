@@ -13,7 +13,8 @@ const compression = require('compression');
 const { sequelize } = require('./models');
 const loadRoutes = require('./routes/index');
 const reddisConnect = require("./config/connectRedis");
-const CacheManager=require("./utils/cache-manager")
+const CacheManager=require("./utils/cache-manager");
+const Driver = require('./models/driver.model');
 
 const app = express();
 const port = process.env.PORT || 4445;
@@ -94,6 +95,14 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 // .catch((err) => {
 //   console.error("Unable to create the database:", err);
 // });
+
+// Driver.sync({ alter: true })
+//   .then(() => {
+//     console.log("✅ Driver table synced successfully.");
+//   })
+//   .catch((err) => {
+//     console.error("❌ Failed to sync Driver table:", err);
+//   });
 
 const startServer = async () => {
   if (process.env.NODE_ENV === 'test') {
