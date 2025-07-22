@@ -21,11 +21,19 @@ const Ride = sequelize.define(
     },
     customer_name: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
+    },
+    email:{
+      type:DataTypes.STRING,
+      allowNull:true
     },
     phone: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
+    },
+    pickup_address:{
+      type:DataTypes.STRING,
+      allowNull:true
     },
     pickup_location: {
       type: DataTypes.STRING,
@@ -35,13 +43,17 @@ const Ride = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    ride_date:{
+      type:DataTypes.DATE,
+      allowNull:true
+    },
     car_model: {
       type: DataTypes.STRING,
       allowNull: false,
     },
     scheduled_time: {
       type: DataTypes.DATE,
-      allowNull: false,
+      allowNull: true,
     },
     driver_id: {
       type: DataTypes.UUID,
@@ -73,13 +85,13 @@ const Ride = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    distance: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
+    // distance: {
+    //   type: DataTypes.DECIMAL(10, 2),
+    //   // allowNull: false,
+    // },
     estimated_cost: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
+      // allowNull: false,
     },
     actual_cost: {
       type: DataTypes.DECIMAL(10, 2),
