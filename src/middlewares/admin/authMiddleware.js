@@ -4,44 +4,44 @@ const Permissions = require('../../models/permissions.model');
 
 const authMiddleware = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
-
+    const token = req.headers.authorization?.split('Bearer ')[1];
     if (!token) {
+      console.log('No token provided');
       return res.status(401).json({ message: 'Authentication required' });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    console.log('Token decoded:', decoded);
 
-    const admin = await Admin?.findByPk(decoded.id);
-
+    const admin = await Admin.findByPk(decoded.id);
     if (!admin || admin.status === 'blocked') {
-      res.clearCookie('token');
+      console.log('Invalid or blocked admin:', admin);
       return res.status(401).json({ message: 'Invalid or blocked account' });
     }
 
-    const permissions = await Permissions?.findOne({ where: { user_id: admin.id } });
+    const permissions = await Permissions.findOne({ where: { user_id: admin.id } });
+    
 
     req.user = {
       id: admin.id,
       email: admin.email,
       role: admin.role,
+      name: `${admin.first_name} ${admin.last_name}`,
       permissions: permissions ? {
         dashboard: permissions.dashboard_access,
         drivers: permissions.manage_drivers,
         vehicles: permissions.manage_vehicles,
         rides: permissions.manage_ride,
-        hotels: permissions.manage_hotel,
         earnings: permissions.manage_earnings,
         support: permissions.manage_support_tickets,
-        notifications: permissions.manage_notitications, // Note: Typo in 'manage_notitications'
+        notifications: permissions.manage_notifications,
         admin_management: permissions.manage_admin,
-      } : undefined,
+      } : {},
     };
 
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    res.clearCookie('token');
     return res.status(401).json({ message: 'Invalid token' });
   }
 };
@@ -49,11 +49,12 @@ const authMiddleware = async (req, res, next) => {
 const permissionMiddleware = (requiredPermission) => {
   return async (req, res, next) => {
     if (!req.user?.permissions) {
+      console.log('No permissions found for user'); // Debug log
       return res.status(403).json({ message: 'No permissions found' });
     }
 
-    // Check the permission directly using the requiredPermission (frontend key)
     if (!req.user.permissions[requiredPermission]) {
+      console.log(`Insufficient permissions for ${requiredPermission}`); // Debug log
       return res.status(403).json({ message: `Insufficient permissions for ${requiredPermission}` });
     }
 
