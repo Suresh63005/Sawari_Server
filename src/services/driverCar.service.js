@@ -1,0 +1,59 @@
+const DriverCar = require('../models/driver-cars.model');
+
+
+const carDTO = (data)=>{
+    return{
+        car_model: data.car_model,
+        car_brand: data.car_brand,
+        license_plate: data.license_plate,
+        car_photos: data.car_photos || [],
+        rc_doc: data.rc_doc,
+        insurance_doc: data.insurance_doc,
+        rc_doc_status: data.rc_doc_status || 'pending',
+        insurance_doc_status: data.insurance_doc_status || 'pending',
+        is_approved: data.is_approved ?? false,
+        verified_by: data.verified_by || null,
+        status: data.status || 'active',
+    }
+}
+
+const carResponseDTO = (data)=>{
+    return{
+        id: data.id,
+        driver_id: data.driver_id,
+        car_model: data.car_model,
+        car_brand: data.car_brand,
+        license_plate: data.license_plate,
+        car_photos: data.car_photos,
+        rc_doc: data.rc_doc,
+        insurance_doc: data.insurance_doc,
+        rc_doc_status: data.rc_doc_status,
+        insurance_doc_status: data.insurance_doc_status,
+        is_approved: data.is_approved,
+        verified_by: data.verified_by,
+        status: data.status,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+    }
+}
+
+const upsertDriverCar =  async(driverId,data)=>{
+    const sanitizedData = carDTO(data)
+    const existing = await DriverCar.findOne({ where: { driver_id: driverId } });
+    if (existing) {
+    const updated = await existing.update(sanitizedData);
+    return carResponseDTO(updated);
+    } else {
+        const created = await DriverCar.create({ ...sanitizedData, driver_id: driverId });
+        return carResponseDTO(created);
+    }
+}
+
+const getDriverCarByDriverId = async(driverId)=>{
+    return await DriverCar.findOne({where:{driver_id:driverId}})
+}
+
+module.exports = {
+    upsertDriverCar,
+    getDriverCarByDriverId
+}
