@@ -47,10 +47,6 @@ const Ride = sequelize.define(
       type:DataTypes.DATE,
       allowNull:true
     },
-    car_brand:{
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     car_model: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -89,13 +85,13 @@ const Ride = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    distance: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
+    // distance: {
+    //   type: DataTypes.DECIMAL(10, 2),
+    //   // allowNull: false,
+    // },
     estimated_cost: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
+      // allowNull: false,
     },
     actual_cost: {
       type: DataTypes.DECIMAL(10, 2),
