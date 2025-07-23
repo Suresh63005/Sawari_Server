@@ -2,7 +2,7 @@ const { Op } = require("sequelize");
 const Ride = require("../models/ride.model")
 const Earnings = require("../models/earnings.model")
 const Driver = require("../models/driver.model")
-const DriverCar=require("../models/driver-cars.model")
+const DriverCar = require("../models/driver-cars.model")
 
 const DashboardServiceData = async (driver_id) => {
 
@@ -37,22 +37,32 @@ const DashboardServiceData = async (driver_id) => {
     // 3. Get Driver Profile (incl. vehicle data if in model)
     const driverProfile = await Driver.findByPk(driver_id, {
         attributes: ["first_name", "last_name", "email", "phone", "experience", "wallet_balance", "availability_status", "ride_count"],
-        include:[
+        include: [
             {
-                model:DriverCar,
-                as:"Vehicles",
-                attributes:["car_model","car_brand","car_photos","verified_by","license_plate"]
+                model: DriverCar,
+                as: "Vehicles",
+                attributes: ["car_model", "car_brand", "car_photos", "verified_by", "license_plate"]
             }
         ]
     });
+
+    const acceptedRides = await Ride.findAll({
+        where: {
+            driver_id: driver_id,
+            status: "completed",
+
+        },
+        limit: 10,
+        order: [["scheduled_time", "ASC"]]
+    })
 
     const availableRides = await Ride.findAll({
         where: {
             status: "pending",
             driver_id: null,
-            scheduled_time: {
-                [Op.gte]: new Date() // only future rides
-            },
+            // scheduled_time: {
+            //     [Op.gte]: new Date() // only future rides
+            // },
         },
         limit: 10,
         order: [["scheduled_time", "ASC"]]
@@ -62,6 +72,7 @@ const DashboardServiceData = async (driver_id) => {
         todayRideCount: todayRides.length,
         todayEarnings: todayEarnings || 0,
         driverProfile,
+        acceptedRides,
         availableRides,
     }
 }
@@ -97,8 +108,132 @@ const DriverStatus = async (driver_id, status) => {
     return driver;
 }
 
+const RideDetails = async (driver_id, ride_id) => {
+    console.log(driver_id, ride_id, "hhhhhhhhhhhhhhhhhhhhhhhhh")
+    const ride = await Ride.findOne({
+        where: {
+            id: ride_id,
+            [Op.or]: [
+                { driver_id: driver_id },
+                { initiated_by_driver_id: driver_id }
+            ]
+        },
+        attributes: ["customer_name", "pickup_location", "drop_location", "status", "ride_type"],
+        include: [
+            {
+                model: Earnings,
+                as: "Earnings",
+                attributes: ["amount", "commission", "percentage"]
+            }
+        ]
+    });
+
+    if (!ride) {
+        throw new Error("Ride not found");
+    }
+
+    return ride;
+};
+
+const statusRide = async (driver_id, ride_id, status) => {
+    if (!["on-route", "cancelled"].includes(status)) {
+        throw new Error("Invalid status. Allowed values: 'on-route', 'cancelled'");
+    }
+    const ride = await Ride.findOne({
+        where: {
+            id: ride_id,
+            [Op.or]: [
+                { driver_id: driver_id },
+                { initiated_by_driver_id: driver_id }]
+        },
+    });
+
+    if (ride.status !== "accepted") {
+        throw new Error("Ride must be in 'accepted' status to start or cancel");
+    }
+
+    ride.status = status;
+    await ride.save();
+}
+
+const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
+    if (!["accepted", "completed", "cancelled"].includes(status)) {
+        throw new Error("Invalid status. Allowed values: 'accepted', 'cancelled','completed");
+    }
+    const rides = await Ride.findAll({
+        where: {
+            [Op.or]: [
+                { driver_id: driver_id },
+                { initiated_by_driver_id: driver_id }],
+            status: status
+        },
+        order: [["updatedAt", "DESC"]]
+    });
+
+    return rides;
+};
+
+const upsertRide = async (rideData) => {
+    const {
+        id,
+        driver_id,
+        customer_name,
+        phone,
+        email,
+        car_model,
+        pickup_time,
+        pickup_address,
+        pickup_location,
+        drop_location,
+        ride_type
+    } = rideData;
+
+    if (id) {
+
+        const ride = await Ride.findByPk(id);
+        if (!ride) {
+            throw new Error("Ride not found");
+        }
+
+        await ride.update({
+            initiated_by_driver_id: driver_id,
+            customer_name,
+            phone,
+            email,
+            car_model,
+            pickup_time,
+            pickup_address,
+            pickup_location,
+            drop_location,
+            ride_type
+        });
+
+        return ride;
+    } else {
+
+        const newRide = await Ride.create({
+            initiated_by_driver_id: driver_id,
+            customer_name,
+            phone,
+            email,
+            car_model,
+            pickup_time,
+            pickup_address,
+            pickup_location,
+            drop_location,
+            ride_type
+        });
+
+        return newRide;
+    }
+};
+
 module.exports = {
     DashboardServiceData,
     acceptRide,
     DriverStatus,
+    RideDetails,
+    statusRide,
+    getCompletedOrCancelledAndAcceptedRides,
+    upsertRide
 }
