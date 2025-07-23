@@ -14,8 +14,7 @@ const { sequelize } = require('./models');
 const loadRoutes = require('./routes/index');
 const reddisConnect = require("./config/connectRedis");
 const CacheManager=require("./utils/cache-manager");
-const Driver = require('./models/driver.model');
-const Ride = require('./models/ride.model');
+
 
 const app = express();
 const port = process.env.PORT || 4445;
