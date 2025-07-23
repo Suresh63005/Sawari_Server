@@ -30,9 +30,9 @@ const acceptRide = async (req, res) => {
   const { ride_id } = req.body;
 
   if (!driver_id || !ride_id) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       success: false,
-      message: "Driver ID and Ride ID are required." 
+      message: "Driver ID and Ride ID are required."
     });
   }
 
@@ -122,11 +122,11 @@ const updateRideStatus = async (req, res) => {
 //6 Get Rides by Status (accepted, completed, cancelled)
 const getRidesByStatus = async (req, res) => {
   const driver_id = req.driver?.id;
-  if(!driver_id){
+  if (!driver_id) {
     return res.status(401).json({
       success: false,
       message: "Unauthorized access",
-      });
+    });
   }
   const { status } = req.query;
 
@@ -197,6 +197,30 @@ const upsertRide = async (req, res) => {
   }
 };
 
+const earningsHistory = async (req, res) => {
+  const driver_id = req.driver?.id;
+  const sortMonth = req.query.month;
+
+  if (!driver_id) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const earnings = await HomeService.getDriverEarningsHistory(driver_id, sortMonth);
+    return res.status(200).json({
+      success: true,
+      message: "Earnings history fetched successfully",
+      data:earnings
+    });
+  } catch (error) {
+    console.error("Error in earningsHistory:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch earnings history"
+    });
+  }
+}
+
 
 module.exports = {
   getAllHomeData,
@@ -205,5 +229,6 @@ module.exports = {
   getRideDetails,
   updateRideStatus,
   getRidesByStatus,
-  upsertRide
+  upsertRide,
+  earningsHistory
 };
