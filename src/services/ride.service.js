@@ -55,20 +55,20 @@ const rideResponseDTO = (ride)=>{
  * @param {Object} data - Ride payload (can include id for update)
  * @returns {Object} - The created or updated ride
  */
-const upsertRide = async (data) => {
-  if (data.id) {
+const upsertRide = async (rideData) => {
+  if (rideData.id) {
     // Check if ride with this ID exists
-    const existingRide = await Ride.findByPk(data.id);
+    const existingRide = await Ride.findByPk(rideData.id);
     if (!existingRide) {
       throw new Error("Ride not found for update.");
     }
 
     // Update and return updated ride
-    await existingRide.update(data);
+    await existingRide.update(rideData);
     return existingRide;
   } else {
     // Create new ride
-    const newRide = await Ride.create(data);
+    const newRide = await Ride.create(rideDTO(rideData));
     return newRide;
   }
 };
@@ -124,8 +124,28 @@ const getRideById = async (rideId) => {
   return rideResponseDTO(ride);
 };
 
+const getRidesByInitiator = async (initiatedByDriverId, { limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC' } = {}) => {
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  const { rows, count } = await Ride.findAndCountAll({
+    where: { initiated_by_driver_id: initiatedByDriverId },
+    order: [[sortBy, sortOrder.toUpperCase()]],
+    limit: parseInt(limit),
+    offset,
+  });
+
+  return {
+    total: count,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    data: rows.map(ride => rideResponseDTO(ride)),
+  };
+};
+
+
 module.exports = {
     upsertRide,
     getAllRides,
-    getRideById
+    getRideById,
+    getRidesByInitiator
 }
