@@ -49,9 +49,12 @@ const DashboardServiceData = async (driver_id) => {
     const acceptedRides = await Ride.findAll({
         where: {
             driver_id: driver_id,
-            status: "completed",
+            status:{
+                [Op.in]:["completed","accepted"]
+            },
 
         },
+        attributes:["customer_name","email","phone","pickup_address","pickup_location","drop_location","scheduled_time","ride_type","pickup_time","dropoff_time"],
         limit: 10,
         order: [["scheduled_time", "ASC"]]
     })
@@ -64,6 +67,7 @@ const DashboardServiceData = async (driver_id) => {
             //     [Op.gte]: new Date() // only future rides
             // },
         },
+        attributes:["customer_name","email","phone","pickup_address","pickup_location","drop_location","scheduled_time","ride_type","pickup_time","dropoff_time"],
         limit: 10,
         order: [["scheduled_time", "ASC"]]
     });
@@ -78,17 +82,26 @@ const DashboardServiceData = async (driver_id) => {
 }
 
 const acceptRide = async (ride_id, driver_id) => {
-    const ride = await Ride.findByPk(ride_id);
-
-    if (!ride || ride.status !== 'pending' || ride.driver_id) {
-        return res.status(400).json({ message: "Ride is not available" });
+  const ride = await Ride.findOne({
+    where: {
+      id: ride_id,
+      status: "pending",
+      driver_id: {
+        [Op.or]: [null, ""], // handles both null and empty string
+      }
     }
+  });
 
-    ride.driver_id = driver_id;
-    ride.status = "accepted"
-    await ride.save();
-    return ride;
-}
+  if (!ride) {
+    throw new Error("Ride is not available or already accepted.");
+  }
+
+  ride.driver_id = driver_id;
+  ride.status = "accepted";
+  await ride.save();
+
+  return ride;
+};
 
 const DriverStatus = async (driver_id, status) => {
     // Validate status

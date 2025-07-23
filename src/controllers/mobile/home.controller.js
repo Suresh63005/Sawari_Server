@@ -30,7 +30,10 @@ const acceptRide = async (req, res) => {
   const { ride_id } = req.body;
 
   if (!driver_id || !ride_id) {
-    return res.status(400).json({ message: "Driver ID and Ride ID required." });
+    return res.status(400).json({ 
+      success: false,
+      message: "Driver ID and Ride ID are required." 
+    });
   }
 
   try {
@@ -41,13 +44,15 @@ const acceptRide = async (req, res) => {
       data: ride,
     });
   } catch (error) {
-    console.error("Error accepting ride:", error);
-    return res.status(500).json({
+    console.error("Error accepting ride:", error.message);
+
+    return res.status(400).json({
       success: false,
-      message: "Failed to accept ride",
+      message: error.message || "Failed to accept ride",
     });
   }
 };
+
 
 // 3. Toggle Driver Status (active/inactive)
 const toggleDriverStatus = async (req, res) => {
