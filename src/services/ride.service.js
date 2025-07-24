@@ -1,5 +1,6 @@
 const { Op } = require("sequelize");
 const Ride = require("../models/ride.model");
+const Earnings = require("../models/earnings.model");
 
 const rideDTO = (data) => {
   return {
@@ -118,10 +119,10 @@ const getAllRides = async ({search,limit = 10,page = 1,sortBy = 'createdAt',sort
  * @returns {Object|null} Ride object or null
  */
 
-const getRideById = async (rideId) => {
+const getRideById = async (rideId,mm) => {
   const ride = await Ride.findByPk(rideId);
   if (!ride) throw new Error("RIde not found with the given ID");;
-  return rideResponseDTO(ride);
+  return ride;
 };
 
 const getRidesByInitiator = async (initiatedByDriverId, { limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC' } = {}) => {
@@ -143,9 +144,44 @@ const getRidesByInitiator = async (initiatedByDriverId, { limit = 10, page = 1, 
 };
 
 
+const conditionalRides = async (options = {}) => {
+  return Ride.findAll(options);
+};
+
+
+const acceptedRides=async(where={})=>{
+  return await Ride.findAll({where})
+}
+
+const getRideByIdData=async(driver_id,ride_id)=>{
+  const ride = await Ride.findOne({
+        where: {
+            id: ride_id,
+            [Op.or]: [
+                { driver_id: driver_id },
+                { initiated_by_driver_id: driver_id }
+            ]
+        },
+        attributes: ["customer_name", "pickup_location", "drop_location", "status", "ride_type"],
+        include: [
+            {
+                model: Earnings,
+                as: "Earnings",
+                attributes: ["amount", "commission", "percentage"]
+            }
+        ]
+    });
+    if (!ride) {
+        throw new Error("Ride not found");
+    }
+    return ride;
+}
 module.exports = {
     upsertRide,
     getAllRides,
     getRideById,
-    getRidesByInitiator
+    getRidesByInitiator,
+    conditionalRides,
+    acceptedRides,
+    getRideByIdData
 }
