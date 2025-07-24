@@ -53,15 +53,15 @@ const upsertRide = async (req, res) => {
             }
         }
 
-        const ride = await rideService.upsertRide({ ...data, initiated_by_driver_id: driverId, driver_id:data.driver_id || null });
-        
+        const ride = await rideService.upsertRide({ ...data, initiated_by_driver_id: driverId, driver_id: data.driver_id || null });
+
         // If ride is marked as completed, record the earning
-        if(ride.status === "completed"){
+        if (ride.status === "completed") {
             await earningService.createEarnings({
-                ride_id:ride.id,
-                driver_id:ride.driver_id,
-                amount:ride.total_amount,
-                date:new Date()
+                ride_id: ride.id,
+                driver_id: ride.driver_id,
+                amount: ride.total_amount,
+                date: new Date()
             })
         }
 
@@ -155,25 +155,25 @@ const getRideById = async (req, res) => {
  * - Supports pagination and sorting via query params.
  */
 const getRidesInitiatedByDriver = async (req, res) => {
-  try {
-    const driverId = req.driver?.id;
-    if (!driverId) {
-      return res.status(401).json({ message: "Unauthorized access. Driver not authenticated." });
+    try {
+        const driverId = req.driver?.id;
+        if (!driverId) {
+            return res.status(401).json({ message: "Unauthorized access. Driver not authenticated." });
+        }
+
+        // Optional query params for pagination & sorting
+        const { limit, page, sortBy, sortOrder } = req.query;
+
+        const rides = await rideService.getRidesByInitiator(driverId, { limit, page, sortBy, sortOrder });
+
+        return res.status(200).json({
+            message: "Rides initiated by you fetched successfully",
+            rides,
+        });
+    } catch (error) {
+        console.error("Get Rides Initiated By Driver Error:", error);
+        return res.status(500).json({ message: error.message });
     }
-
-    // Optional query params for pagination & sorting
-    const { limit, page, sortBy, sortOrder } = req.query;
-
-    const rides = await rideService.getRidesByInitiator(driverId, { limit, page, sortBy, sortOrder });
-
-    return res.status(200).json({
-      message: "Rides initiated by you fetched successfully",
-      rides,
-    });
-  } catch (error) {
-    console.error("Get Rides Initiated By Driver Error:", error);
-    return res.status(500).json({ message: error.message });
-  }
 };
 
 
