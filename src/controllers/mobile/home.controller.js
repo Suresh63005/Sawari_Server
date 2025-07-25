@@ -1,4 +1,8 @@
+const { Op } = require("sequelize");
 const HomeService = require("../../services/home.service");
+const { conditionalRides, getRideById, getRideByIdData } = require("../../services/ride.service");
+const { getEarningsSum } = require("../../services/earnings.service");
+const { driverProfileWithCar, getDriverById } = require("../../services/driver.service");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -9,12 +13,79 @@ const getAllHomeData = async (req, res) => {
   }
 
   try {
-    const todayData = await HomeService.DashboardServiceData(driver_id);
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // 1. Get Today's Completed Rides
+    const todayRides = await conditionalRides({
+      where: {
+        driver_id,
+        status: "completed",
+        updatedAt: {
+          [Op.between]: [startOfDay, endOfDay]
+        }
+      }
+    });
+
+    // 2. Get Today's Earnings
+    const todayEarnings = await getEarningsSum({
+      where: {
+        driver_id,
+        createdAt: {
+          [Op.between]: [startOfDay, endOfDay]
+        },
+        status: "processed"
+      }
+    });
+
+    // 3. Driver profile with vehicle
+    const driverProfile = await driverProfileWithCar(driver_id);
+
+    // 4. Accepted & Completed Rides
+    const acceptedRides = await conditionalRides({
+      where: {
+        driver_id,
+        status: {
+          [Op.in]: ["completed", "accepted"]
+        }
+      },
+      attributes: [
+        "customer_name", "email", "phone", "pickup_address", "pickup_location",
+        "drop_location", "scheduled_time", "ride_type", "pickup_time", "dropoff_time"
+      ],
+      limit: 10,
+      order: [["scheduled_time", "ASC"]]
+    });
+
+    // 5. Available Rides (unassigned)
+    const availableRides = await conditionalRides({
+      where: {
+        driver_id: null,
+        status: "pending"
+      },
+      attributes: [
+        "customer_name", "email", "phone", "pickup_address", "pickup_location",
+        "drop_location", "scheduled_time", "ride_type", "pickup_time", "dropoff_time"
+      ],
+      limit: 10,
+      order: [["scheduled_time", "ASC"]]
+    });
+
     return res.status(200).json({
       success: true,
       message: "Home data fetched successfully!",
-      data: todayData,
+      data: {
+        todayRides,
+        todayEarnings,
+        driverProfile,
+        acceptedRides,
+        availableRides
+      }
     });
+
   } catch (error) {
     console.error("Error fetching home data:", error);
     return res.status(500).json({
@@ -37,14 +108,26 @@ const acceptRide = async (req, res) => {
   }
 
   try {
-    const ride = await HomeService.acceptRide(ride_id, driver_id);
+    const rideGetById = await getRideById(ride_id);
+    // console.log(rideGetById,"iddddddddddddddddddddddddd")
+    if (!rideGetById) {
+      return res.status(404).json({
+        success: false,
+        message: "Ride not found."
+      });
+    }
+
+    rideGetById.driver_id = driver_id;
+    rideGetById.status = "accepted";
+    const result = await rideGetById.save();
+    
     return res.status(200).json({
       success: true,
       message: "Ride accepted successfully!",
-      data: ride,
+      data: result,
     });
   } catch (error) {
-    console.error("Error accepting ride:", error.message);
+    console.error("Error accepting ride:", error);
 
     return res.status(400).json({
       success: false,
@@ -52,6 +135,7 @@ const acceptRide = async (req, res) => {
     });
   }
 };
+
 
 
 // 3. Toggle Driver Status (active/inactive)
@@ -64,11 +148,13 @@ const toggleDriverStatus = async (req, res) => {
   }
 
   try {
-    const updatedDriver = await HomeService.DriverStatus(driver_id, status);
+    const driverGetById = await getDriverById(driver_id);
+    driverGetById.status=status
+    const result=await driverGetById.save()
     return res.status(200).json({
       success: true,
       message: `Driver status updated to ${status}`,
-      data: updatedDriver,
+      data: result,
     });
   } catch (error) {
     console.error("Error updating driver status:", error);
@@ -85,7 +171,7 @@ const getRideDetails = async (req, res) => {
   const { ride_id } = req.params;
 
   try {
-    const ride = await HomeService.RideDetails(driver_id, ride_id);
+    const ride = await getRideByIdData(driver_id, ride_id);
     return res.status(200).json({
       success: true,
       message: "Ride details fetched successfully",
@@ -106,10 +192,18 @@ const updateRideStatus = async (req, res) => {
   const { status } = req.body;
 
   try {
-    await HomeService.statusRide(driver_id, ride_id, status);
+    const ride= await getRideByIdData(driver_id, ride_id);
+    if (ride.status !== "accepted") {
+        throw new Error("Ride must be in 'accepted' status to start or cancel");
+    }
+
+    ride.status = status;
+    await ride.save();
+
     return res.status(200).json({
       success: true,
       message: `Ride status updated to '${status}'`,
+      data:ride
     });
   } catch (error) {
     return res.status(400).json({
@@ -167,6 +261,7 @@ const upsertRide = async (req, res) => {
       drop_location,
       ride_type,
     } = req.body;
+    
 
     const ride = await HomeService.upsertRide({
       id,
@@ -210,7 +305,7 @@ const earningsHistory = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Earnings history fetched successfully",
-      data:earnings
+      data: earnings
     });
   } catch (error) {
     console.error("Error in earningsHistory:", error);

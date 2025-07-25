@@ -1,4 +1,6 @@
+const { fn, col } = require('sequelize');
 const Earnings = require('../models/earnings.model');
+const Ride = require('../models/ride.model');
 
 const earningsDTO = (data) => {
   return {
@@ -85,8 +87,52 @@ const getEarningsByRide = async(riderId)=>{
     return earningsResponseDTO(earnings);
 }
 
+//mo
+
+const monthFilteredEarnings =async(where)=>{
+  return await Earnings.findAll({
+    where,
+    include:[
+      {
+        model:Ride,
+        as:"Ride"
+      }
+    ],
+    order:[['createdAt','DESC']]
+  })
+}
+
+const getEarningsSum = async(where={})=>{
+  const amount = await Earnings.sum("amount",where)
+  return amount || 0;
+}
+
+// Get total pending payouts
+const getPendingPayouts = async (where = {}) => {
+  const amount = await Earnings.sum("amount", { where });
+  return amount || 0;
+};
+
+/**
+ * Get total commission based on condition
+ * @param {Object} where
+ * @returns {Number}
+ */
+
+const getTotalCommission = async (where = {}) => {
+  const commission = await Earnings.sum("commission", { where });
+  return commission || 0;
+};
+
+
+
 module.exports = {
     createEarnings,
     getEarningsByDriver,
-    getEarningsByRide
+    getEarningsByRide,
+    monthFilteredEarnings,
+    getEarningsSum,
+    getPendingPayouts,
+    getTotalCommission,
+
 }
