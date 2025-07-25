@@ -3,6 +3,7 @@ const Ride = require("../models/ride.model");
 const Earnings = require("../models/earnings.model");
 
 const rideDTO = (data) => {
+  
   return {
     admin_id: data.admin_id,
     initiated_by_driver_id: data.initiated_by_driver_id,
