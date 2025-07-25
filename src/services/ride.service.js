@@ -1,5 +1,8 @@
-const { Op } = require("sequelize");
+const { Op, fn, col } = require("sequelize");
 const Ride = require("../models/ride.model");
+const Driver = require("../models/driver.model");
+const DriverCar = require("../models/driver-cars.model");
+const Earnings = require("../models/earnings.model");
 
 const rideDTO = (data) => {
   return {
@@ -118,10 +121,10 @@ const getAllRides = async ({search,limit = 10,page = 1,sortBy = 'createdAt',sort
  * @returns {Object|null} Ride object or null
  */
 
-const getRideById = async (rideId) => {
+const getRideById = async (rideId,mm) => {
   const ride = await Ride.findByPk(rideId);
   if (!ride) throw new Error("RIde not found with the given ID");;
-  return rideResponseDTO(ride);
+  return ride;
 };
 
 const getRidesByInitiator = async (initiatedByDriverId, { limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC' } = {}) => {
@@ -143,9 +146,120 @@ const getRidesByInitiator = async (initiatedByDriverId, { limit = 10, page = 1, 
 };
 
 
+
+const getAllRidesAdmin = async ({ search = "", status, page = 1, limit = 10 }) => {
+  const whereClause = {};
+
+  // Search logic
+  if (search) {
+    whereClause[Op.or] = [
+      { customer_name: { [Op.like]: `%${search}%` } },
+      { email: { [Op.like]: `%${search}%` } },
+      { phone: { [Op.like]: `%${search}%` } },
+    ];
+  }
+
+  // Status filter
+  if (status) {
+    whereClause.status = status;
+  }
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  // Fetch rides
+  const rides = await Ride.findAll({
+    where: whereClause,
+    include: [
+      { model: Driver, 
+        as: "AssignedDriver",
+        attributes: ["id", "first_name","last_name",] ,
+        include: [{
+          model: DriverCar,
+          as: "Vehicles",
+          attributes: ["car_brand", "car_model",]
+        }]
+      }],
+    offset: parseInt(offset),
+    limit: parseInt(limit),
+    order: [["createdAt", "DESC"]],
+  });
+
+  // Count data
+  const totalRides = await Ride.count();
+  const [pending, accepted, onRoute, completed, cancelled] = await Promise.all([
+    Ride.count({ where: { status: "pending" } }),
+    Ride.count({ where: { status: "accepted" } }),
+    Ride.count({ where: { status: "on-route" } }),
+    Ride.count({ where: { status: "completed" } }),
+    Ride.count({ where: { status: "cancelled" } }),
+  ]);
+
+  // Total revenue
+  const revenueResult = await Ride.findAll({
+    attributes: [[fn("SUM", col("actual_cost")), "total_revenue"]],
+    raw: true,
+  });
+  const totalRevenue = parseFloat(revenueResult[0].total_revenue || 0);
+
+  return {
+    rides,
+    counts: {
+      totalRides,
+      pending,
+      accepted,
+      onRoute,
+      completed,
+      cancelled,
+    },
+    totalRevenue,
+  };
+};
+
+
+
+const conditionalRides = async (options = {}) => {
+  return Ride.findAll(options);
+};
+
+
+const acceptedRides=async(where={})=>{
+  return await Ride.findAll({where})
+}
+
+const getRideByIdData=async(driver_id,ride_id)=>{
+  const ride = await Ride.findOne({
+        where: {
+            id: ride_id,
+            [Op.or]: [
+                { driver_id: driver_id },
+                { initiated_by_driver_id: driver_id }
+            ]
+        },
+        attributes: ["customer_name", "pickup_location", "drop_location", "status", "ride_type"],
+        include: [
+            {
+                model: Earnings,
+                as: "Earnings",
+                attributes: ["amount", "commission", "percentage"]
+            }
+        ]
+    });
+    if (!ride) {
+        throw new Error("Ride not found");
+    }
+    return ride;
+}
+
 module.exports = {
     upsertRide,
     getAllRides,
     getRideById,
-    getRidesByInitiator
+    getRidesByInitiator,
+
+    getAllRidesAdmin,
+
+    conditionalRides,
+    acceptedRides,
+    getRideByIdData
+
 }

@@ -21,7 +21,7 @@ const port = process.env.PORT || 4445;
 // Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100000,
+  max: 1000,
   message: 'Too many requests from this IP, please try again later',
 });
 
@@ -42,6 +42,7 @@ app.use(hpp());
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:3001',
   'http://localhost:3002',
   'http://localhost',
 ];
@@ -83,6 +84,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
     process.exit(1);
   }
 })();
+
+
 
 
 // Database sync
