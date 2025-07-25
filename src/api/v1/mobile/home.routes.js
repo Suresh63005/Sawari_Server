@@ -14,4 +14,5 @@ router.put("/ride/:ride_id", middleware.isAuthenticated, homeController.updateRi
 router.get("/rides", middleware.isAuthenticated, homeController.getRidesByStatus);
 router.post("/upsert-ride",middleware.isAuthenticated,homeController.upsertRide)
 
+router.get("/earnings-history",middleware.isAuthenticated,homeController.earningsHistory) // http://localhost:4445/api/v1/mobile/home/earnings-history?month=2025-07
 module.exports=router

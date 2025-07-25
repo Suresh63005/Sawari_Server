@@ -49,9 +49,12 @@ const DashboardServiceData = async (driver_id) => {
     const acceptedRides = await Ride.findAll({
         where: {
             driver_id: driver_id,
-            status: "completed",
+            status: {
+                [Op.in]: ["completed", "accepted"]
+            },
 
         },
+        attributes: ["customer_name", "email", "phone", "pickup_address", "pickup_location", "drop_location", "scheduled_time", "ride_type", "pickup_time", "dropoff_time"],
         limit: 10,
         order: [["scheduled_time", "ASC"]]
     })
@@ -64,6 +67,7 @@ const DashboardServiceData = async (driver_id) => {
             //     [Op.gte]: new Date() // only future rides
             // },
         },
+        attributes: ["customer_name", "email", "phone", "pickup_address", "pickup_location", "drop_location", "scheduled_time", "ride_type", "pickup_time", "dropoff_time"],
         limit: 10,
         order: [["scheduled_time", "ASC"]]
     });
@@ -78,17 +82,26 @@ const DashboardServiceData = async (driver_id) => {
 }
 
 const acceptRide = async (ride_id, driver_id) => {
-    const ride = await Ride.findByPk(ride_id);
+    const ride = await Ride.findOne({
+        where: {
+            id: ride_id,
+            status: "pending",
+            driver_id: {
+                [Op.or]: [null, ""], // handles both null and empty string
+            }
+        }
+    });
 
-    if (!ride || ride.status !== 'pending' || ride.driver_id) {
-        return res.status(400).json({ message: "Ride is not available" });
+    if (!ride) {
+        throw new Error("Ride is not available or already accepted.");
     }
 
     ride.driver_id = driver_id;
-    ride.status = "accepted"
+    ride.status = "accepted";
     await ride.save();
+
     return ride;
-}
+};
 
 const DriverStatus = async (driver_id, status) => {
     // Validate status
@@ -228,6 +241,90 @@ const upsertRide = async (rideData) => {
     }
 };
 
+const getDriverEarningsHistory = async (driver_id, sortMonth = null) => {
+    const today = new Date();
+    const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+    const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0)
+
+    const endOfWeek = new Date();
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999)
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
+    const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
+
+    let monthFilteredEarnings = [];
+    if (sortMonth) {
+        const [year, month] = sortMonth.split("-");
+        const start = new Date(year, parseInt(month) - 1, 1, 0, 0, 0);
+        const end = new Date(year, parseInt(month), 0, 23, 59, 59);
+
+        monthFilteredEarnings = await Earnings.findAll({
+            where: {
+                driver_id: driver_id,
+                createdAt: {
+                    [Op.between]: [start, end]
+                },
+                status: "processed"
+            },
+            include:[
+                {
+                    model:Ride,
+                    as:"Ride",
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+
+        })
+    }
+
+    const todayEarnings = await Earnings.sum("amount", {
+        where: {
+            driver_id: driver_id,
+            createdAt: {
+                [Op.between]: [startOfToday, endOfToday]
+            },
+            status: "processed"
+        }
+    })
+
+    const weekEarnings  = await Earnings.sum("amount",{
+        where: {
+            driver_id: driver_id,
+            createdAt: {
+                [Op.between]: [startOfWeek, endOfWeek]
+            },
+            status: "processed"
+        }
+    })
+
+    const monthEarnings = await Earnings.sum("amount", {
+        where: {
+            driver_id: driver_id,
+            createdAt: {
+                [Op.between]: [startOfMonth, endOfMonth]
+            },
+            status: "processed"
+        }
+    })
+
+    return {
+        todayEarnings: todayEarnings || 0,
+        weekEarnings: weekEarnings || 0,
+        monthEarnings: monthEarnings || 0,
+        sortedMonth: sortMonth || null,
+        sortedMonthEarnings: monthFilteredEarnings
+    }
+}
+
 module.exports = {
     DashboardServiceData,
     acceptRide,
@@ -235,5 +332,6 @@ module.exports = {
     RideDetails,
     statusRide,
     getCompletedOrCancelledAndAcceptedRides,
-    upsertRide
+    upsertRide,
+    getDriverEarningsHistory
 }
