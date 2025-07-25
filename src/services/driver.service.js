@@ -2,6 +2,7 @@ const Driver = require('../models/driver.model');
 const jwt = require('jsonwebtoken');
 const {driverFirebase}=require('../config/firebase-config');
 const { sequelize } = require('../models');
+const DriverCar = require('../models/driver-cars.model');
 
 /// Create token
 const generateToken = (driverId)=>{
@@ -95,9 +96,24 @@ const deactivateDriver = async(driverId)=>{
     return {message:"Account deactivated successfully"}
 }
 
+const driverProfileWithCar=async(driver_id)=>{
+  return await Driver.findByPk(driver_id,{
+    attributes: ["first_name", "last_name", "email", "phone", "experience", "wallet_balance", "availability_status", "ride_count"],
+        include: [
+            {
+                model: DriverCar,
+                as: "Vehicles",
+                attributes: ["car_model", "car_brand", "car_photos", "verified_by", "license_plate"]
+            }
+        ]
+  })
+}
+
+
 module.exports = {
     verifyDriverMobile,
     updateDriverProfile,
     getDriverById,
     deactivateDriver,
+    driverProfileWithCar
 }
