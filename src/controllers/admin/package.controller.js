@@ -10,6 +10,7 @@ const upsertPackage = async (req, res) => {
   }
 };
 
+// Controller to get all packages
 const getAllPackages = async (req, res) => {
   try {
     const {
@@ -30,36 +31,46 @@ const getAllPackages = async (req, res) => {
       status,
     });
 
-    res.status(200).json({message:"Packages retrieved successfully",result});
+    res.status(200).json({ message: "Packages retrieved successfully", result });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
+// Controller to get a package by ID
+const getPackageById = async (req, res) => {
+  try {
+    const pkg = await packageService.getPackageById(req.params.id);
+    res.status(200).json({ message: 'Package retrieved successfully', data: pkg });
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+  }
+};
 
-// Controller to get a package by Id
-const getPackageById = async(req,res)=>{
-    try {
-        const package =  await packageService.getPackageById(req.params.id)
-        res.status(201).json({message:'Package retrieved successfully',package});
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-}
-
-// Controller to delete a package by Id
-const deletePackageById = async(req,res)=>{
-    try {
+// Controller to delete a package by ID
+const deletePackageById = async (req, res) => {
+  try {
     const result = await packageService.deletePackageById(req.params.id);
-    res.status(200).json({message:'Package Deleted successfully',result});
+    res.status(200).json({ message: 'Package deleted successfully', data: result });
   } catch (err) {
     res.status(404).json({ error: err.message });
   }
-}
+};
+
+// Controller to toggle package status
+const togglePackageStatus = async (req, res) => {
+  try {
+    const result = await packageService.togglePackageStatus(req.params.id);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
 
 module.exports = {
-    upsertPackage,
-    getAllPackages,
-    getPackageById,
-    deletePackageById
-}
+  upsertPackage,
+  getAllPackages,
+  getPackageById,
+  deletePackageById,
+  togglePackageStatus,
+};

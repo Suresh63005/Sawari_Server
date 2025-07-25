@@ -44,7 +44,7 @@ const Permissions = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
-    manage_notitications: {
+    manage_notifications: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,

@@ -25,6 +25,10 @@ const SubPackage = sequelize.define("SubPackage", {
     allowNull: true,
     comment: "Number of hours for hourly packages, e.g., 3, 10",
   },
+  status: {
+      type: DataTypes.ENUM("active", "inactive"),
+      defaultValue: "active",
+    },
   days_per_month: {
     type: DataTypes.INTEGER,
     allowNull: true,

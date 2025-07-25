@@ -54,6 +54,10 @@ const DriverCar = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
+      reason:{
+            type:DataTypes.STRING,
+            allowNull:true,
+        },
     verified_by: {
       type: DataTypes.UUID,
       allowNull: true,
