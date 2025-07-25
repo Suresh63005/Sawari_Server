@@ -11,6 +11,9 @@ const subPackageResponseDTO = (subpackage) => ({
   days_per_month: subpackage.days_per_month,
   hours_per_day: subpackage.hours_per_day,
   base_fare: subpackage.base_fare,
+  status: subpackage.status || 'active',
+  createdAt: subpackage.createdAt,
+  updatedAt: subpackage.updatedAt,
 });
 
 // Create or update a sub-package
@@ -23,6 +26,7 @@ const upsertSubPackage = async (data) => {
     days_per_month: data.days_per_month,
     hours_per_day: data.hours_per_day,
     base_fare: data.base_fare,
+    status: data.status || 'active',
   };
 
   if (data.id) {
@@ -71,6 +75,8 @@ const getAllSubPackages = async ({
   if (search) {
     where[Op.or] = [
       { name: { [Op.like]: `%${search}%` } },
+      { package_id: { [Op.like]: `%${search}%` } },
+      { car_id: { [Op.like]: `%${search}%` } },
     ];
   }
 
@@ -111,9 +117,24 @@ const deleteSubPackageById = async (id) => {
   };
 };
 
+// Toggle sub-package status
+const toggleSubPackageStatus = async (id) => {
+  const sp = await SubPackage.findByPk(id);
+  if (!sp) throw new Error("Sub-Package not found with the given ID");
+
+  const newStatus = sp.status === 'active' ? 'inactive' : 'active';
+  await sp.update({ status: newStatus });
+
+  return {
+    message: `Sub-Package status updated to ${newStatus}`,
+    data: subPackageResponseDTO(sp),
+  };
+};
+
 module.exports = {
   upsertSubPackage,
   getAllSubPackages,
   getSubPackageById,
   deleteSubPackageById,
+  toggleSubPackageStatus,
 };
