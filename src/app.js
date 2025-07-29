@@ -14,6 +14,7 @@ const { sequelize } = require('./models');
 const loadRoutes = require('./routes/index');
 const reddisConnect = require("./config/connectRedis");
 const CacheManager=require("./utils/cache-manager");
+const Notifications = require('./models/notifications.model');
 
 const app = express();
 const port = process.env.PORT || 4445;
@@ -21,7 +22,7 @@ const port = process.env.PORT || 4445;
 // Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 1000,
   message: 'Too many requests from this IP, please try again later',
 });
 
@@ -86,6 +87,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 })();
 
 
+
+
 // Database sync
 // sequelize
 // .sync({alter:true})
@@ -96,12 +99,12 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 //   console.error("Unable to create the database:", err);
 // });
 
-// Ride.sync({ alter: true })
+// Notifications.sync({ alter: true })
 //   .then(() => {
-//     console.log("✅ Ride table synced successfully.");
+//     console.log("✅ Notification table synced successfully.");
 //   })
 //   .catch((err) => {
-//     console.error("❌ Failed to sync Ride table:", err);
+//     console.error("❌ Failed to sync Notification table:", err);
 //   });
 
 const startServer = async () => {

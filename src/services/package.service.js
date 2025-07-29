@@ -1,27 +1,27 @@
 const { Op } = require('sequelize');
 const Package = require('../models/package.model');
 
-// Data transfor object for creating a package
+// Data transform object for creating a package
 const packageDTO = (data) => {
-    return {
-        name: data.name,
-        description: data.description,
-        status: data.status || 'active'
-    };
-}
+  return {
+    name: data.name,
+    description: data.description,
+    status: data.status || 'active',
+  };
+};
 
-const packageResponseDTO = (package)=>{
-    return {
-        id: package.id,
-        name: package.name,
-        description: package.description,
-        status: package.status,
-        createdAt: package.createdAt,
-        updatedAt: package.updatedAt
-    };
-}
+const packageResponseDTO = (pkg) => {
+  return {
+    id: pkg.id,
+    name: pkg.name,
+    description: pkg.description,
+    status: pkg.status,
+    createdAt: pkg.createdAt,
+    updatedAt: pkg.updatedAt,
+  };
+};
 
-// Service to create a new package
+// Service to create or update a package
 const upsertPackage = async (data) => {
   const dto = packageDTO(data);
 
@@ -64,8 +64,7 @@ const upsertPackage = async (data) => {
   }
 };
 
-
-// Updated service to get all packages with filtering, search, pagination, sorting
+// Service to get all packages with filtering, search, pagination, sorting
 const getAllPackages = async ({ search, limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC', status }) => {
   const where = {};
 
@@ -99,26 +98,40 @@ const getAllPackages = async ({ search, limit = 10, page = 1, sortBy = 'createdA
   };
 };
 
+// Service to get a package by ID
+const getPackageById = async (id) => {
+  const pkg = await Package.findByPk(id);
+  if (!pkg) throw new Error('Package not found');
+  return packageResponseDTO(pkg);
+};
 
-// Service to get a package by Id
-const getPackageById = async(id)=>{
-    const pkg = await Package.findByPk(id);
-    if(!pkg) throw new Error('Package not found');
-    return packageResponseDTO(pkg);
-}
+// Service to delete a package by ID
+const deletePackageById = async (id) => {
+  const pkg = await Package.findByPk(id);
+  if (!pkg) throw new Error('Package not found');
 
-// Service to delete a package by Id
-const deletePackageById = async(id)=>{
-    const pkg = await Package.findByPk(id);
-    if(!pkg) throw new Error('Package not found');
+  await pkg.destroy();
+  return { message: 'Package deleted successfully' };
+};
 
-    await pkg.destroy();
-    return {message:'Package deleted successfully'}
-}
+// Service to toggle package status
+const togglePackageStatus = async (id) => {
+  const pkg = await Package.findByPk(id);
+  if (!pkg) throw new Error('Package not found');
+
+  const newStatus = pkg.status === 'active' ? 'inactive' : 'active';
+  await pkg.update({ status: newStatus });
+
+  return {
+    message: `Package status updated to ${newStatus}`,
+    data: packageResponseDTO(pkg),
+  };
+};
 
 module.exports = {
-    upsertPackage,
-    getAllPackages,
-    getPackageById,
-    deletePackageById
-}
+  upsertPackage,
+  getAllPackages,
+  getPackageById,
+  deletePackageById,
+  togglePackageStatus,
+};
