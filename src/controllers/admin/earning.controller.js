@@ -1,13 +1,11 @@
 const { Op } = require("sequelize");
-const Earnings = require("../../models/earnings.model");
-const Ride = require("../../models/ride.model");
-const { monthFilteredEarnings, getEarningsSum, getPendingPayouts, getTotalCommission,} = require("../../services/earnings.service");
-
+const { monthFilteredEarnings, getEarningsSum, getPendingPayouts, getTotalCommission, generateExcel, singleEarnings, allEarnings, } = require("../../services/earnings.service");
+const { AbortController } = require("node-abort-controller")
 
 const earningsHistory = async (req, res) => {
   console.log(1)
   const sortMonth = req.query.month;
-  console.log(sortMonth,"monthhhhhhhh")
+  console.log(sortMonth, "monthhhhhhhh")
   try {
     console.log(2)
     let start, end;
@@ -49,7 +47,7 @@ const earningsHistory = async (req, res) => {
       ...dateRange,
       status: "processed",
     });
-console.log(9)
+    console.log(9)
     return res.status(200).json({
       success: true,
       message: "Earnings history fetched successfully",
@@ -71,8 +69,45 @@ console.log(9)
   }
 };
 
+// it worked for both single and multiple download 
+const Download = async (req, res) => {
+  const controller = new AbortController();
+  const timeOut = setTimeout(()=>controller.abort(),10000)
 
+  try {
+    const { id } = req.params;
+    let earnings;
+    let filename;
+
+    if (id) {
+      earnings = await singleEarnings(id,controller.signal);
+      filename = `earnings_report_${id}.xlsx`;
+    } else {
+      earnings = await allEarnings(controller.signal);
+      filename = `earnings_report_all.xlsx`;
+    }
+
+    const buffer = await generateExcel(earnings,controller.signal);
+    clearTimeout(timeOut)
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${filename}"`
+    )
+
+    res.send(buffer);
+    res.end()
+  } catch (error) {
+    if(controller.signal.aborted){
+      return res.status(408).json({ message: 'Request timed out or aborted' });
+    }
+    console.error('Error downloading earnings report:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
 
 module.exports = {
-    earningsHistory
+  earningsHistory,
+  Download
 }

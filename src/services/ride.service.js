@@ -120,7 +120,7 @@ const getAllRides = async ({search,limit = 10,page = 1,sortBy = 'createdAt',sort
  */
 
 const getRideById = async (rideId,mm) => {
-  const ride = await Ride.findByPk(rideId);
+  const ride = await Ride.findByPk(rideId,{attributes:["customer_name","email","phone","pickup_address","pickup_location","drop_location","ride_date","car_model","scheduled_time","status","ride_type","pickup_time","dropoff_time"]});
   if (!ride) throw new Error("RIde not found with the given ID");;
   return ride;
 };
