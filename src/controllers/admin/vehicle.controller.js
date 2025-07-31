@@ -1,3 +1,4 @@
+const DriverCar = require('../../models/driver-cars.model');
 const vehicleService = require('../../services/driverCar.service');
 
 exports.getAllVehicles = async (req, res) => {
@@ -12,7 +13,9 @@ exports.getAllVehicles = async (req, res) => {
 exports.approveVehicle = async (req, res) => {
   try {
     const { id } = req.params;
-    await vehicleService.upsertDriverCar(id, { is_approved: true, status: 'active', verified_by: req.user.id });
+    const car = await DriverCar.findByPk(id);
+    if (!car) throw new Error('Vehicle not found');
+    await car.update({ is_approved: true, status: 'active', verified_by: req.user.id });
     res.status(200).json({ message: 'Vehicle approved' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -23,7 +26,9 @@ exports.rejectVehicle = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    await vehicleService.rejectDriverCar(id, reason, req.user.id);
+    const car = await DriverCar.findByPk(id);
+    if (!car) throw new Error('Vehicle not found');
+    await car.update({ is_approved: false, status: 'rejected', reason, verified_by: req.user.id });
     res.status(200).json({ message: 'Vehicle rejected' });
   } catch (error) {
     res.status(500).json({ message: error.message });
