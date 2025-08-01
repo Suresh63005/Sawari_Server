@@ -1,6 +1,7 @@
 const { uploadToS3, deleteFromS3 } = require('../../config/fileUpload.aws');
 const driverService = require('../../services/driver.service');
 const driverCarService = require('../../services/driverCar.service');
+const { checkActiveRide } = require('../../services/ride.service');
 
 const verifyMobile = async (req, res) => {
     try {
@@ -228,6 +229,8 @@ const driverAccountDetails = async (req, res) => {
 const deleteAccount = async (req, res) => {
     try {
         const driverId = req.driver.id;
+
+        await checkActiveRide(driverId)
         const result = await driverService.deactivateDriver(driverId);
         res.status(200).json(result);
     } catch (error) {

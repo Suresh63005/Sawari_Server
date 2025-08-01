@@ -4,3 +4,5 @@ node_modules
 note.txt
 combined.log
 k8s
+private_key.pem
+public_key.pem

@@ -1,3 +1,4 @@
+const { uploadToS3 } = require('../config/fileUpload.aws');
 const DriverCar = require('../models/driver-cars.model');
 
 const carDTO = (data) => {
@@ -48,8 +49,18 @@ const upsertDriverCar = async (driverId, data) => {
   }
 };
 
-const getDriverCarByDriverId = async (driverId) => {
-  return await DriverCar.findOne({ where: { driver_id: driverId } });
+const getDriverCarByDriverId = async (driver_id,car_id=null) => {
+  const whereClause = {driver_id}
+  if(car_id){
+    whereClause.id = car_id
+  }
+
+  const vehicle = await DriverCar.findOne({where:whereClause});
+  if(!vehicle) {
+    throw new Error('Vehicle not found');
+  }
+  return vehicle
+  
 };
 
 // Service for reject vehicle
@@ -96,6 +107,59 @@ const rejectInsurance = async (carId, reason, verifiedBy) => {
   return { message: 'Insurance document rejected' };
 };
 
+
+const updateDriverCar = async(driver_id,data,files)=>{
+  const vehicle = await getDriverCarByDriverId(driver_id,data.id)
+
+  vehicle.car_model = data.car_model || vehicle.car_model;
+  vehicle.color = data.color || vehicle.color;
+  vehicle.license_plate  = data.license_plate || vehicle.license_plate; 
+
+  if(files && files.length > 0){
+    try {
+      const uploadURLS=await uploadToS3(files,"driver-cars");
+      // vehicle.car_photos = JSON.stringify(uploadedUrls); 
+    } catch (error) {
+      console.error("S3 upload failed:", err);
+      throw new Error("Image upload failed");
+    }
+  }
+
+  await vehicle.save();
+  return vehicle;
+} 
+
+
+const updateDriverDocuments=async({driver,driverCar,files})=>{
+  try {
+    const s3Uploads = {};
+    if(files.rc_doc){
+      s3Uploads.rc_doc = await uploadToS3(files.rc_doc[0],"driver-cars")
+    }
+    if(files.insurance_doc){
+      s3Uploads.insurance_doc = await uploadToS3(files.insurance_doc[0],"driver-cars");
+    }
+    if(files.license_front){
+      s3Uploads.license_front = await uploadToS3(files.license_front[0],"drivers")
+    }
+
+    //update driver car
+    if(s3Uploads.rc_doc) driverCar.rc_doc = s3Uploads.rc_doc;
+    if(s3Uploads.insurance_doc) driverCar.insurance_doc = s3Uploads.insurance_doc;
+
+    //update driver
+    if(s3Uploads.license_front) driver.license_front = s3Uploads.license_front;
+
+    await Promise.all([driverCar.save(),driver.save()])
+
+    return {
+      driver,
+      driverCar
+    }
+  } catch (error) {
+      console.error(error)
+  }
+}
 module.exports = {
   upsertDriverCar,
   getDriverCarByDriverId,
@@ -105,4 +169,6 @@ module.exports = {
   rejectRc,
   verifyInsurance,
   rejectInsurance,
+  updateDriverCar,
+  updateDriverDocuments
 };

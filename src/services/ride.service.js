@@ -28,29 +28,29 @@ const rideDTO = (data) => {
   };
 };
 
-const rideResponseDTO = (ride)=>{
-    return{
-        id:ride.id,
-        admin_id: ride.admin_id,
-        initiated_by_driver_id: ride.initiated_by_driver_id,
-        customer_name: ride.customer_name,
-        email: ride.email,
-        phone: ride.phone,
-        pickup_address: ride.pickup_address,
-        pickup_location: ride.pickup_location,
-        drop_location: ride.drop_location,
-        car_model: ride.car_model,
-        scheduled_time: ride.scheduled_time,
-        driver_id: ride.driver_id,
-        status: ride.status,
-        ride_type: ride.ride_type,
-        notes: ride.notes,
-        estimated_cost: ride.estimated_cost,
-        actual_cost: ride.actual_cost,
-        payment_status: ride.payment_status,
-        pickup_time: ride.pickup_time,
-        dropoff_time: ride.dropoff_time,
-    }
+const rideResponseDTO = (ride) => {
+  return {
+    id: ride.id,
+    admin_id: ride.admin_id,
+    initiated_by_driver_id: ride.initiated_by_driver_id,
+    customer_name: ride.customer_name,
+    email: ride.email,
+    phone: ride.phone,
+    pickup_address: ride.pickup_address,
+    pickup_location: ride.pickup_location,
+    drop_location: ride.drop_location,
+    car_model: ride.car_model,
+    scheduled_time: ride.scheduled_time,
+    driver_id: ride.driver_id,
+    status: ride.status,
+    ride_type: ride.ride_type,
+    notes: ride.notes,
+    estimated_cost: ride.estimated_cost,
+    actual_cost: ride.actual_cost,
+    payment_status: ride.payment_status,
+    pickup_time: ride.pickup_time,
+    dropoff_time: ride.dropoff_time,
+  }
 }
 
 /**
@@ -80,7 +80,7 @@ const upsertRide = async (rideData) => {
  * Get all rides with search, filter, pagination, and sorting
  * @param {Object} options - Filters and pagination
  */
-const getAllRides = async ({search,limit = 10,page = 1,sortBy = 'createdAt',sortOrder = 'DESC',status,}) => {
+const getAllRides = async ({ search, limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC', status, }) => {
   const where = {};
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -121,8 +121,8 @@ const getAllRides = async ({search,limit = 10,page = 1,sortBy = 'createdAt',sort
  * @returns {Object|null} Ride object or null
  */
 
-const getRideById = async (rideId,mm) => {
-  const ride = await Ride.findByPk(rideId,{attributes:["customer_name","email","phone","pickup_address","pickup_location","drop_location","ride_date","car_model","scheduled_time","status","ride_type","pickup_time","dropoff_time"]});
+const getRideById = async (rideId) => {
+  const ride = await Ride.findByPk(rideId, { attributes: ["customer_name", "email", "phone", "pickup_address", "pickup_location", "drop_location", "ride_date", "car_model", "scheduled_time", "status", "ride_type", "pickup_time", "dropoff_time"] });
   if (!ride) throw new Error("RIde not found with the given ID");;
   return ride;
 };
@@ -170,9 +170,10 @@ const getAllRidesAdmin = async ({ search = "", status, page = 1, limit = 10 }) =
   const rides = await Ride.findAll({
     where: whereClause,
     include: [
-      { model: Driver, 
+      {
+        model: Driver,
         as: "AssignedDriver",
-        attributes: ["id", "first_name","last_name",] ,
+        attributes: ["id", "first_name", "last_name",],
         include: [{
           model: DriverCar,
           as: "Vehicles",
@@ -222,44 +223,85 @@ const conditionalRides = async (options = {}) => {
 };
 
 
-const acceptedRides=async(where={})=>{
-  return await Ride.findAll({where})
+const acceptedRides = async (where = {}) => {
+  return await Ride.findAll({ where })
 }
 
-const getRideByIdData=async(driver_id,ride_id)=>{
+const getRideByIdData = async (driver_id, ride_id) => {
   const ride = await Ride.findOne({
-        where: {
-            id: ride_id,
-            [Op.or]: [
-                { driver_id: driver_id },
-                { initiated_by_driver_id: driver_id }
-            ]
-        },
-        attributes: ["customer_name", "pickup_location", "drop_location", "status", "ride_type"],
-        include: [
-            {
-                model: Earnings,
-                as: "Earnings",
-                attributes: ["amount", "commission", "percentage"]
-            }
-        ]
-    });
-    if (!ride) {
-        throw new Error("Ride not found");
+    where: {
+      id: ride_id,
+      [Op.or]: [
+        { driver_id: driver_id },
+        { initiated_by_driver_id: driver_id }
+      ]
+    },
+    attributes: ["customer_name", "pickup_location", "drop_location", "status", "ride_type"],
+    include: [
+      {
+        model: Earnings,
+        as: "Earnings",
+        attributes: ["amount", "commission", "percentage"]
+      }
+    ]
+  });
+  if (!ride) {
+    throw new Error("Ride not found");
+  }
+  return ride;
+}
+
+const rideStatuUpdate = async (driver_id, ride_id,transaction) => {
+  const ride = await Ride.findOne({
+    where: {
+      id: ride_id,
+      [Op.or]: [
+        { driver_id: driver_id },
+      ]
+    },
+    transaction
+  })
+  if (!ride) {
+    throw new Error("Ride not found or not assigned to this driver");
+  }
+
+  if (ride.status === "completed") {
+    throw new Error("Ride is already completed");
+  }
+
+  const updatedRide = await ride.update({
+    status: "completed",
+    dropoff_time: new Date(),
+    payment_status: "completed",
+  },{transaction});
+
+  return updatedRide;
+}
+
+const checkActiveRide = async(driver_id)=>{
+  const ride = await Ride.findOne({
+    where:{
+      driver_id:driver_id,
+      status:{
+        [Op.in]:["accepted", "on-route"]
+      }
     }
-    return ride;
+  });
+  if(ride){
+    throw new Error("Cannot deactivate account while a ride is accepted, or in progress.")
+  }
 }
 
 module.exports = {
-    upsertRide,
-    getAllRides,
-    getRideById,
-    getRidesByInitiator,
-
-    getAllRidesAdmin,
-
-    conditionalRides,
-    acceptedRides,
-    getRideByIdData
+  upsertRide,
+  getAllRides,
+  getRideById,
+  getRidesByInitiator,
+  getAllRidesAdmin,
+  conditionalRides,
+  acceptedRides,
+  getRideByIdData,
+  rideStatuUpdate,
+  checkActiveRide
 
 }

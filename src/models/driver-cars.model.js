@@ -22,6 +22,10 @@ const DriverCar = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    color:{
+      type: DataTypes.STRING,
+      allowNull:true
+    },
     license_plate: {
       type: DataTypes.STRING,
       allowNull: false,

@@ -1,8 +1,11 @@
 const { Op } = require("sequelize");
 const HomeService = require("../../services/home.service");
-const { conditionalRides, getRideById, getRideByIdData } = require("../../services/ride.service");
+const { conditionalRides, getRideById, getRideByIdData, rideStatuUpdate } = require("../../services/ride.service");
 const { getEarningsSum } = require("../../services/earnings.service");
 const { driverProfileWithCar, getDriverById } = require("../../services/driver.service");
+const { bulkCreateWalletTransactions } = require("../../services/wallet.service");
+const { v4: uuidv4 } = require("uuid");
+const { sequelize } = require("../../models");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -120,7 +123,7 @@ const acceptRide = async (req, res) => {
     rideGetById.driver_id = driver_id;
     rideGetById.status = "accepted";
     const result = await rideGetById.save();
-    
+
     return res.status(200).json({
       success: true,
       message: "Ride accepted successfully!",
@@ -149,8 +152,8 @@ const toggleDriverStatus = async (req, res) => {
 
   try {
     const driverGetById = await getDriverById(driver_id);
-    driverGetById.status=status
-    const result=await driverGetById.save()
+    driverGetById.status = status
+    const result = await driverGetById.save()
     return res.status(200).json({
       success: true,
       message: `Driver status updated to ${status}`,
@@ -192,9 +195,9 @@ const updateRideStatus = async (req, res) => {
   const { status } = req.body;
 
   try {
-    const ride= await getRideByIdData(driver_id, ride_id);
+    const ride = await getRideByIdData(driver_id, ride_id);
     if (ride.status !== "accepted") {
-        throw new Error("Ride must be in 'accepted' status to start or cancel");
+      throw new Error("Ride must be in 'accepted' status to start or cancel");
     }
 
     ride.status = status;
@@ -203,7 +206,7 @@ const updateRideStatus = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `Ride status updated to '${status}'`,
-      data:ride
+      data: ride
     });
   } catch (error) {
     return res.status(400).json({
@@ -239,6 +242,7 @@ const getRidesByStatus = async (req, res) => {
   }
 };
 
+//7 driver can create a new ride and they got commission when ride is completed.
 const upsertRide = async (req, res) => {
   const driver_id = req.driver?.id;
   if (!driver_id) {
@@ -261,7 +265,7 @@ const upsertRide = async (req, res) => {
       drop_location,
       ride_type,
     } = req.body;
-    
+
 
     const ride = await HomeService.upsertRide({
       id,
@@ -316,6 +320,100 @@ const earningsHistory = async (req, res) => {
   }
 }
 
+//9 end ride (pending)
+const endRide = async (req, res) => {
+  const driver_id = req.driver?.id;
+  const ride_id = req.params.id;
+  if (!driver_id) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const ride = await getRideById(ride_id);
+  if (!ride) {
+    return res.status(404).json({ message: "Ride not found" });
+  }
+  const t = await sequelize.transaction();
+  try {
+    //update ride status 
+    await rideStatuUpdate(driver_id, ride_id, t);
+    // Calculate cost splits
+    const cost = parseFloat(ride.actual_cost);
+    if (!cost || cost <= 0) {
+      return res.status(400).json({ message: "Invalid ride cost" });
+    }
+
+    const adminAmount = parseFloat((cost * 0.10).toFixed(2));
+    let initiatorAmount = 0;
+    let driverAmount = cost;
+
+    // Check if initiated by another driver
+    if (ride.initiated_by_driver_id && ride.initiated_by_driver_id !== ride.driver_id) {
+      initiatorAmount = parseFloat((cost * 0.10).toFixed(2));
+      driverAmount = parseFloat((cost - adminAmount - initiatorAmount)).toFixed(2)
+    } else {
+      driverAmount = parseFloat((cost - adminAmount).toFixed(2));
+    }
+
+    let now = new Date();
+    const transactions = [];
+
+    // // Driver (who completed the ride)
+    transactions.push({
+      id: uuidv4(),
+      driver_id: driver_id,
+      transaction_type: "credit",
+      amount: driverAmount,
+      // balance_transfer:0,
+      transaction_date: now,
+      description: `Ride earnings for ride ID: ${ride_id}`,
+      status: "completed"
+    })
+
+
+    // Admin (only if ride has admin_id)
+    if (ride.admin_id) {
+      transactions.push({
+        id: uuidv4(),
+        driver_id: ride.admin_id,
+        transaction_type: "credit",
+        amount: adminAmount,
+        balance_after: 0,
+        transaction_date: now,
+        description: `Admin commission for ride ID: ${ride_id}`,
+        status: "completed",
+      })
+    }
+
+    //// Initiator (only if another driver initiated the ride)
+    if (ride.initiated_by_driver_id && ride.initiated_by_driver_id !== ride.driver_id) {
+      transactions.push({
+        id: uuidv4(),
+        driver_id: ride.initiated_by_driver_id,
+        transaction_type: "credit",
+        amount: initiatorAmount,
+        balance_after: 0,
+        transaction_date: now,
+        description: `Initiator reward for ride ID: ${ride_id}`,
+        status: "completed",
+      })
+    }
+    await bulkCreateWalletTransactions(transactions,t);
+    await t.commit()
+    return res.status(200).json({
+      message: "Ride completed and payment split successfully.",
+      payouts: {
+        driverAmount,
+        adminAmount,
+        initiatorAmount,
+      },
+    });
+  } catch (error) {
+    await t.rollback()
+    console.error("Error in endRide:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+}
+
+
 
 module.exports = {
   getAllHomeData,
@@ -325,5 +423,6 @@ module.exports = {
   updateRideStatus,
   getRidesByStatus,
   upsertRide,
-  earningsHistory
+  earningsHistory,
+  endRide,
 };

@@ -80,8 +80,8 @@ const updateDriverProfile = async (driverId, data) => {
 };
 
 // Service to fetch driver
-const getDriverById = async(driverId)=>{
-  const driver = await Driver.findByPk(driverId,{attributes:["first_name","last_name","email","phone","profile_pic","dob","experience","emirates_id","emirates_doc_front","emirates_doc_back","languages","license_front","license_back","license_verification_status","emirates_verification_status","is_approved","availability_status","wallet_balance","status"]});
+const getDriverById = async (driverId) => {
+  const driver = await Driver.findByPk(driverId, { attributes: ["first_name", "last_name", "email", "phone", "profile_pic", "dob", "experience", "emirates_id", "emirates_doc_front", "emirates_doc_back", "languages", "license_front", "license_back", "license_verification_status", "emirates_verification_status", "is_approved", "availability_status", "wallet_balance", "status"] });
   if (!driver) throw new Error("Driver not found");
   return driver;
 };
@@ -164,18 +164,26 @@ const rejectEmirates = async (driverId, reason, verifiedBy) => {
   return { message: 'Emirates ID rejected' };
 };
 
-const driverProfileWithCar=async(driver_id)=>{
-  return await Driver.findByPk(driver_id,{
+const driverProfileWithCar = async (driver_id) => {
+  return await Driver.findByPk(driver_id, {
     attributes: ["first_name", "last_name", "email", "phone", "experience", "wallet_balance", "availability_status", "ride_count"],
-        include: [
-            {
-                model: DriverCar,
-                as: "Vehicles",
-                attributes: ["car_model", "car_brand", "car_photos", "verified_by", "license_plate"]
-            }
-        ]
+    include: [
+      {
+        model: DriverCar,
+        as: "Vehicles",
+        attributes: ["car_model", "car_brand", "car_photos", "verified_by", "license_plate"]
+      }
+    ]
   })
 }
+
+
+const updateDriverBalance = async (driver_id, newBalance) => {
+  return Driver.update(
+    { wallet_balance: newBalance },
+    { where: { id: driver_id } }
+  );
+};
 
 
 module.exports = {
@@ -192,7 +200,8 @@ module.exports = {
   rejectLicense,
   verifyEmirates,
   rejectEmirates,
-  driverProfileWithCar
+  driverProfileWithCar,
+  updateDriverBalance
 };
-  
+
 
