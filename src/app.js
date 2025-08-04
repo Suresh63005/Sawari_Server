@@ -45,7 +45,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:3002',
-  'http://localhost',
+  'https://sawari-admin.vercel.app',
 ];
 app.use(cors({
   origin: (origin, callback) => {
