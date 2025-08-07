@@ -10,6 +10,7 @@ const Review = require("./review.model");
 const Car = require("./cars.model");
 const Package = require("./package.model");
 const SubPackage = require("./sub-package.model");
+const PackagePrice = require("./packageprice.model");
 
 // Admin associations
 Admin.hasMany(Ride, { foreignKey: 'admin_id', as: 'CreatedRides', onDelete: 'SET NULL', constraints: false });
@@ -45,6 +46,23 @@ PaymentReports.belongsTo(Driver, { foreignKey: 'driver_id', as: 'Driver', constr
 
 Driver.hasMany(WalletReports, { foreignKey: 'driver_id', as: 'WalletReports', onDelete: 'CASCADE', constraints: false });
 WalletReports.belongsTo(Driver, { foreignKey: 'driver_id', as: 'Driver', constraints: false });
+// ride and package associations
+// Ride belongs to Package
+Ride.belongsTo(Package, { foreignKey: 'package_id', as: 'Package' });
+Package.hasMany(Ride, { foreignKey: 'package_id', as: 'Rides' });
+
+// Ride belongs to SubPackage
+Ride.belongsTo(SubPackage, { foreignKey: 'subpackage_id', as: 'SubPackage' });
+SubPackage.hasMany(Ride, { foreignKey: 'subpackage_id', as: 'Rides' });
+
+// Ride belongs to Car
+Ride.belongsTo(Car, { foreignKey: 'car_id', as: 'Car' });
+Car.hasMany(Ride, { foreignKey: 'car_id', as: 'Rides' });
+
+// package price car associations
+
+PackagePrice.belongsTo(Car, { foreignKey: 'car_id', as: 'Car' });
+Car.hasMany(PackagePrice, { foreignKey: 'car_id', as: 'PackagePrices' });
 
 Driver.hasMany(Review, { foreignKey: 'driver_id', as: 'Reviews', onDelete: 'CASCADE', constraints: false });
 Review.belongsTo(Driver, { foreignKey: 'driver_id', as: 'Driver', constraints: false });
