@@ -12,37 +12,19 @@ const SubPackage = sequelize.define("SubPackage", {
     allowNull: false,
     comment: "Descriptive name, e.g., 'Airport - Dubai City', 'Hourly - 3hr', 'Corporate Monthly - 12hr x 6 days/week'",
   },
-  car_id: {
+  package_id: {
     type: DataTypes.UUID,
     allowNull: false,
   },
-  package_id:{
-    type:DataTypes.UUID,
-    allowNull:false,
-  },
-  hours: {
-    type: DataTypes.INTEGER,
+  description: {
+    type: DataTypes.STRING,
     allowNull: true,
-    comment: "Number of hours for hourly packages, e.g., 3, 10",
+    comment: "Detailed description of the sub-package",
   },
   status: {
-      type: DataTypes.ENUM("active", "inactive"),
-      defaultValue: "active",
-    },
-  days_per_month: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    comment: "Number of days per month for corporate packages, e.g., 2 or 22",
-  },
-  hours_per_day: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    comment: "Hours per day for corporate packages, e.g., 10 or 12",
-  },
-  base_fare: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false,
-    comment: "Cost per hour for hourly packages or total cost for other packages, e.g., 120.00 for hourly, 20000.00 for corporate",
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    comment: "Indicates if the sub-package is active (true) or inactive (false)",
   },
 }, {
   tableName: "SubPackages",

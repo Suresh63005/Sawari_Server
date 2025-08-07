@@ -1,5 +1,6 @@
 const { Op } = require("sequelize");
 const Car = require("../models/cars.model");
+const PackagePrice = require("../models/packageprice.model");
 const { deleteFromS3 } = require("../config/fileUpload.aws");
 
 const carDTO = (data) => {
@@ -143,11 +144,24 @@ const toggleCarStatus = async (id) => {
     data: carResponseDTO(car),
   };
 };
-
+const getCarsBySubPackageId = async (sub_package_id) => {
+  const packagePrices = await PackagePrice.findAll({
+    where: { sub_package_id },
+    include: [{ model: Car, attributes: ['id', 'name'] }],
+  });
+  return packagePrices
+    .map(pp => pp.Car)
+    .filter(car => car)
+    .map(car => ({
+      id: car.id,
+      name: car.name, // Ensure name is a meaningful field (e.g., "Toyota Camry")
+    }));
+};
 module.exports = {
   upsertCar,
   getAllCars,
   getCarById,
   deleteCarById,
   toggleCarStatus,
+  getCarsBySubPackageId
 };
