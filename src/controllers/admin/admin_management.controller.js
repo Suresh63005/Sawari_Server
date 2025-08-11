@@ -45,8 +45,9 @@ const listAdmins = async (req, res) => {
         manage_ride: false,
         manage_earnings: false,
         manage_support_tickets: false,
-        manage_notifications: false,
+        manage_push_notifications: false,
         manage_admin: false,
+        manage_fleet: false,
       };
       console.log(`Mapping admin ${admin.id} (${admin.first_name} ${admin.last_name}):`, { permissions });
       return {
@@ -64,8 +65,9 @@ const listAdmins = async (req, res) => {
           rides: Boolean(permissions.manage_ride),
           earnings: Boolean(permissions.manage_earnings),
           support: Boolean(permissions.manage_support_tickets),
-          notifications: Boolean(permissions.manage_notifications),
+          push_notifications: Boolean(permissions.manage_push_notifications),
           admin_management: Boolean(permissions.manage_admin),
+          fleet: Boolean(permissions.manage_fleet), // New
         },
       };
     });
@@ -121,8 +123,9 @@ const createAdmin = async (req, res) => {
       manage_ride: Boolean(permissions.manage_ride),
       manage_earnings: Boolean(permissions.manage_earnings),
       manage_support_tickets: Boolean(permissions.manage_support_tickets),
-      manage_notifications: Boolean(permissions.manage_notifications),
+      manage_push_notifications: Boolean(permissions.manage_push_notifications),
       manage_admin: Boolean(permissions.manage_admin),
+      manage_fleet: Boolean(permissions.manage_fleet),
       granted_by: currentUser.id,
     });
 
@@ -208,8 +211,9 @@ const updatePermissions = async (req, res) => {
       manage_ride: permissions.rides ? 1 : 0,
       manage_earnings: permissions.earnings ? 1 : 0,
       manage_support_tickets: permissions.support ? 1 : 0,
-      manage_notifications: permissions.notifications ? 1 : 0,
+      manage_push_notifications: permissions.push_notifications ? 1 : 0, // Renamed
       manage_admin: permissions.admin_management ? 1 : 0,
+      manage_fleet: permissions.fleet ? 1 : 0, // New
       granted_by: currentUser.id,
     });
     console.log(`Permissions updated for admin ${id}:`, updatedPermissions); // Debug log
@@ -223,8 +227,9 @@ const updatePermissions = async (req, res) => {
         rides: !!updatedPermissions.manage_ride,
         earnings: !!updatedPermissions.manage_earnings,
         support: !!updatedPermissions.manage_support_tickets,
-        notifications: !!updatedPermissions.manage_notifications,
+        push_notifications: !!updatedPermissions.manage_push_notifications, // Renamed
         admin_management: !!updatedPermissions.manage_admin,
+        fleet: !!updatedPermissions.manage_fleet, // New
       },
     });
   } catch (error) {
