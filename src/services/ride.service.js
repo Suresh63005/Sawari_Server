@@ -343,11 +343,11 @@ const getAllRides = async ({ search = '', status = '', limit = '10', page = '1',
     const where = {};
     if (search) {
       where[Op.or] = [
-        { customer_name: { [Op.iLike]: `%${search}%` } },
-        { pickup_location: { [Op.iLike]: `%${search}%` } },
-        { drop_location: { [Op.iLike]: `%${search}%` } },
-        { phone: { [Op.iLike]: `%${search}%` } },
-        { email: { [Op.iLike]: `%${search}%` } },
+        { customer_name: { [Op.like]: `%${search}%` } },
+        { pickup_location: { [Op.like]: `%${search}%` } },
+        { drop_location: { [Op.like]: `%${search}%` } },
+        { phone: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } },
       ];
     }
     if (status && status !== 'all') {
