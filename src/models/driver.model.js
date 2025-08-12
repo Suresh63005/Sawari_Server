@@ -128,7 +128,7 @@ const Driver = sequelize.define(
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM("active", "inactive", "blocked"),
+      type: DataTypes.ENUM("active", "inactive", "blocked","rejected"),
       allowNull: false,
       defaultValue: "inactive",
     },
