@@ -41,9 +41,14 @@ const upsertDriverCar = async (driverId, data) => {
   const sanitizedData = carDTO(data);
   const existing = await DriverCar.findOne({ where: { driver_id: driverId } });
   if (existing) {
-    const updated = await existing.update(sanitizedData);
-    return carResponseDTO(updated);
+    // Only update the fields provided in sanitizedData, preserving existing values
+    await existing.update(sanitizedData, { fields: Object.keys(sanitizedData).filter(key => sanitizedData[key] !== undefined && sanitizedData[key] !== null) });
+    return carResponseDTO(existing);
   } else {
+    // Ensure all required fields are provided when creating a new record
+    if (!sanitizedData.car_model || !sanitizedData.car_brand || !sanitizedData.license_plate || !sanitizedData.rc_doc || !sanitizedData.insurance_doc) {
+      throw new Error('All required vehicle fields must be provided');
+    }
     const created = await DriverCar.create({ ...sanitizedData, driver_id: driverId });
     return carResponseDTO(created);
   }

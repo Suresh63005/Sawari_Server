@@ -1,5 +1,6 @@
 const { Op } = require('sequelize');
 const Notifications = require('../models/notifications.model');
+const { deleteFromS3 } = require('../config/fileUpload.aws');
 
 const notificationDTO = (data)=>{
     return{
@@ -110,8 +111,39 @@ const fetchSingleNotificationService = async (id) => {
   }
 };
 
+const deleteNotificationService = async (id) => {
+  try {
+    const notification = await Notifications.findByPk(id);
+    if (!notification) {
+      return {
+        success: false,
+        message: 'Notification not found',
+      };
+    }
+
+    // If image exists, delete it from S3
+    if (notification.image) {
+      await deleteFromS3(notification.image);
+    }
+
+    await Notifications.destroy({ where: { id } });
+
+    return {
+      success: true,
+      message: 'Notification deleted successfully',
+    };
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    return {
+      success: false,
+      message: 'Failed to delete notification',
+      error: error.message,
+    };
+  }
+};
 module.exports = {
     sendNotificationService,
     fetchAllNotifcationsService,
-    fetchSingleNotificationService
+    fetchSingleNotificationService,
+    deleteNotificationService
 }

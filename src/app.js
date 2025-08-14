@@ -14,7 +14,7 @@ const { sequelize } = require('./models');
 const loadRoutes = require('./routes/index');
 const reddisConnect = require("./config/connectRedis");
 const CacheManager=require("./utils/cache-manager");
-const Notifications = require('./models/notifications.model');
+const Ride = require('./models/ride.model');
 
 const app = express();
 const port = process.env.PORT || 4445;
@@ -22,7 +22,7 @@ const port = process.env.PORT || 4445;
 // Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000,
+  max: 10000,
   message: 'Too many requests from this IP, please try again later',
 });
 
@@ -45,7 +45,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:3002',
-  'http://localhost',
+  'https://sawari-admin.vercel.app',
 ];
 app.use(cors({
   origin: (origin, callback) => {
@@ -60,6 +60,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Content-Disposition'],
 }));
+
 
 // Swagger setup
 const swaggerOptions = {
@@ -99,12 +100,12 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 //   console.error("Unable to create the database:", err);
 // });
 
-// Notifications.sync({ alter: true })
+// Ride.sync({ alter: true })
 //   .then(() => {
-//     console.log("✅ Notification table synced successfully.");
+//     console.log("✅ Rides table synced successfully.");
 //   })
 //   .catch((err) => {
-//     console.error("❌ Failed to sync Notification table:", err);
+//     console.error("❌ Failed to sync Rides table:", err);
 //   });
 
 const startServer = async () => {

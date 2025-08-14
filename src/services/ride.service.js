@@ -1,307 +1,450 @@
-const { Op, fn, col } = require("sequelize");
-const Ride = require("../models/ride.model");
-const Driver = require("../models/driver.model");
-const DriverCar = require("../models/driver-cars.model");
-const Earnings = require("../models/earnings.model");
+const { Op } = require('sequelize');
+const Ride = require('../models/ride.model');
+const PackagePrice = require('../models/packageprice.model');
+const Package = require('../models/package.model');
+const SubPackage = require('../models/sub-package.model');
+const Car = require('../models/cars.model');
 
-const rideDTO = (data) => {
-  return {
-    admin_id: data.admin_id,
-    initiated_by_driver_id: data.initiated_by_driver_id,
-    customer_name: data.customer_name,
-    email: data.email,
-    phone: data.phone,
-    pickup_address: data.pickup_address,
-    pickup_location: data.pickup_location,
-    drop_location: data.drop_location,
-    car_model: data.car_model,
-    scheduled_time: data.scheduled_time,
-    driver_id: data.driver_id,
-    status: data.status,
-    ride_type: data.ride_type,
-    notes: data.notes,
-    estimated_cost: data.estimated_cost,
-    actual_cost: data.actual_cost,
-    payment_status: data.payment_status,
-    pickup_time: data.pickup_time,
-    dropoff_time: data.dropoff_time,
-  };
+// Response DTO
+const rideResponseDTO = (ride) => ({
+  id: ride.id,
+  customer_name: ride.customer_name,
+  phone: ride.phone,
+  email: ride.email,
+  pickup_address: ride.pickup_address,
+  pickup_location: ride.pickup_location,
+  drop_location: ride.drop_location,
+  ride_date: ride.ride_date,
+  car_id: ride.car_id,
+  package_id: ride.package_id,
+  subpackage_id: ride.subpackage_id,
+  scheduled_time: ride.scheduled_time,
+  driver_id: ride.driver_id,
+  status: ride.status,
+  notes: ride.notes,
+  Price: ride.Price,
+  Total: ride.Total,
+  payment_status: ride.payment_status,
+  accept_time: ride.accept_time,
+  pickup_time: ride.pickup_time,
+  dropoff_time: ride.dropoff_time,
+  rider_hours: ride.rider_hours,
+  createdAt: ride.createdAt,
+  updatedAt: ride.updatedAt,
+});
+
+// Check if sub-package is 1-hour (based on name or ID logic)
+const isOneHourSubPackage = (subPackage) => {
+  // Assuming sub-package name contains "1 Hour" or similar; adjust logic based on your data
+  return subPackage.name.toLowerCase().includes('1 hour');
 };
 
-const rideResponseDTO = (ride) => {
-  return {
-    id: ride.id,
-    admin_id: ride.admin_id,
-    initiated_by_driver_id: ride.initiated_by_driver_id,
-    customer_name: ride.customer_name,
-    email: ride.email,
-    phone: ride.phone,
-    pickup_address: ride.pickup_address,
-    pickup_location: ride.pickup_location,
-    drop_location: ride.drop_location,
-    car_model: ride.car_model,
-    scheduled_time: ride.scheduled_time,
-    driver_id: ride.driver_id,
-    status: ride.status,
-    ride_type: ride.ride_type,
-    notes: ride.notes,
-    estimated_cost: ride.estimated_cost,
-    actual_cost: ride.actual_cost,
-    payment_status: ride.payment_status,
-    pickup_time: ride.pickup_time,
-    dropoff_time: ride.dropoff_time,
-  }
-}
+// Create a new ride
+const createRide = async (data) => {
+  const transaction = await Ride.sequelize.transaction();
+  try {
+    console.log('createRide data:', data);
 
-/**
- * Create or update a ride based on the presence of an ID
- * @param {Object} data - Ride payload (can include id for update)
- * @returns {Object} - The created or updated ride
- */
-const upsertRide = async (rideData) => {
-  if (rideData.id) {
-    // Check if ride with this ID exists
-    const existingRide = await Ride.findByPk(rideData.id);
-    if (!existingRide) {
-      throw new Error("Ride not found for update.");
+    // Validate required fields
+    if (!data.package_id || !data.subpackage_id || !data.car_id) {
+      throw new Error('Missing required fields: package_id, subpackage_id, or car_id');
+    }
+    if (!data.customer_name || !data.phone || !data.pickup_location || !data.drop_location) {
+      throw new Error('Missing required fields: customer_name, phone, pickup_location, or drop_location');
+    }
+    if (!data.ride_date) {
+      throw new Error('Missing required fields: ride_date');
     }
 
-    // Update and return updated ride
-    await existingRide.update(rideData);
-    return existingRide;
-  } else {
-    // Create new ride
-    const newRide = await Ride.create(rideDTO(rideData));
-    return newRide;
-  }
-};
-
-/**
- * Get all rides with search, filter, pagination, and sorting
- * @param {Object} options - Filters and pagination
- */
-const getAllRides = async ({ search, limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC', status, }) => {
-  const where = {};
-  const offset = (parseInt(page) - 1) * parseInt(limit);
-
-  // Search by customer name, phone, or email
-  if (search) {
-    where[Op.or] = [
-      { customer_name: { [Op.like]: `%${search}%` } },
-      { phone: { [Op.like]: `%${search}%` } },
-      { email: { [Op.like]: `%${search}%` } },
-    ];
-  }
-
-  // Filter by status
-  if (status) {
-    where.status = status;
-  }
-
-  console.log("WHERE clause for getAllRides:", JSON.stringify(where, null, 2));
-
-  const { rows, count } = await Ride.findAndCountAll({
-    where,
-    order: [[sortBy, sortOrder.toUpperCase()]],
-    limit: parseInt(limit),
-    offset: offset,
-  });
-
-  return {
-    total: count,
-    page: parseInt(page),
-    limit: parseInt(limit),
-    data: rows.map(ride => rideResponseDTO(ride)),
-  };
-};
-
-/**
- * Get a single ride by ID
- * @param {string} rideId - UUID of the ride
- * @returns {Object|null} Ride object or null
- */
-
-const getRideById = async (rideId) => {
-  const ride = await Ride.findByPk(rideId, { attributes: ["customer_name", "email", "phone", "pickup_address", "pickup_location", "drop_location", "ride_date", "car_model", "scheduled_time", "status", "ride_type", "pickup_time", "dropoff_time"] });
-  if (!ride) throw new Error("RIde not found with the given ID");;
-  return ride;
-};
-
-const getRidesByInitiator = async (initiatedByDriverId, { limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC' } = {}) => {
-  const offset = (parseInt(page) - 1) * parseInt(limit);
-
-  const { rows, count } = await Ride.findAndCountAll({
-    where: { initiated_by_driver_id: initiatedByDriverId },
-    order: [[sortBy, sortOrder.toUpperCase()]],
-    limit: parseInt(limit),
-    offset,
-  });
-
-  return {
-    total: count,
-    page: parseInt(page),
-    limit: parseInt(limit),
-    data: rows.map(ride => rideResponseDTO(ride)),
-  };
-};
-
-
-
-const getAllRidesAdmin = async ({ search = "", status, page = 1, limit = 10 }) => {
-  const whereClause = {};
-
-  // Search logic
-  if (search) {
-    whereClause[Op.or] = [
-      { customer_name: { [Op.like]: `%${search}%` } },
-      { email: { [Op.like]: `%${search}%` } },
-      { phone: { [Op.like]: `%${search}%` } },
-    ];
-  }
-
-  // Status filter
-  if (status) {
-    whereClause.status = status;
-  }
-
-  const offset = (parseInt(page) - 1) * parseInt(limit);
-
-  // Fetch rides
-  const rides = await Ride.findAll({
-    where: whereClause,
-    include: [
-      {
-        model: Driver,
-        as: "AssignedDriver",
-        attributes: ["id", "first_name", "last_name",],
-        include: [{
-          model: DriverCar,
-          as: "Vehicles",
-          attributes: ["car_brand", "car_model",]
-        }]
-      }],
-    offset: parseInt(offset),
-    limit: parseInt(limit),
-    order: [["createdAt", "DESC"]],
-  });
-
-  // Count data
-  const totalRides = await Ride.count();
-  const [pending, accepted, onRoute, completed, cancelled] = await Promise.all([
-    Ride.count({ where: { status: "pending" } }),
-    Ride.count({ where: { status: "accepted" } }),
-    Ride.count({ where: { status: "on-route" } }),
-    Ride.count({ where: { status: "completed" } }),
-    Ride.count({ where: { status: "cancelled" } }),
-  ]);
-
-  // Total revenue
-  const revenueResult = await Ride.findAll({
-    attributes: [[fn("SUM", col("actual_cost")), "total_revenue"]],
-    raw: true,
-  });
-  const totalRevenue = parseFloat(revenueResult[0].total_revenue || 0);
-
-  return {
-    rides,
-    counts: {
-      totalRides,
-      pending,
-      accepted,
-      onRoute,
-      completed,
-      cancelled,
-    },
-    totalRevenue,
-  };
-};
-
-
-
-const conditionalRides = async (options = {}) => {
-  return Ride.findAll(options);
-};
-
-
-const acceptedRides = async (where = {}) => {
-  return await Ride.findAll({ where })
-}
-
-const getRideByIdData = async (driver_id, ride_id) => {
-  const ride = await Ride.findOne({
-    where: {
-      id: ride_id,
-      [Op.or]: [
-        { driver_id: driver_id },
-        { initiated_by_driver_id: driver_id }
-      ]
-    },
-    attributes: ["customer_name", "pickup_location", "drop_location", "status", "ride_type"],
-    include: [
-      {
-        model: Earnings,
-        as: "Earnings",
-        attributes: ["amount", "commission", "percentage"]
-      }
-    ]
-  });
-  if (!ride) {
-    throw new Error("Ride not found");
-  }
-  return ride;
-}
-
-const rideStatuUpdate = async (driver_id, ride_id,transaction) => {
-  const ride = await Ride.findOne({
-    where: {
-      id: ride_id,
-      [Op.or]: [
-        { driver_id: driver_id },
-      ]
-    },
-    transaction
-  })
-  if (!ride) {
-    throw new Error("Ride not found or not assigned to this driver");
-  }
-
-  if (ride.status === "completed") {
-    throw new Error("Ride is already completed");
-  }
-
-  const updatedRide = await ride.update({
-    status: "completed",
-    dropoff_time: new Date(),
-    payment_status: "completed",
-  },{transaction});
-
-  return updatedRide;
-}
-
-const checkActiveRide = async(driver_id)=>{
-  const ride = await Ride.findOne({
-    where:{
-      driver_id:driver_id,
-      status:{
-        [Op.in]:["accepted", "on-route"]
-      }
+    // Validate date formats
+    const rideDate = new Date(data.ride_date);
+    const scheduledTime = data.scheduled_time ? new Date(data.scheduled_time) : null;
+    if (isNaN(rideDate.getTime()) || (scheduledTime && isNaN(scheduledTime.getTime()))) {
+      throw new Error('Invalid ride_date or scheduled_time: Must be valid ISO datetime strings');
     }
-  });
-  if(ride){
-    throw new Error("Cannot deactivate account while a ride is accepted, or in progress.")
+
+    // Validate package exists
+    const packageExists = await Package.findByPk(data.package_id, { transaction });
+    if (!packageExists) {
+      throw new Error('Invalid package_id: Package does not exist');
+    }
+
+    // Validate sub-package exists and belongs to the package
+    const subPackage = await SubPackage.findOne({
+      where: {
+        id: data.subpackage_id,
+        package_id: data.package_id,
+      },
+      transaction,
+    });
+    if (!subPackage) {
+      throw new Error('Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package');
+    }
+
+    // Validate car exists
+    const car = await Car.findByPk(data.car_id, { transaction });
+    if (!car) {
+      throw new Error('Invalid car_id: Car does not exist');
+    }
+
+    // Validate package, sub-package, and car combination and fetch price
+    const packagePrice = await PackagePrice.findOne({
+      where: {
+        package_id: data.package_id,
+        sub_package_id: data.subpackage_id,
+        car_id: data.car_id,
+      },
+      transaction,
+    });
+    if (!packagePrice) {
+      throw new Error('Invalid package, sub-package, or car combination');
+    }
+
+    // Ensure the provided price matches the package price
+    if (data.Price && parseFloat(data.Price) !== parseFloat(packagePrice.base_fare)) {
+      throw new Error(
+        `Invalid price: Provided price (${data.Price}) does not match the base fare (${packagePrice.base_fare})`
+      );
+    }
+
+    // Calculate Total based on sub-package type
+    const baseFare = parseFloat(packagePrice.base_fare);
+    const riderHours = isOneHourSubPackage(subPackage) ? (data.rider_hours || 1) : 1;
+    const total = isOneHourSubPackage(subPackage) ? baseFare * riderHours : baseFare;
+
+    const ride = await Ride.create(
+      {
+        customer_name: data.customer_name,
+        phone: data.phone,
+        email: data.email,
+        pickup_address: data.pickup_address,
+        pickup_location: data.pickup_location,
+        drop_location: data.drop_location,
+        ride_date: rideDate.toISOString(),
+        car_id: data.car_id,
+        package_id: data.package_id,
+        subpackage_id: data.subpackage_id,
+        scheduled_time: scheduledTime ? scheduledTime.toISOString() : null,
+        notes: data.notes,
+        Price: baseFare,
+        Total: total,
+        rider_hours: riderHours,
+        status: data.status || 'pending',
+        payment_status: data.payment_status || 'pending',
+        accept_time: data.accept_time || new Date().toISOString(),
+      },
+      { transaction }
+    );
+
+    await transaction.commit();
+    return { data: rideResponseDTO(ride) };
+  } catch (error) {
+    await transaction.rollback();
+    console.error('createRide error:', error);
+    throw error;
   }
-}
+};
+
+// Update a ride
+const updateRide = async (id, data) => {
+  const transaction = await Ride.sequelize.transaction();
+  try {
+    console.log('updateRide data:', { id, data });
+    const ride = await Ride.findByPk(id, { transaction });
+    if (!ride) throw new Error('Ride not found with the given ID');
+
+    // Validate date formats if provided
+    let rideDate = ride.ride_date;
+    let scheduledTime = ride.scheduled_time;
+    if (data.ride_date) {
+      rideDate = new Date(data.ride_date);
+      if (isNaN(rideDate.getTime())) {
+        throw new Error('Invalid ride_date: Must be a valid ISO datetime string');
+      }
+      rideDate = rideDate.toISOString();
+    }
+    if (data.scheduled_time) {
+      scheduledTime = new Date(data.scheduled_time);
+      if (isNaN(scheduledTime.getTime())) {
+        throw new Error('Invalid scheduled_time: Must be a valid ISO datetime string');
+      }
+      scheduledTime = scheduledTime.toISOString();
+    }
+
+    let baseFare = ride.Price;
+    let total = ride.Total;
+    let riderHours = ride.rider_hours;
+
+    // Validate package, sub-package, and car combination if provided
+    if (data.package_id && data.subpackage_id && data.car_id) {
+      // Validate package exists
+      const packageExists = await Package.findByPk(data.package_id, { transaction });
+      if (!packageExists) {
+        throw new Error('Invalid package_id: Package does not exist');
+      }
+
+      // Validate sub-package exists and belongs to the package
+      const subPackage = await SubPackage.findOne({
+        where: {
+          id: data.subpackage_id,
+          package_id: data.package_id,
+        },
+        transaction,
+      });
+      if (!subPackage) {
+        throw new Error('Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package');
+      }
+
+      // Validate car exists
+      const car = await Car.findByPk(data.car_id, { transaction });
+      if (!car) {
+        throw new Error('Invalid car_id: Car does not exist');
+      }
+
+      // Validate package, sub-package, and car combination and fetch price
+      const packagePrice = await PackagePrice.findOne({
+        where: {
+          package_id: data.package_id,
+          sub_package_id: data.subpackage_id,
+          car_id: data.car_id,
+        },
+        transaction,
+      });
+      if (!packagePrice) {
+        throw new Error('Invalid package, sub-package, or car combination');
+      }
+
+      // Ensure the provided price matches the package price
+      if (data.Price && parseFloat(data.Price) !== parseFloat(packagePrice.base_fare)) {
+        throw new Error(
+          `Invalid price: Provided price (${data.Price}) does not match the base fare (${packagePrice.base_fare})`
+        );
+      }
+
+      baseFare = parseFloat(packagePrice.base_fare);
+      riderHours = isOneHourSubPackage(subPackage) ? (data.rider_hours || ride.rider_hours || 1) : 1;
+      total = isOneHourSubPackage(subPackage) ? baseFare * riderHours : baseFare;
+    }
+
+    await ride.update(
+      {
+        customer_name: data.customer_name || ride.customer_name,
+        phone: data.phone || ride.phone,
+        email: data.email || ride.email,
+        pickup_address: data.pickup_address || ride.pickup_address,
+        pickup_location: data.pickup_location || ride.pickup_location,
+        drop_location: data.drop_location || ride.drop_location,
+        ride_date: rideDate,
+        car_id: data.car_id || ride.car_id,
+        package_id: data.package_id || ride.package_id,
+        subpackage_id: data.subpackage_id || ride.subpackage_id,
+        scheduled_time: scheduledTime,
+        notes: data.notes || ride.notes,
+        Price: baseFare,
+        Total: total,
+        rider_hours: riderHours,
+        status: data.status || ride.status,
+        payment_status: data.payment_status || ride.payment_status,
+        accept_time: data.accept_time || ride.accept_time,
+      },
+      { transaction }
+    );
+
+    await transaction.commit();
+    return { data: rideResponseDTO(ride) };
+  } catch (error) {
+    await transaction.rollback();
+    console.error('updateRide error:', error);
+    throw error;
+  }
+};
+
+// Get available cars and prices for a package and sub-package
+const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
+  try {
+    console.log('getAvailableCarsAndPrices query:', { package_id, sub_package_id });
+
+    // Validate package exists
+    const packageExists = await Package.findByPk(package_id);
+    if (!packageExists) {
+      throw new Error('Invalid package_id: Package does not exist');
+    }
+
+    // Validate sub-package exists and belongs to the package
+    const subPackage = await SubPackage.findOne({
+      where: {
+        id: sub_package_id,
+        package_id,
+      },
+    });
+    if (!subPackage) {
+      throw new Error('Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package');
+    }
+
+    // Fetch package prices with associated cars
+    const packagePrices = await PackagePrice.findAll({
+      where: {
+        package_id,
+        sub_package_id,
+      },
+      include: [
+        {
+          model: Car,
+          as: 'Car',
+          attributes: ['id', 'brand', 'model', 'image_url'],
+        },
+      ],
+    });
+
+    if (!packagePrices.length) {
+      throw new Error('No cars available for this package and sub-package combination');
+    }
+
+    const result = packagePrices.map(pp => ({
+      car_id: pp.car_id,
+      car_model: pp.Car ? pp.Car.model : `${pp.car_id} (Unknown)`,
+      base_fare: pp.base_fare,
+    }));
+
+    return { data: result };
+  } catch (error) {
+    console.error('getAvailableCarsAndPrices error:', error);
+    throw error;
+  }
+};
+
+// Get all rides with filters
+const getAllRides = async ({ search = '', status = '', limit = '10', page = '1', sortBy = 'createdAt', sortOrder = 'DESC' }) => {
+  try {
+    console.log('getAllRides query:', { search, status, limit, page, sortBy, sortOrder });
+
+    // Validate query parameters
+    const parsedLimit = parseInt(limit, 10);
+    const parsedPage = parseInt(page, 10);
+    if (isNaN(parsedLimit) || parsedLimit <= 0) {
+      throw new Error('Invalid limit parameter');
+    }
+    if (isNaN(parsedPage) || parsedPage <= 0) {
+      throw new Error('Invalid page parameter');
+    }
+    const validStatuses = ['all', 'pending', 'accepted', 'on-route', 'completed', 'cancelled'];
+    if (status && !validStatuses.includes(status)) {
+      throw new Error(`Invalid status parameter. Must be one of: ${validStatuses.join(', ')}`);
+    }
+    const validSortFields = ['createdAt', 'ride_date', 'Price', 'Total', 'status'];
+    if (!validSortFields.includes(sortBy)) {
+      throw new Error(`Invalid sortBy parameter. Must be one of: ${validSortFields.join(', ')}`);
+    }
+    const validSortOrders = ['ASC', 'DESC'];
+    if (!validSortOrders.includes(sortOrder.toUpperCase())) {
+      throw new Error(`Invalid sortOrder parameter. Must be one of: ${validSortOrders.join(', ')}`);
+    }
+
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { customer_name: { [Op.iLike]: `%${search}%` } },
+        { pickup_location: { [Op.iLike]: `%${search}%` } },
+        { drop_location: { [Op.iLike]: `%${search}%` } },
+        { phone: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    const offset = (parsedPage - 1) * parsedLimit;
+
+    const { rows, count } = await Ride.findAndCountAll({
+      where,
+      order: [[sortBy, sortOrder.toUpperCase()]],
+      limit: parsedLimit,
+      offset,
+      include: [
+        { model: Package, as: "Package", attributes: ['id', 'name'] },
+        { model: SubPackage, as: "SubPackage", attributes: ['id', 'name'] },
+        { model: Car, as: "Car", attributes: ['id', 'model'] },
+      ],
+    });
+
+    // Calculate summary
+    const counts = await Ride.findAll({
+      attributes: [
+        'status',
+        [Ride.sequelize.fn('COUNT', Ride.sequelize.col('id')), 'count'],
+        [Ride.sequelize.fn('SUM', Ride.sequelize.col('Total')), 'totalRevenue'],
+      ],
+      group: ['status'],
+      raw: true,
+    });
+
+    const summary = {
+      totalRides: count,
+      pending: 0,
+      accepted: 0,
+      onRoute: 0,
+      completed: 0,
+      cancelled: 0,
+      totalRevenue: 0,
+    };
+
+    counts.forEach(c => {
+      if (c.status === 'pending') summary.pending = Number(c.count);
+      if (c.status === 'accepted') summary.accepted = Number(c.count);
+      if (c.status === 'on-route') summary.onRoute = Number(c.count);
+      if (c.status === 'completed') summary.completed = Number(c.count);
+      if (c.status === 'cancelled') summary.cancelled = Number(c.count);
+      summary.totalRevenue += parseFloat(c.totalRevenue || 0);
+    });
+
+    return {
+      data: {
+        rides: rows.map(ride => ({
+          ...rideResponseDTO(ride),
+          package_name: ride.Package ? ride.Package.name : null,
+          subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
+          car_name: ride.Car ? ride.Car.model : null,
+        })),
+        counts: summary,
+      },
+    };
+  } catch (error) {
+    console.error('getAllRides error:', error);
+    throw error;
+  }
+};
+
+// Get ride by ID
+const getRideById = async (id) => {
+  try {
+    console.log('getRideById id:', id);
+    const ride = await Ride.findByPk(id, {
+      include: [
+        { model: Package, as:"Package", attributes: ['id', 'name'] },
+        { model: SubPackage, as:"SubPackage", attributes: ['id', 'name'] },
+        { model: Car, as:"Car", attributes: ['id', 'model'] },
+      ],
+    });
+    if (!ride) throw new Error('Ride not found with the given ID');
+    return {
+      data: {
+        ...rideResponseDTO(ride),
+        package_name: ride.Package ? ride.Package.name : null,
+        subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
+        car_name: ride.Car ? ride.Car.model : null,
+      },
+    };
+  } catch (error) {
+    console.error('getRideById error:', error);
+    throw error;
+  }
+};
 
 module.exports = {
-  upsertRide,
+  createRide,
+  updateRide,
   getAllRides,
   getRideById,
-  getRidesByInitiator,
-  getAllRidesAdmin,
-  conditionalRides,
-  acceptedRides,
-  getRideByIdData,
-  rideStatuUpdate,
-  checkActiveRide
-
-}
+  getAvailableCarsAndPrices,
+};

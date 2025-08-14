@@ -13,6 +13,7 @@ const Ride = sequelize.define(
     admin_id: {
       type: DataTypes.UUID,
       allowNull: true,
+      comment: "ID of the admin who created the ride",
     },
     initiated_by_driver_id: {
       type: DataTypes.UUID,
@@ -23,17 +24,17 @@ const Ride = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    email:{
-      type:DataTypes.STRING,
-      allowNull:true
+    email: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     phone: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    pickup_address:{
-      type:DataTypes.STRING,
-      allowNull:true
+    pickup_address: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     pickup_location: {
       type: DataTypes.STRING,
@@ -43,13 +44,24 @@ const Ride = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    ride_date:{
-      type:DataTypes.DATE,
-      allowNull:true
+    ride_date: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
-    car_model: {
-      type: DataTypes.STRING,
+    package_id: {
+      type: DataTypes.UUID,
       allowNull: false,
+      comment: "ID of the associated package",
+    },
+    subpackage_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      comment: "ID of the associated sub-package",
+    },
+    car_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      comment: "ID of the associated car",
     },
     scheduled_time: {
       type: DataTypes.DATE,
@@ -58,48 +70,35 @@ const Ride = sequelize.define(
     driver_id: {
       type: DataTypes.UUID,
       allowNull: true,
+      comment: "ID of the assigned driver",
     },
     status: {
-      type: DataTypes.ENUM(
-        "pending",
-        "accepted",
-        "on-route",
-        "completed",
-        "cancelled"
-      ),
+      type: DataTypes.ENUM("pending", "accepted", "on-route", "completed", "cancelled"),
       allowNull: false,
       defaultValue: "pending",
-    },
-    ride_type: {
-      type: DataTypes.ENUM(
-        "hourly",
-        "weekly",
-        "monthly",
-        "airport",
-        "local",
-        "outstation"
-      ),
-      allowNull: false,
     },
     notes: {
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    // distance: {
-    //   type: DataTypes.DECIMAL(10, 2),
-    //   // allowNull: false,
-    // },
-    estimated_cost: {
+    Price: {
       type: DataTypes.DECIMAL(10, 2),
-      // allowNull: false,
+      allowNull: false,
+      comment: "Base fare for the ride, sourced from PackagePrice",
     },
-    actual_cost: {
+    Total: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
+      allowNull: false,
+      comment: "Total cost for the ride, calculated as Price * rider_hours for 1-hour sub-packages, otherwise equals Price",
     },
     payment_status: {
       type: DataTypes.ENUM("pending", "completed", "failed"),
       allowNull: true,
+      defaultValue: "pending",
+    },
+    accept_time: {
+      type: DataTypes.DATE,
+      allowNull: false,
     },
     pickup_time: {
       type: DataTypes.DATE,
@@ -108,6 +107,12 @@ const Ride = sequelize.define(
     dropoff_time: {
       type: DataTypes.DATE,
       allowNull: true,
+    },
+    rider_hours: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: "Number of hours for the ride, applicable only for 1-hour sub-packages",
     },
   },
   {

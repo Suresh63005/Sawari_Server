@@ -119,11 +119,22 @@ const toggleCarStatus = async (req, res) => {
     console.error(`Error in toggleCarStatus: ${error.message}`);
   }
 };
-
+const getCarsBySubPackageId = async (req, res) => {
+  try {
+    const { sub_package_id } = req.params;
+    console.log('Fetching cars for sub_package_id:', sub_package_id);
+    const cars = await carService.getCarsBySubPackageId(sub_package_id);
+    res.status(200).json({ result: { data: cars } });
+  } catch (error) {
+    console.error('getCarsBySubPackageId error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+}
 module.exports = {
   upsertCar,
   getAllCars,
   getCarById,
   deleteCarById,
   toggleCarStatus,
+  getCarsBySubPackageId,
 };

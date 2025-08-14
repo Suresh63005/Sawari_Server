@@ -137,9 +137,33 @@ const getSingleNotificationController = async (req, res) => {
   const result = await notificationService.fetchSingleNotificationService(req.params.id);
   res.status(result.success ? 200 : 404).json(result);
 };
+const deleteNotificationController = async (req, res) => {
+    try {
+        const {id}=req.params;
+        if(!id){
+            return res.status(400).json({
+                success: false,
+                message: "Notification ID is required"
+            });
+        }
+        const result = await notificationService.deleteNotificationService(id);
+        return res.status(200).json({
+            success: result.success,
+            message: result.message,
+        })
+    } catch (error) {
+        console.error('Error deleting notification:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to delete notification',
+            error: error.message,
+        });
 
+    }
+}
 module.exports = {
     sendNotificationController,
     getAllNotificationsController,
-    getSingleNotificationController
+    getSingleNotificationController,
+    deleteNotificationController
 }
