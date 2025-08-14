@@ -66,11 +66,42 @@ const rejectDriverCar = async (carId, reason, verifiedBy) => {
 };
 
 // Service to get all vehicles
-const getAllVehicles = async () => {
-  const vehicles = await DriverCar.findAll();
-  return vehicles.map(vehicle => carResponseDTO(vehicle));
-};
+const getAllVehicles = async ({ page = 1, limit = 5, search = '', status = 'all' }) => {
+  const offset = (page - 1) * limit;
+  const where = {};
 
+  // Add search filter for car_brand, car_model, and license_plate
+  if (search) {
+    where[Sequelize.Op.or] = [
+      { car_brand: { [Sequelize.Op.iLike]: `%${search}%` } },
+      { car_model: { [Sequelize.Op.iLike]: `%${search}%` } },
+      { license_plate: { [Sequelize.Op.iLike]: `%${search}%` } }
+    ];
+  }
+
+  // Add status filter
+  if (status !== 'all') {
+    if (status === 'pending') {
+      where.is_approved = false;
+    } else if (status === 'approved') {
+      where.is_approved = true;
+      where.status = 'active';
+    } else if (status === 'rejected') {
+      where.status = 'rejected';
+    }
+  }
+
+  const { rows, count } = await DriverCar.findAndCountAll({
+    where,
+    limit,
+    offset
+  });
+
+  return {
+    data: rows.map(vehicle => carResponseDTO(vehicle)),
+    total: count
+  };
+};
 // ... (previous imports and functions remain the same)
 
 const verifyRc = async (carId, verifiedBy) => {

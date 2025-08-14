@@ -1,3 +1,4 @@
+// backend/models/ticket.model.js
 
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
@@ -10,6 +11,12 @@ const Ticket = sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+    ticket_number: {
+  type: DataTypes.STRING(6),
+  allowNull: false,
+  unique: true,
+}
+,
     title: {
       type: DataTypes.STRING(255),
       allowNull: false,
@@ -49,8 +56,8 @@ const Ticket = sequelize.define(
   },
   {
     tableName: "tickets",
-    timestamps: true, // createdAt, updatedAt
-    paranoid: true,   // deletedAt
+    timestamps: true,
+    paranoid: true,
   }
 );
 
