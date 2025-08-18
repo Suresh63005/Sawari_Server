@@ -99,10 +99,10 @@ const getAllSubPackages = async ({
   });
 
   return {
+    data: rows.map(subPackageResponseDTO),
     total: count,
     page: parseInt(page),
     limit: parseInt(limit),
-    data: rows.map(subPackageResponseDTO),
   };
 };
 

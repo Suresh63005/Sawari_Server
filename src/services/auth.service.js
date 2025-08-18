@@ -76,12 +76,37 @@ const updateAdminStatus = async (id, status) => {
   throw new Error('Admin not found');
 };
 
-const getAllAdmins = async () => {
-  return await Admin.findAll({
+
+const getAllAdmins = async ({ search = '', limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC' }) => {
+  const where = {};
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  if (search) {
+    where[Op.or] = [
+      { first_name: { [Op.like]: `%${search}%` } },
+      { last_name: { [Op.like]: `%${search}%` } },
+      { email: { [Op.like]: `%${search}%` } },
+      { phone: { [Op.like]: `%${search}%` } },
+      { role: { [Op.like]: `%${search}%` } }
+    ];
+  }
+
+  const { rows, count } = await Admin.findAndCountAll({
+    where,
     include: [{ model: Permissions, as: 'AdminPermissions' }],
-    order: [['createdAt', 'DESC']],
+    order: [[sortBy, sortOrder.toUpperCase()]],
+    limit: parseInt(limit),
+    offset
   });
+
+  return {
+    total: count,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    data: rows
+  };
 };
+
 
 const updatePermissions = async (id, permissions) => {
   const [updatedPermissions, created] = await Permissions.findOrCreate({
