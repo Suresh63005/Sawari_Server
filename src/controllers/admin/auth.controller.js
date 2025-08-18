@@ -2,6 +2,7 @@ const AuthService = require('../../services/auth.service');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// auth.controller.js
 const getRolePermissions = (role) => {
   const permissions = {
     super_admin: {
@@ -11,8 +12,9 @@ const getRolePermissions = (role) => {
       manage_ride: true,
       manage_earnings: true,
       manage_support_tickets: true,
-      manage_notifications: true,
+      manage_push_notifications: true, // Renamed from manage_notifications
       manage_admin: true,
+      manage_fleet: true, // New permission
     },
     admin: {
       dashboard_access: true,
@@ -21,8 +23,9 @@ const getRolePermissions = (role) => {
       manage_ride: true,
       manage_earnings: false,
       manage_support_tickets: true,
-      manage_notifications: true,
+      manage_push_notifications: true, // Renamed
       manage_admin: true,
+      manage_fleet: true, // New permission
     },
     executive_admin: {
       dashboard_access: true,
@@ -31,8 +34,9 @@ const getRolePermissions = (role) => {
       manage_ride: true,
       manage_earnings: false,
       manage_support_tickets: true,
-      manage_notifications: true,
-      manage_admin: true,
+      manage_push_notifications: true, // Renamed
+      manage_admin: false,
+      manage_fleet: true, // New permission
     },
     ride_manager: {
       dashboard_access: true,
@@ -41,9 +45,10 @@ const getRolePermissions = (role) => {
       manage_ride: true,
       manage_earnings: false,
       manage_support_tickets: false,
-      manage_notifications: false,
+      manage_push_notifications: false, // Renamed
       manage_admin: false,
-    }
+      manage_fleet: false, // New permission
+    },
   };
   return permissions[role] || permissions.ride_manager;
 };
@@ -90,16 +95,18 @@ const login = async (req, res) => {
       email: admin.email,
       role: admin.role,
       token: token,
-      permissions: {
-        dashboard: permissions.dashboard_access,
-        drivers: permissions.manage_drivers,
-        vehicles: permissions.manage_vehicles,
-        rides: permissions.manage_ride,
-        earnings: permissions.manage_earnings,
-        support: permissions.manage_support_tickets,
-        notifications: permissions.manage_notifications,
-        admin_management: permissions.manage_admin,
-      },
+      // In login, getPermissions, getMe
+permissions: {
+  dashboard: permissions.dashboard_access,
+  drivers: permissions.manage_drivers,
+  vehicles: permissions.manage_vehicles,
+  rides: permissions.manage_ride,
+  earnings: permissions.manage_earnings,
+  support: permissions.manage_support_tickets,
+  push_notifications: permissions.manage_push_notifications, // Renamed
+  admin_management: permissions.manage_admin,
+  fleet: permissions.manage_fleet, // New
+}
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -140,7 +147,8 @@ const register = async (req, res) => {
       manage_ride: permissions.manage_ride,
       manage_earnings: permissions.manage_earnings,
       manage_support_tickets: permissions.manage_support_tickets,
-      manage_notifications: permissions.manage_notifications,
+      manage_push_notifications: permissions.manage_push_notifications, // Renamed
+      manage_fleet: permissions.manage_fleet, // New
       manage_admin: permissions.manage_admin,
       granted_by: granted_by || req.user?.id || null,
     });
@@ -184,8 +192,9 @@ const getPermissions = async (req, res) => {
         rides: permissions.manage_ride,
         earnings: permissions.manage_earnings,
         support: permissions.manage_support_tickets,
-        notifications: permissions.manage_notifications,
+        push_notifications: permissions.manage_push_notifications, // Renamed
         admin_management: permissions.manage_admin,
+        fleet: permissions.manage_fleet, // New
       },
     });
   } catch (error) {
@@ -218,8 +227,9 @@ const getMe = async (req, res) => {
         rides: permissions.manage_ride,
         earnings: permissions.manage_earnings,
         support: permissions.manage_support_tickets,
-        notifications: permissions.manage_notifications,
+        push_notifications: permissions.manage_push_notifications, // Renamed
         admin_management: permissions.manage_admin,
+        fleet: permissions.manage_fleet, // New
       },
     });
   } catch (error) {

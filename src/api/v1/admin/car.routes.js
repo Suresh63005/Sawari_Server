@@ -9,5 +9,6 @@ router.get('/', carController.getAllCars);
 router.get('/:id', carController.getCarById);
 router.delete('/:id', carController.deleteCarById);
 router.patch('/:id/status', carController.toggleCarStatus);
+router.get('/by-sub-package/:sub_package_id', carController.getCarsBySubPackageId);
 
 module.exports = router;

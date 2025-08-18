@@ -34,8 +34,9 @@ const authMiddleware = async (req, res, next) => {
         rides: permissions.manage_ride,
         earnings: permissions.manage_earnings,
         support: permissions.manage_support_tickets,
-        notifications: permissions.manage_notifications,
+        push_notifications: permissions.manage_push_notifications, // Renamed
         admin_management: permissions.manage_admin,
+        fleet: permissions.manage_fleet, // New
       } : {},
     };
 

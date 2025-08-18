@@ -5,11 +5,11 @@ const { monthFilteredEarnings, getEarningsSum, getPendingPayouts, getTotalCommis
 
 
 const earningsHistory = async (req, res) => {
-  console.log(1)
   const sortMonth = req.query.month;
-  console.log(sortMonth,"monthhhhhhhh")
+  const search = req.query.search || '';
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 5;
   try {
-    console.log(2)
     let start, end;
 
     if (sortMonth) {
@@ -21,39 +21,39 @@ const earningsHistory = async (req, res) => {
       start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
       end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
     }
-    console.log(3)
 
     const dateRange = {
       createdAt: {
         [Op.between]: [start, end]
       }
     };
-    console.log(4)
-    // 1. Get all earnings within date range
-    const earningsList = await monthFilteredEarnings(dateRange);
-    console.log(6)
+
+    // 1. Get all earnings within date range with pagination and search
+    const { earningsList, total } = await monthFilteredEarnings(dateRange, search, page, limit);
+
     // 2. Get processed earnings sum
     const processedTotal = await getEarningsSum({
       ...dateRange,
       status: "processed",
     });
-    console.log(7)
+
     // 3. Get pending payouts
     const pendingTotal = await getPendingPayouts({
       ...dateRange,
       status: "pending",
     });
-    console.log(8)
+
     // 4. Get total commission from processed earnings
     const commissionTotal = await getTotalCommission({
       ...dateRange,
       status: "processed",
     });
-console.log(9)
+
     return res.status(200).json({
       success: true,
       message: "Earnings history fetched successfully",
       data: earningsList,
+      total: total,
       summary: {
         processedTotal: parseFloat(processedTotal),
         pendingTotal: parseFloat(pendingTotal),

@@ -7,5 +7,6 @@ router.get("/", subPackageController.getAllSubPackages);
 router.get("/:id", subPackageController.getSubPackageById);
 router.delete("/:id", subPackageController.deleteSubPackageById);
 router.patch("/:id/status", subPackageController.toggleSubPackageStatus);
+router.get('/by-package', subPackageController.getSubPackagesByPackageId);
 
 module.exports = router;

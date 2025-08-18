@@ -34,7 +34,8 @@ const createAdmin = async (data) => {
       manage_ride: 0,
       manage_earnings: 0,
       manage_support_tickets: 0,
-      manage_notifications: 0,
+      manage_push_notifications: 0, // Renamed
+      manage_fleet: 0,
       manage_admin: 0,
       granted_by: data.created_by || null,
     },
@@ -55,7 +56,8 @@ const createPermissions = async (data) => {
     manage_ride: data.manage_ride ? 1 : 0,
     manage_earnings: data.manage_earnings ? 1 : 0,
     manage_support_tickets: data.manage_support_tickets ? 1 : 0,
-    manage_notifications: data.manage_notifications ? 1 : 0,
+    manage_push_notifications: data.manage_push_notifications ? 1 : 0,
+    manage_fleet: data.manage_fleet ? 1 : 0, // New
     manage_admin: data.manage_admin ? 1 : 0,
     granted_by: data.granted_by,
   });
@@ -74,12 +76,37 @@ const updateAdminStatus = async (id, status) => {
   throw new Error('Admin not found');
 };
 
-const getAllAdmins = async () => {
-  return await Admin.findAll({
+
+const getAllAdmins = async ({ search = '', limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC' }) => {
+  const where = {};
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  if (search) {
+    where[Op.or] = [
+      { first_name: { [Op.like]: `%${search}%` } },
+      { last_name: { [Op.like]: `%${search}%` } },
+      { email: { [Op.like]: `%${search}%` } },
+      { phone: { [Op.like]: `%${search}%` } },
+      { role: { [Op.like]: `%${search}%` } }
+    ];
+  }
+
+  const { rows, count } = await Admin.findAndCountAll({
+    where,
     include: [{ model: Permissions, as: 'AdminPermissions' }],
-    order: [['createdAt', 'DESC']],
+    order: [[sortBy, sortOrder.toUpperCase()]],
+    limit: parseInt(limit),
+    offset
   });
+
+  return {
+    total: count,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    data: rows
+  };
 };
+
 
 const updatePermissions = async (id, permissions) => {
   const [updatedPermissions, created] = await Permissions.findOrCreate({
@@ -92,7 +119,8 @@ const updatePermissions = async (id, permissions) => {
       manage_ride: 0,
       manage_earnings: 0,
       manage_support_tickets: 0,
-      manage_notifications: 0,
+      manage_push_notifications: 0, // Renamed
+      manage_fleet: 0, // New
       manage_admin: 0,
       granted_by: permissions.granted_by || null,
     },
@@ -105,7 +133,8 @@ const updatePermissions = async (id, permissions) => {
     manage_ride: permissions.manage_ride,
     manage_earnings: permissions.manage_earnings,
     manage_support_tickets: permissions.manage_support_tickets,
-    manage_notifications: permissions.manage_notifications,
+    manage_push_notifications: permissions.manage_push_notifications, // Renamed
+    manage_fleet: permissions.manage_fleet, // New
     manage_admin: permissions.manage_admin,
     granted_by: permissions.granted_by,
   };
