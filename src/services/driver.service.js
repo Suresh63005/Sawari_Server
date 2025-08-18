@@ -98,9 +98,17 @@ const approveDriver = async (driverId, verifiedBy) => {
 const rejectDriver = async (driverId, reason, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
-  await driver.update({ is_approved: false, reason, verified_by: verifiedBy });
+
+  await driver.update({
+    is_approved: false,
+    status: 'rejected', // mark as rejected
+    reason,
+    verified_by: verifiedBy
+  });
+
   return { message: 'Driver rejected' };
 };
+
 
 const blockDriver = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
@@ -120,8 +128,9 @@ const getAllDrivers = async (page = 1, limit = 10, search = '', status = '') => 
   const offset = (page - 1) * limit;
   const where = {};
 
-  if (search) {
-    const searchTerm = `%${search.replace(/\*/g, '%')}%`; // Replace * with % for SQL LIKE
+  const safeSearch = (typeof search === 'string' ? search : '').trim();
+  if (safeSearch.length > 0) {
+    const searchTerm = `%${safeSearch.replace(/\*/g, '%')}%`;
     where[Op.or] = [
       { first_name: { [Op.like]: searchTerm } },
       { last_name: { [Op.like]: searchTerm } },
@@ -137,6 +146,10 @@ const getAllDrivers = async (page = 1, limit = 10, search = '', status = '') => 
     where.status = 'active';
   } else if (status === 'blocked') {
     where.status = 'blocked';
+  } else if (status === 'rejected') {
+    where.status = 'rejected';
+  } else if (status === 'inactive') {
+    where.status = 'inactive';
   }
 
   const { rows: drivers, count } = await Driver.findAndCountAll({
@@ -148,6 +161,7 @@ const getAllDrivers = async (page = 1, limit = 10, search = '', status = '') => 
 
   return { drivers, total: count };
 };
+
 
 const verifyLicense = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
