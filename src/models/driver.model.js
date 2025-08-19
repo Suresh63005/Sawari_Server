@@ -137,6 +137,23 @@ const Driver = sequelize.define(
       allowNull: true,
       defaultValue: 0,
     },
+        last_login: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      validate: {
+        isDate: { msg: "Last login must be a valid date" },
+      },
+    },
+    social_login: {
+      type: DataTypes.ENUM( "google"),
+      allowNull: true,
+      validate: {
+        isIn: {
+          args: [[ "google"]],
+          msg: "Social login must be one of:google",
+        },
+      },
+    },
   },
   {
     tableName: "Driver",

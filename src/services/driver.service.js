@@ -1,6 +1,6 @@
 const Driver = require('../models/driver.model');
 const jwt = require('jsonwebtoken');
-const { driverFirebase } = require('../config/firebase-config');
+const  {driverFirebase}  = require('../config/firebase-config');
 const { sequelize } = require('../models');
 const DriverCar = require('../models/driver-cars.model');
 const { Op } = require('sequelize');
@@ -11,55 +11,91 @@ const generateToken = (driverId) => {
 
 const normalizePhone = (phone) => {
   phone = phone.trim();
-  if (!phone.startsWith('+91')) {
+  if (!phone.startsWith('+971')) {
     phone = phone.replace(/^(\+|0)*/, '');
-    phone = '+91' + phone;
+    phone = '+971' + phone;
   }
   return phone;
 };
 
-const verifyDriverMobile = async (phone) => {
-  if (!phone) throw new Error('Phone number is required');
+const verifyDriverMobile = async (phone, token, email, social_login) => {
+  if (!token) throw new Error("Token is required");
 
-  const normalizedPhone = normalizePhone(phone);
+  console.log(token,"ttttttttttttttttttt")
 
-  const firebaseUsers = await driverFirebase.auth().listUsers();
-  const firebaseUser = firebaseUsers.users.find(
-    (user) => user.phoneNumber === normalizedPhone
-  );
+  let normalizedPhone = null;
+  let driver = null;
 
-  if (!firebaseUser) throw new Error('Phone number not registered in Firebase');
+  if (social_login === "google") {
+    // Google Login
+    if (!email) throw new Error("Email is required");
 
-  const result = await sequelize.transaction(async (t) => {
-    let driver = await Driver.findOne({
-      where: { phone: normalizedPhone },
-      transaction: t,
-      lock: t.LOCK.UPDATE,
-    });
+    const decoded = await driverFirebase.auth()?.verifyIdToken(token);
+    const firebaseEmail = decoded.email;
 
-    if (!driver) {
-      driver = await Driver.create(
-        {
-          first_name: '',
-          last_name: '',
-          phone: normalizedPhone,
-          dob: new Date(),
-          experience: 0,
-          languages: [],
-          license_front: '',
-          license_back: '',
-          status: 'inactive',
-        },
-        { transaction: t }
-      );
+    if (firebaseEmail !== email) {
+      throw new Error("Email mismatch with token");
     }
 
-    const token = generateToken(driver.id);
-    return { message: 'Driver verified', token, driver };
-  });
+    driver = await Driver.findOne({ where: { email } });
+    if (!driver) {
+      driver = await Driver.create({
+        first_name: "",
+        last_name: "",
+        email,
+        social_login: "google",
+        dob: new Date(),
+        experience: 0,
+        languages: [],
+        license_front: "",
+        license_back: "",
+        status: "inactive",
+      });
+    }
+  } else {
+    // Phone Login
+    if (!phone) throw new Error("Phone number is required");
 
-  return result;
+    normalizedPhone = normalizePhone(phone);
+    if (!normalizedPhone) throw new Error("Invalid phone number format");
+
+    const decoded = await driverFirebase.auth()?.verifyIdToken(token);
+    // const firebasePhone = decoded.phone_number;
+    const firebasePhone = decoded.phone_number?.replace("+91", "");
+
+    console.log("yyyyyyyyyyyyyyyyyyyyyyyyy:", firebasePhone);
+    console.log("xxxxxxxxxxxxxxxxxxxxxxx,", normalizedPhone);
+
+    if (firebasePhone !== normalizedPhone) {
+      throw new Error("Phone number mismatch with token");
+    }
+
+    driver = await Driver.findOne({ where: { phone: normalizedPhone } });
+    if (!driver) {
+      driver = await Driver.create({
+        first_name: "",
+        last_name: "",
+        phone: normalizedPhone,
+        dob: new Date(),
+        experience: 0,
+        languages: [],
+        license_front: "",
+        license_back: "",
+        status: "inactive",
+      });
+    }
+  }
+
+  // Update last login
+  driver.last_login = new Date();
+  await driver.save();
+
+  // Generate auth token
+  const jwtToken = generateToken(driver.id);
+
+  return { message: "Driver verified", token: jwtToken, driver };
 };
+
 
 const updateDriverProfile = async (driverId, data) => {
   const driver = await Driver.findByPk(driverId);
