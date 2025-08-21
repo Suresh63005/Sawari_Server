@@ -3,6 +3,9 @@ const HomeService = require("../../services/home.service");
 const { conditionalRides, getRideById, getRideByIdData } = require("../../services/ride.service");
 const { getEarningsSum } = require("../../services/earnings.service");
 const { driverProfileWithCar, getDriverById } = require("../../services/driver.service");
+const Package = require("../../models/package.model");
+const SubPackage = require("../../models/sub-package.model");
+const Ride = require("../../models/ride.model");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -68,7 +71,19 @@ const getAllHomeData = async (req, res) => {
       },
       attributes: [
         "id","customer_name", "email", "phone", "pickup_address", "pickup_location",
-        "drop_location", "scheduled_time", "pickup_time", "dropoff_time"
+        "drop_location", "scheduled_time", "pickup_time", "dropoff_time","Price"
+      ],
+      include:[
+        {
+          model: Package,
+          as: "Package",
+          attributes: ["name"]
+        },
+        {
+          model: SubPackage,
+          as: "SubPackage",
+          attributes: ["name"]
+        }
       ],
       limit: 10,
       order: [["scheduled_time", "ASC"]]
@@ -117,14 +132,15 @@ const acceptRide = async (req, res) => {
       });
     }
 
-    rideGetById.driver_id = driver_id;
-    rideGetById.status = "accepted";
-    const result = await rideGetById.save();
+    const result = await Ride.update(
+      { driver_id, status: "accepted" },
+      { where: { id: ride_id } }
+    );
     
     return res.status(200).json({
       success: true,
       message: "Ride accepted successfully!",
-      data: result,
+      data: rideGetById,
     });
   } catch (error) {
     console.error("Error accepting ride:", error);
