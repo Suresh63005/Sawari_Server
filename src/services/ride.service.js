@@ -441,10 +441,46 @@ const getRideById = async (id) => {
   }
 };
 
+const conditionalRides = async (options = {}) => {
+  return Ride.findAll(options);
+};
+
+
+const acceptedRides=async(where={})=>{
+  return await Ride.findAll({where})
+}
+
+const getRideByIdData=async(driver_id,ride_id)=>{
+  const ride = await Ride.findOne({
+        where: {
+            id: ride_id,
+            [Op.or]: [
+                { driver_id: driver_id },
+                { initiated_by_driver_id: driver_id }
+            ]
+        },
+        attributes: ["customer_name", "pickup_location", "drop_location", "status", "ride_type"],
+        include: [
+            {
+                model: Earnings,
+                as: "Earnings",
+                attributes: ["amount", "commission", "percentage"]
+            }
+        ]
+    });
+    if (!ride) {
+        throw new Error("Ride not found");
+    }
+    return ride;
+}
+
 module.exports = {
   createRide,
   updateRide,
   getAllRides,
   getRideById,
   getAvailableCarsAndPrices,
+  conditionalRides,
+  acceptedRides,
+  getRideByIdData
 };
