@@ -67,7 +67,7 @@ const getAllHomeData = async (req, res) => {
         status: "pending"
       },
       attributes: [
-        "customer_name", "email", "phone", "pickup_address", "pickup_location",
+        "id","customer_name", "email", "phone", "pickup_address", "pickup_location",
         "drop_location", "scheduled_time", "pickup_time", "dropoff_time"
       ],
       limit: 10,

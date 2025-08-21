@@ -71,7 +71,7 @@ const updateProfileAndCarDetails = async(req,res)=>{
         // Handle profile related file uploads
         const profileFields = [
             'profile_pic', 'emirates_doc_front', 'emirates_doc_back',
-            'license_front', 'license_back'
+            'license_front', 'license_back',
         ];
 
         for (const field of profileFields) {
@@ -119,6 +119,17 @@ const updateProfileAndCarDetails = async(req,res)=>{
 
         if (req.files?.rc_doc) {
             carData.rc_doc = await uploadToS3(req.files.rc_doc[0], 'driver-cars');
+        }
+        if (req.files?.rc_doc_back) {
+          
+            const uploadResult = await uploadToS3(req.files.rc_doc_back[0], 'driver-cars');
+           
+            // If rc_doc_back
+            carData.rc_doc_back = uploadResult;
+            
+            
+            
+            console.log()
         }
         if (req.files?.insurance_doc) {
             carData.insurance_doc = await uploadToS3(req.files.insurance_doc[0], 'driver-cars');
