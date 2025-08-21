@@ -141,7 +141,7 @@ const acceptRide = async (req, res) => {
 // 3. Toggle Driver Status (active/inactive)
 const toggleDriverStatus = async (req, res) => {
   const driver_id = req.driver?.id;
-  const { status } = req.body; // expecting "active" or "inactive"
+  const { status } = req.body; // expecting "online" or "offline"
 
   if (!driver_id || !status) {
     return res.status(400).json({ message: "Driver ID and status required." });
@@ -149,8 +149,8 @@ const toggleDriverStatus = async (req, res) => {
 
   try {
     const driverGetById = await getDriverById(driver_id);
-    driverGetById.status=status
-    const result=await driverGetById.save()
+    driverGetById.availability_status=status
+    const result=await driverGetById.save();
     return res.status(200).json({
       success: true,
       message: `Driver status updated to ${status}`,
