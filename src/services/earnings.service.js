@@ -93,18 +93,37 @@ const getEarningsByRide = async (riderId) => {
 
 //mo
 
-const monthFilteredEarnings = async (where) => {
-  return await Earnings.findAll({
+const monthFilteredEarnings = async (dateRange, search = '', page = 1, limit = 5) => {
+  const offset = (page - 1) * limit;
+  const where = { ...dateRange };
+
+  if (search) {
+    where[Op.or] = [
+      { '$Ride.customer_name$': { [Op.like]: `%${search}%` } },
+      { '$Ride.email$': { [Op.like]: `%${search}%` } },
+      { '$Ride.phone$': { [Op.like]: `%${search}%` } },
+      { ride_id: { [Op.like]: `%${search}%` } },
+    ];
+  }
+
+  const { rows, count } = await Earnings.findAndCountAll({
     where,
     include: [
       {
         model: Ride,
-        as: "Ride"
-      }
+        as: 'Ride',
+      },
     ],
-    order: [['createdAt', 'DESC']]
-  })
-}
+    order: [['createdAt', 'DESC']],
+    limit,
+    offset,
+  });
+
+  return {
+    earningsList: rows,
+    total: count,
+  };
+};
 
 const getEarningsSum = async (where = {}) => {
   const amount = await Earnings.sum("amount", where)

@@ -3,7 +3,13 @@ const vehicleService = require('../../services/driverCar.service');
 
 exports.getAllVehicles = async (req, res) => {
   try {
-    const vehicles = await vehicleService.getAllVehicles();
+    const { page = 1, limit = 5, search = '', status = 'all' } = req.query;
+    const vehicles = await vehicleService.getAllVehicles({
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+      search,
+      status
+    });
     res.status(200).json(vehicles);
   } catch (error) {
     res.status(500).json({ message: error.message });

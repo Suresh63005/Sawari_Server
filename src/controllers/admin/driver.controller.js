@@ -2,8 +2,9 @@ const driverService = require('../../services/driver.service');
 
 exports.getAllDrivers = async (req, res) => {
   try {
-    const drivers = await driverService.getAllDrivers();
-    res.status(200).json(drivers);
+    const { page = 1, limit = 10, search = '', status = '' } = req.query;
+    const data = await driverService.getAllDrivers(Number(page), Number(limit), search, status);
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

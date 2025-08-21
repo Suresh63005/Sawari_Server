@@ -14,7 +14,7 @@ const { sequelize } = require('./models');
 const loadRoutes = require('./routes/index');
 const reddisConnect = require("./config/connectRedis");
 const CacheManager=require("./utils/cache-manager");
-const Ride = require('./models/ride.model');
+const Ticket = require('./models/ticket.model');
 
 const app = express();
 const port = process.env.PORT || 4445;
@@ -100,12 +100,12 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 //   console.error("Unable to create the database:", err);
 // });
 
-// Ride.sync({ alter: true })
+// Ticket.sync({ alter: true })
 //   .then(() => {
-//     console.log("✅ Rides table synced successfully.");
+//     console.log("✅ Ticket table synced successfully.");
 //   })
 //   .catch((err) => {
-//     console.error("❌ Failed to sync Rides table:", err);
+//     console.error("❌ Failed to sync Ticket table:", err);
 //   });
 
 const startServer = async () => {

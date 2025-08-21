@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken');
 const { driverFirebase } = require('../config/firebase-config');
 const { sequelize } = require('../models');
 const DriverCar = require('../models/driver-cars.model');
+const { Op } = require('sequelize');
 
-// Create token
 const generateToken = (driverId) => {
   return jwt.sign({ id: driverId }, process.env.JWT_SECRET);
 };
@@ -12,20 +12,17 @@ const generateToken = (driverId) => {
 const normalizePhone = (phone) => {
   phone = phone.trim();
   if (!phone.startsWith('+91')) {
-    // Remove any leading 0 or + if they exist before adding +91
     phone = phone.replace(/^(\+|0)*/, '');
     phone = '+91' + phone;
   }
   return phone;
 };
 
-// Service for verify mobile
 const verifyDriverMobile = async (phone) => {
   if (!phone) throw new Error('Phone number is required');
 
   const normalizedPhone = normalizePhone(phone);
 
-  // ✅ Check with Firebase (phone must match normalized format)
   const firebaseUsers = await driverFirebase.auth().listUsers();
   const firebaseUser = firebaseUsers.users.find(
     (user) => user.phoneNumber === normalizedPhone
@@ -33,7 +30,6 @@ const verifyDriverMobile = async (phone) => {
 
   if (!firebaseUser) throw new Error('Phone number not registered in Firebase');
 
-  // ✅ Transaction to safely create or fetch driver
   const result = await sequelize.transaction(async (t) => {
     let driver = await Driver.findOne({
       where: { phone: normalizedPhone },
@@ -65,12 +61,10 @@ const verifyDriverMobile = async (phone) => {
   return result;
 };
 
-// Service for update the driver profile
 const updateDriverProfile = async (driverId, data) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
 
-  // Disallow phone/email update here if needed
   await driver.update(data);
 
   return {
@@ -79,14 +73,12 @@ const updateDriverProfile = async (driverId, data) => {
   };
 };
 
-// Service to fetch driver
 const getDriverById = async (driverId) => {
   const driver = await Driver.findByPk(driverId, { attributes: ["first_name", "last_name", "email", "phone", "profile_pic", "dob", "experience", "emirates_id", "emirates_doc_front", "emirates_doc_back", "languages", "license_front", "license_back", "license_verification_status", "emirates_verification_status", "is_approved", "availability_status", "wallet_balance", "status"] });
   if (!driver) throw new Error("Driver not found");
   return driver;
 };
 
-// Service for deactivate driver account
 const deactivateDriver = async (driverId) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
@@ -96,7 +88,6 @@ const deactivateDriver = async (driverId) => {
   return { message: 'Account deactivated successfully' };
 };
 
-// Service for approve driver
 const approveDriver = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
@@ -104,7 +95,6 @@ const approveDriver = async (driverId, verifiedBy) => {
   return { message: 'Driver approved' };
 };
 
-// Service for reject driver
 const rejectDriver = async (driverId, reason, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
@@ -112,7 +102,6 @@ const rejectDriver = async (driverId, reason, verifiedBy) => {
   return { message: 'Driver rejected' };
 };
 
-// Service for block driver
 const blockDriver = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
@@ -120,7 +109,6 @@ const blockDriver = async (driverId, verifiedBy) => {
   return { message: 'Driver blocked' };
 };
 
-// Service for unblock driver
 const unblockDriver = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
@@ -128,13 +116,38 @@ const unblockDriver = async (driverId, verifiedBy) => {
   return { message: 'Driver unblocked' };
 };
 
-// Service to get all drivers
-const getAllDrivers = async () => {
-  const drivers = await Driver.findAll({ attributes: { exclude: ['password'] } });
-  return drivers;
-};
+const getAllDrivers = async (page = 1, limit = 10, search = '', status = '') => {
+  const offset = (page - 1) * limit;
+  const where = {};
 
-// ... (previous imports and functions remain the same)
+  if (search) {
+    const searchTerm = `%${search.replace(/\*/g, '%')}%`; // Replace * with % for SQL LIKE
+    where[Op.or] = [
+      { first_name: { [Op.like]: searchTerm } },
+      { last_name: { [Op.like]: searchTerm } },
+      { email: { [Op.like]: searchTerm } },
+      { phone: { [Op.like]: searchTerm } },
+    ];
+  }
+
+  if (status === 'pending') {
+    where.is_approved = false;
+  } else if (status === 'approved') {
+    where.is_approved = true;
+    where.status = 'active';
+  } else if (status === 'blocked') {
+    where.status = 'blocked';
+  }
+
+  const { rows: drivers, count } = await Driver.findAndCountAll({
+    where,
+    attributes: { exclude: ['password'] },
+    offset,
+    limit,
+  });
+
+  return { drivers, total: count };
+};
 
 const verifyLicense = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
@@ -201,7 +214,6 @@ module.exports = {
   verifyEmirates,
   rejectEmirates,
   driverProfileWithCar,
-  updateDriverBalance
+  updateDriverBalance,
+  driverProfileWithCar
 };
-
-
