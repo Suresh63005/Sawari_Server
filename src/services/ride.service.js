@@ -474,6 +474,36 @@ const getRideByIdData=async(driver_id,ride_id)=>{
     return ride;
 }
 
+const getRidesByStatusAndDriver = async (status,driverId) => {
+  try {
+    const where = { driver_id: driverId };
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    const rides = await Ride.findAll({
+      where,
+      order: [['createdAt', 'DESC']],
+      include: [
+        { model: Package, as: "Package", attributes: ['id', 'name'] },
+        { model: SubPackage, as: "SubPackage", attributes: ['id', 'name'] },
+        { model: Car, as: "Car", attributes: ['id', 'model'] },
+      ],
+    });
+
+    return rides.map(ride => ({
+      ...rideResponseDTO(ride),
+      package_name: ride.Package ? ride.Package.name : null,
+      subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
+      car_name: ride.Car ? ride.Car.model : null,
+    }));
+  } catch (error) {
+    console.error('getRidesByStatusAndDriver error:', error);
+    throw error;
+  }
+}
+
+
 module.exports = {
   createRide,
   updateRide,
@@ -482,5 +512,6 @@ module.exports = {
   getAvailableCarsAndPrices,
   conditionalRides,
   acceptedRides,
-  getRideByIdData
+  getRideByIdData,
+  getRidesByStatusAndDriver
 };
