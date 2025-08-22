@@ -276,8 +276,13 @@ const upsertRide = async (req, res) => {
       pickup_location,
       drop_location,
       ride_type,
+      accept_time,
+      package_id,
+      subpackage_id,
+      car_id,
+      Price,
+      Total
     } = req.body;
-    
 
     const ride = await HomeService.upsertRide({
       id,
@@ -290,7 +295,13 @@ const upsertRide = async (req, res) => {
       pickup_address,
       pickup_location,
       drop_location,
-      ride_type
+      ride_type,
+      accept_time,
+      package_id,
+      subpackage_id,
+      car_id,
+      Price,
+      Total
     });
 
     return res.status(200).json({
@@ -303,10 +314,11 @@ const upsertRide = async (req, res) => {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Server error",
+      message: error.message || "Server error",
     });
   }
 };
+
 
 const earningsHistory = async (req, res) => {
   const driver_id = req.driver?.id;
