@@ -474,11 +474,17 @@ const getRideByIdData=async(driver_id,ride_id)=>{
     return ride;
 }
 
-const getRidesByStatusAndDriver = async (status,driverId) => {
+
+const getRidesByStatusAndDriver = async (status, driverId) => {
   try {
     const where = { driver_id: driverId };
     if (status && status !== 'all') {
-      where.status = status;
+      if (status === 'accepted') {
+        // Show both 'accepted' and 'on-route' rides
+        where.status = { [Op.or]: ['accepted', 'on-route'] };
+      } else {
+        where.status = status;
+      }
     }
 
     const rides = await Ride.findAll({
@@ -501,7 +507,7 @@ const getRidesByStatusAndDriver = async (status,driverId) => {
     console.error('getRidesByStatusAndDriver error:', error);
     throw error;
   }
-}
+};
 
 
 module.exports = {
