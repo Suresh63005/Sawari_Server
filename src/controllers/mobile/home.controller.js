@@ -344,11 +344,95 @@ const earningsHistory = async (req, res) => {
   }
 }
 
+// controller for revealing/after accepting ride
+const releaseDriverFromRide = async (req, res) => {
+  const driver_id = req.driver?.id;
+  const { rideId } = req.params;
+
+  if (!driver_id) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
+  }
+
+  try {
+    const ride = await HomeService.releaseRide(rideId, driver_id);
+    return res.status(200).json({
+      success: true,
+      message: "Driver released from ride successfully",
+      data: ride,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// controller for start the ride
+const startRide = async (req, res) => {
+  const driver_id = req.driver?.id;
+  const { rideId } = req.params;
+
+  if (!driver_id) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
+  }
+
+  try {
+    const ride = await HomeService.startRide(rideId, driver_id);
+    return res.status(200).json({
+      success: true,
+      message: "Ride started successfully",
+      data: ride,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// controller for end the ride
+const endRide = async (req, res) => {
+  const driver_id = req.driver?.id;
+  const { rideId } = req.params;
+
+  if (!driver_id) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
+  }
+
+  try {
+    const ride = await HomeService.endRide(rideId, driver_id);
+    return res.status(200).json({
+      success: true,
+      message: "Ride ended successfully",
+      data: ride,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   getAllHomeData,
   acceptRide,
+  startRide,
+  endRide,
   toggleDriverStatus,
+  releaseDriverFromRide,
   getRideDetails,
   updateRideStatus,
   getRidesByStatus,

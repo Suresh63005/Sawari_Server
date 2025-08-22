@@ -12,7 +12,11 @@ router.get("/ride/:ride_id", middleware.isAuthenticated, homeController.getRideD
 router.put("/ride/:ride_id", middleware.isAuthenticated, homeController.updateRideStatus);
 ////Get rides by status
 router.get("/rides", middleware.isAuthenticated, homeController.getRidesByStatus);
-router.post("/upsert-ride",middleware.isAuthenticated,homeController.upsertRide)
+router.post("/upsert-ride",middleware.isAuthenticated,homeController.upsertRide);
+router.put("/release/:rideId",middleware.isAuthenticated,homeController.releaseDriverFromRide);
+router.put("/start-ride/:rideId",middleware.isAuthenticated,homeController.startRide);
+router.put("/end-ride/:rideId",middleware.isAuthenticated,homeController.endRide);
+
 
 router.get("/earnings-history",middleware.isAuthenticated,homeController.earningsHistory) // http://localhost:4445/api/v1/mobile/home/earnings-history?month=2025-07
 module.exports=router
