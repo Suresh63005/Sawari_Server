@@ -244,8 +244,73 @@ const getDriverEarningsHistory = async (driver_id, sortMonth = null) => {
     }
 }
 
+
+// Service for relieving driver from a ride
+const releaseRide = async (rideId, driver_id) => {
+    const ride = await Ride.findOne({
+        where: {
+            id: rideId,
+            driver_id: driver_id,
+            status: "accepted"
+        }
+    });
+
+    if (!ride) {
+        throw new Error("Ride not found or cannot be released.");
+    }
+
+    ride.driver_id = null;
+    ride.status = "pending";
+    await ride.save();
+
+    return ride;
+};
+
+// Start the ride service
+const startRide = async (rideId, driver_id) => {
+    const ride = await Ride.findOne({
+        where: {
+            id: rideId,
+            driver_id: driver_id,
+            status: "accepted"
+        }
+    });
+
+    if (!ride) {
+        throw new Error("Ride not found or cannot be started.");
+    }
+
+    ride.status = "on-route";
+    await ride.save();
+
+    return ride;
+};
+
+// service for end the ride
+const endRide = async (rideId, driver_id) => {
+    const ride = await Ride.findOne({
+        where: {
+            id: rideId,
+            driver_id: driver_id,
+            status: "on-route"
+        }
+    });
+
+    if (!ride) {
+        throw new Error("Ride not found or cannot be ended.");
+    }
+
+    ride.status = "completed";
+    await ride.save();
+
+    return ride;
+};
+
+
 module.exports = {
-    
+    releaseRide,
+    startRide,
+    endRide,
     acceptRide,
     DriverStatus,
     RideDetails,
