@@ -104,6 +104,8 @@ const updateProfileAndCarDetails = async(req,res)=>{
 
         await driverService.updateDriverProfile(driverId,updatedDriverData);
 
+        const UpdatedDriver = await driverService.getDriverById(driverId);
+
         // Handle Vehicle/ Car info
         const carData = {
             car_model:req.body.car_model,
@@ -139,10 +141,10 @@ const updateProfileAndCarDetails = async(req,res)=>{
         carData.insurance_doc_status = 'pending';
 
         // Save or update car details
-        await driverCarService.upsertDriverCar(driverId, carData);
+       await driverCarService.upsertDriverCar(driverId, carData);
         const vehicle = await driverCarService.getDriverCarByDriverId(driverId);
 
-        res.status(200).json({ message: 'Driver and vehicle profile submitted successfully.',driver, vehicle });
+        res.status(200).json({ message: 'Driver and vehicle profile submitted successfully.',driver:UpdatedDriver, vehicle });
     } catch (error) {
         console.error('Submit driver & car profile error:', error);
         res.status(500).json({ error: error.message });
