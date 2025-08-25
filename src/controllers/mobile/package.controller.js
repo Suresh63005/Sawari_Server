@@ -1,6 +1,6 @@
 const CarService = require("../../services/car.service");
 const PackageService = require("../../services/package.service");
-const SubPackageService = require("../../services/subpackage.service");
+const SubPackageService = require("../../services/subPackage.service");
 
 
 // controller to get all packages
