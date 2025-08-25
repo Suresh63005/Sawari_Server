@@ -90,7 +90,7 @@ const updateProfileAndCarDetails = async (req, res) => {
         // Step 4: Handle profile-related file uploads
         const profileFields = [
             'profile_pic', 'emirates_doc_front', 'emirates_doc_back',
-            'license_front', 'license_back'
+            'license_front', 'license_back',
         ];
 
         for (const field of profileFields) {
@@ -137,11 +137,9 @@ const updateProfileAndCarDetails = async (req, res) => {
         await driverService.updateDriverProfile(driverId, updatedDriverData);
         console.log("Driver profile updated in DB.");
 
-        // 🟢 Fetch updated driver from DB
-        const updatedDriver = await driverService.getDriverById(driverId);
-        console.log("Re-fetched updated Driver Data from DB:", updatedDriver);
+        const UpdatedDriver = await driverService.getDriverById(driverId);
 
-        // Step 7: Prepare vehicle/car data
+        // Handle Vehicle/ Car info
         const carData = {
             car_model: req.body.car_model,
             car_brand: req.body.car_brand,
@@ -165,8 +163,17 @@ const updateProfileAndCarDetails = async (req, res) => {
             carData.rc_doc = await uploadToS3(req.files.rc_doc[0], 'driver-cars');
             console.log("Uploaded RC document:", carData.rc_doc);
         }
-
-        // Step 10: Upload Insurance document
+        if (req.files?.rc_doc_back) {
+          
+            const uploadResult = await uploadToS3(req.files.rc_doc_back[0], 'driver-cars');
+           
+            // If rc_doc_back
+            carData.rc_doc_back = uploadResult;
+            
+            
+            
+            console.log()
+        }
         if (req.files?.insurance_doc) {
             console.log("Uploading insurance document...");
             carData.insurance_doc = await uploadToS3(req.files.insurance_doc[0], 'driver-cars');
@@ -178,25 +185,11 @@ const updateProfileAndCarDetails = async (req, res) => {
         carData.insurance_doc_status = 'pending';
         console.log("Set car document verification statuses to 'pending'");
 
-        // Step 12: Save or update car data in DB
-        await driverCarService.upsertDriverCar(driverId, carData);
-        console.log("Driver car data upserted to DB");
-
-        // 🟢 Fetch updated vehicle info
-        const updatedVehicle = await driverCarService.getDriverCarByDriverId(driverId);
-        console.log("Fetched updated vehicle data:", updatedVehicle);
-
-        // Step 13: Fetch updated vehicle info
+        // Save or update car details
+       await driverCarService.upsertDriverCar(driverId, carData);
         const vehicle = await driverCarService.getDriverCarByDriverId(driverId);
-        console.log("Fetched updated vehicle data:", vehicle);
 
-        // Final response
-        console.log("=== End: updateProfileAndCarDetails ===");
-        res.status(200).json({
-            message: 'Driver and vehicle profile submitted successfully.',
-            driver:updatedDriver,
-            vehicle:updatedVehicle
-        });
+        res.status(200).json({ message: 'Driver and vehicle profile submitted successfully.',driver:UpdatedDriver, vehicle });
     } catch (error) {
         console.error('🚨 Submit driver & car profile error:', error);
         res.status(500).json({ error: error.message });

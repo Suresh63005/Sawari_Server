@@ -154,6 +154,10 @@ const Driver = sequelize.define(
         },
       },
     },
+    full_address: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
   },
   {
     tableName: "Driver",

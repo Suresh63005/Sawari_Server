@@ -176,11 +176,38 @@ const getRidesInitiatedByDriver = async (req, res) => {
   }
 };
 
+const getRidesByStatus = async (req, res) => {
+
+    console.log("getRidesByStatus called with status:", req.params.status);
+    try {
+        const driverId = req.driver?.id;
+        const status = req.params.status;
+
+        console.log("Driver ID:", driverId, "Status:", status);
+
+        if (!driverId) {
+            return res.status(401).json({ message: "Unauthorized access. Driver not authenticated." });
+        }
+
+        const rides = await rideService.getRidesByStatusAndDriver(status, driverId);
+
+        return res.status(200).json({
+            message: `Rides with status '${status}' fetched successfully`,
+            rides,
+            count: rides.length
+        });
+    } catch (error) {
+        console.error("Get Rides By Status Error:", error);
+        return res.status(500).json({ message: error.message });
+    }
+};
+
 
 module.exports = {
     upsertRide,
     getAllRides,
     getRideById,
-    getRidesInitiatedByDriver
+    getRidesInitiatedByDriver,
+    getRidesByStatus
 }
 

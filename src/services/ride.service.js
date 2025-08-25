@@ -441,10 +441,83 @@ const getRideById = async (id) => {
   }
 };
 
+const conditionalRides = async (options = {}) => {
+  return Ride.findAll(options);
+};
+
+
+const acceptedRides=async(where={})=>{
+  return await Ride.findAll({where})
+}
+
+const getRideByIdData=async(driver_id,ride_id)=>{
+  const ride = await Ride.findOne({
+        where: {
+            id: ride_id,
+            [Op.or]: [
+                { driver_id: driver_id },
+                { initiated_by_driver_id: driver_id }
+            ]
+        },
+        attributes: ["customer_name", "pickup_location", "drop_location", "status", "ride_type"],
+        include: [
+            {
+                model: Earnings,
+                as: "Earnings",
+                attributes: ["amount", "commission", "percentage"]
+            }
+        ]
+    });
+    if (!ride) {
+        throw new Error("Ride not found");
+    }
+    return ride;
+}
+
+
+const getRidesByStatusAndDriver = async (status, driverId) => {
+  try {
+    const where = { driver_id: driverId };
+    if (status && status !== 'all') {
+      if (status === 'accepted') {
+        // Show both 'accepted' and 'on-route' rides
+        where.status = { [Op.or]: ['accepted', 'on-route'] };
+      } else {
+        where.status = status;
+      }
+    }
+
+    const rides = await Ride.findAll({
+      where,
+      order: [['createdAt', 'DESC']],
+      include: [
+        { model: Package, as: "Package", attributes: ['id', 'name'] },
+        { model: SubPackage, as: "SubPackage", attributes: ['id', 'name'] },
+        { model: Car, as: "Car", attributes: ['id', 'model'] },
+      ],
+    });
+
+    return rides.map(ride => ({
+      ...rideResponseDTO(ride),
+      package_name: ride.Package ? ride.Package.name : null,
+      subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
+      car_name: ride.Car ? ride.Car.model : null,
+    }));
+  } catch (error) {
+    console.error('getRidesByStatusAndDriver error:', error);
+    throw error;
+  }
+};
+
+
 module.exports = {
   createRide,
   updateRide,
   getAllRides,
   getRideById,
   getAvailableCarsAndPrices,
+  conditionalRides,
+  acceptedRides,
+  getRideByIdData,
+  getRidesByStatusAndDriver
 };

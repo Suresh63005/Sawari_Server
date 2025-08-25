@@ -8,6 +8,7 @@ const carDTO = (data) => {
     license_plate: data.license_plate,
     car_photos: data.car_photos || [],
     rc_doc: data.rc_doc,
+    rc_doc_back: data.rc_doc_back,
     insurance_doc: data.insurance_doc,
     rc_doc_status: data.rc_doc_status || 'pending',
     insurance_doc_status: data.insurance_doc_status || 'pending',

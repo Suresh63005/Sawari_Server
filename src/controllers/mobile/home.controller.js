@@ -3,9 +3,9 @@ const HomeService = require("../../services/home.service");
 const { conditionalRides, getRideById, getRideByIdData, rideStatuUpdate } = require("../../services/ride.service");
 const { getEarningsSum } = require("../../services/earnings.service");
 const { driverProfileWithCar, getDriverById } = require("../../services/driver.service");
-const { bulkCreateWalletTransactions } = require("../../services/wallet.service");
-const { v4: uuidv4 } = require("uuid");
-const { sequelize } = require("../../models");
+const Package = require("../../models/package.model");
+const SubPackage = require("../../models/sub-package.model");
+const Ride = require("../../models/ride.model");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -57,7 +57,7 @@ const getAllHomeData = async (req, res) => {
       },
       attributes: [
         "customer_name", "email", "phone", "pickup_address", "pickup_location",
-        "drop_location", "scheduled_time", "ride_type", "pickup_time", "dropoff_time"
+        "drop_location", "scheduled_time", "pickup_time", "dropoff_time"
       ],
       limit: 10,
       order: [["scheduled_time", "ASC"]]
@@ -70,8 +70,20 @@ const getAllHomeData = async (req, res) => {
         status: "pending"
       },
       attributes: [
-        "customer_name", "email", "phone", "pickup_address", "pickup_location",
-        "drop_location", "scheduled_time", "ride_type", "pickup_time", "dropoff_time"
+        "id","customer_name", "email", "phone", "pickup_address", "pickup_location",
+        "drop_location", "scheduled_time", "pickup_time", "dropoff_time","Price"
+      ],
+      include:[
+        {
+          model: Package,
+          as: "Package",
+          attributes: ["name"]
+        },
+        {
+          model: SubPackage,
+          as: "SubPackage",
+          attributes: ["name"]
+        }
       ],
       limit: 10,
       order: [["scheduled_time", "ASC"]]
@@ -120,14 +132,15 @@ const acceptRide = async (req, res) => {
       });
     }
 
-    rideGetById.driver_id = driver_id;
-    rideGetById.status = "accepted";
-    const result = await rideGetById.save();
-
+    const result = await Ride.update(
+      { driver_id, status: "accepted" },
+      { where: { id: ride_id } }
+    );
+    
     return res.status(200).json({
       success: true,
       message: "Ride accepted successfully!",
-      data: result,
+      data: rideGetById,
     });
   } catch (error) {
     console.error("Error accepting ride:", error);
@@ -144,7 +157,7 @@ const acceptRide = async (req, res) => {
 // 3. Toggle Driver Status (active/inactive)
 const toggleDriverStatus = async (req, res) => {
   const driver_id = req.driver?.id;
-  const { status } = req.body; // expecting "active" or "inactive"
+  const { status } = req.body; // expecting "online" or "offline"
 
   if (!driver_id || !status) {
     return res.status(400).json({ message: "Driver ID and status required." });
@@ -152,8 +165,8 @@ const toggleDriverStatus = async (req, res) => {
 
   try {
     const driverGetById = await getDriverById(driver_id);
-    driverGetById.status = status
-    const result = await driverGetById.save()
+    driverGetById.availability_status=status
+    const result=await driverGetById.save();
     return res.status(200).json({
       success: true,
       message: `Driver status updated to ${status}`,
@@ -264,8 +277,13 @@ const upsertRide = async (req, res) => {
       pickup_location,
       drop_location,
       ride_type,
+      accept_time,
+      package_id,
+      subpackage_id,
+      car_id,
+      Price,
+      Total
     } = req.body;
-
 
     const ride = await HomeService.upsertRide({
       id,
@@ -278,7 +296,13 @@ const upsertRide = async (req, res) => {
       pickup_address,
       pickup_location,
       drop_location,
-      ride_type
+      ride_type,
+      accept_time,
+      package_id,
+      subpackage_id,
+      car_id,
+      Price,
+      Total
     });
 
     return res.status(200).json({
@@ -291,10 +315,11 @@ const upsertRide = async (req, res) => {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Server error",
+      message: error.message || "Server error",
     });
   }
 };
+
 
 const earningsHistory = async (req, res) => {
   const driver_id = req.driver?.id;
@@ -320,105 +345,95 @@ const earningsHistory = async (req, res) => {
   }
 }
 
-//9 end ride (pending)
-const endRide = async (req, res) => {
+// controller for revealing/after accepting ride
+const releaseDriverFromRide = async (req, res) => {
   const driver_id = req.driver?.id;
-  const ride_id = req.params.id;
+  const { rideId } = req.params;
+
   if (!driver_id) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
   }
-  const ride = await getRideById(ride_id);
-  if (!ride) {
-    return res.status(404).json({ message: "Ride not found" });
-  }
-  const t = await sequelize.transaction();
+
   try {
-    //update ride status 
-    await rideStatuUpdate(driver_id, ride_id, t);
-    // Calculate cost splits
-    const cost = parseFloat(ride.actual_cost);
-    if (!cost || cost <= 0) {
-      return res.status(400).json({ message: "Invalid ride cost" });
-    }
-
-    const adminAmount = parseFloat((cost * 0.10).toFixed(2));
-    let initiatorAmount = 0;
-    let driverAmount = cost;
-
-    // Check if initiated by another driver
-    if (ride.initiated_by_driver_id && ride.initiated_by_driver_id !== ride.driver_id) {
-      initiatorAmount = parseFloat((cost * 0.10).toFixed(2));
-      driverAmount = parseFloat((cost - adminAmount - initiatorAmount)).toFixed(2)
-    } else {
-      driverAmount = parseFloat((cost - adminAmount).toFixed(2));
-    }
-
-    let now = new Date();
-    const transactions = [];
-
-    // // Driver (who completed the ride)
-    transactions.push({
-      id: uuidv4(),
-      driver_id: driver_id,
-      transaction_type: "credit",
-      amount: driverAmount,
-      // balance_transfer:0,
-      transaction_date: now,
-      description: `Ride earnings for ride ID: ${ride_id}`,
-      status: "completed"
-    })
-
-
-    // Admin (only if ride has admin_id)
-    if (ride.admin_id) {
-      transactions.push({
-        id: uuidv4(),
-        driver_id: ride.admin_id,
-        transaction_type: "credit",
-        amount: adminAmount,
-        balance_after: 0,
-        transaction_date: now,
-        description: `Admin commission for ride ID: ${ride_id}`,
-        status: "completed",
-      })
-    }
-
-    //// Initiator (only if another driver initiated the ride)
-    if (ride.initiated_by_driver_id && ride.initiated_by_driver_id !== ride.driver_id) {
-      transactions.push({
-        id: uuidv4(),
-        driver_id: ride.initiated_by_driver_id,
-        transaction_type: "credit",
-        amount: initiatorAmount,
-        balance_after: 0,
-        transaction_date: now,
-        description: `Initiator reward for ride ID: ${ride_id}`,
-        status: "completed",
-      })
-    }
-    await bulkCreateWalletTransactions(transactions,t);
-    await t.commit()
+    const ride = await HomeService.releaseRide(rideId, driver_id);
     return res.status(200).json({
-      message: "Ride completed and payment split successfully.",
-      payouts: {
-        driverAmount,
-        adminAmount,
-        initiatorAmount,
-      },
+      success: true,
+      message: "Driver released from ride successfully",
+      data: ride,
     });
   } catch (error) {
-    await t.rollback()
-    console.error("Error in endRide:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
   }
-}
+};
 
 
+// controller for start the ride
+const startRide = async (req, res) => {
+  const driver_id = req.driver?.id;
+  const { rideId } = req.params;
+
+  if (!driver_id) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
+  }
+
+  try {
+    const ride = await HomeService.startRide(rideId, driver_id);
+    return res.status(200).json({
+      success: true,
+      message: "Ride started successfully",
+      data: ride,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// controller for end the ride
+const endRide = async (req, res) => {
+  const driver_id = req.driver?.id;
+  const { rideId } = req.params;
+
+  if (!driver_id) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
+  }
+
+  try {
+    const ride = await HomeService.endRide(rideId, driver_id);
+    return res.status(200).json({
+      success: true,
+      message: "Ride ended successfully",
+      data: ride,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   getAllHomeData,
   acceptRide,
+  startRide,
+  endRide,
   toggleDriverStatus,
+  releaseDriverFromRide,
   getRideDetails,
   updateRideStatus,
   getRidesByStatus,

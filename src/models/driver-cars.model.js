@@ -39,6 +39,10 @@ const DriverCar = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    rc_doc_back: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     insurance_doc: {
       type: DataTypes.STRING,
       allowNull: false,
