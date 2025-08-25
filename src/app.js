@@ -15,8 +15,6 @@ const loadRoutes = require('./routes/index');
 const reddisConnect = require("./config/connectRedis");
 const CacheManager=require("./utils/cache-manager");
 const Ticket = require('./models/ticket.model');
-const { getAllCars } = require('./controllers/mobile/package.controller');
-const { isAuthenticated } = require('./middlewares/mobile/authMiddleware');
 
 const app = express();
 const port = process.env.PORT || 4445;
@@ -88,7 +86,6 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
   }
 })();
 
-app.use("/api/v1/mobile/package/get-all-cars", isAuthenticated, getAllCars);
 
 // Database sync
 // sequelize
