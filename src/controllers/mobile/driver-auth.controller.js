@@ -134,7 +134,7 @@ const updateProfileAndCarDetails = async (req, res) => {
         }
 
         // Step 6: Update driver profile in DB
-        await driverService.updateDriverProfile(driverId, updatedDriverData);
+        await driverService.updateDriverProfile(driverId, updatedDriverData); //update 1
         console.log("Driver profile updated in DB.");
 
         const UpdatedDriver = await driverService.getDriverById(driverId);
@@ -164,15 +164,11 @@ const updateProfileAndCarDetails = async (req, res) => {
             console.log("Uploaded RC document:", carData.rc_doc);
         }
         if (req.files?.rc_doc_back) {
-
             const uploadResult = await uploadToS3(req.files.rc_doc_back[0], 'driver-cars');
 
             // If rc_doc_back
             carData.rc_doc_back = uploadResult;
 
-
-
-            console.log()
         }
         if (req.files?.insurance_doc) {
             console.log("Uploading insurance document...");
@@ -186,7 +182,7 @@ const updateProfileAndCarDetails = async (req, res) => {
         console.log("Set car document verification statuses to 'pending'");
 
         // Save or update car details
-        await driverCarService.upsertDriverCar(driverId, carData);
+        await driverCarService.upsertDriverCar(driverId, carData); // update 2
         const vehicle = await driverCarService.getDriverCarByDriverId(driverId);
 
         res.status(200).json({ message: 'Driver and vehicle profile submitted successfully.', driver: UpdatedDriver, vehicle });
@@ -197,7 +193,7 @@ const updateProfileAndCarDetails = async (req, res) => {
 };
 
 
-const verifyOTP = async (req, res) => {
+const blockDriverByIdentifier = async (req, res) => {
     const { phone, email, } = req.body;
 
     try {
@@ -206,7 +202,7 @@ const verifyOTP = async (req, res) => {
                 message: "Provide either phone or email, not both or neither.",
             });
         }
-        const result = await driverService.verifyOTPService(phone, email);
+        const result = await driverService.blockDriverByPhoneOrEmail(phone, email);
         res.status(200).json({
             message: "Driver status updated to blocked",
             data: result,
@@ -251,10 +247,29 @@ const deleteAccount = async (req, res) => {
     }
 }
 
+const checkStatus = async (req, res) => {
+    const driverId = req.driver.id;
+    if (!driverId) {
+        return res.status(400).json({ success: false, message: "driver ID is required" });
+    }
+    try {
+        const driver = await driverService.getDriverById(driverId);
+        console.log(driver,"driverrrrrrrrrrrr")
+        const vehicle = await driverCarService.getDriverCarByDriverId(driver.id)
+        console.log(vehicle,"vehicleeeeeeeeeeeeeeeee")
+        return res.status(200).json({ success: true, message: "Driver data fetched successfully", data: {driver,vehicle} });
+
+    } catch (error) {
+        console.error("check status error:", error);
+        return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+}
+
 module.exports = {
     verifyMobile,
-    verifyOTP,
+    blockDriverByIdentifier,
     updateProfileAndCarDetails,
     driverAccountDetails,
-    deleteAccount
+    deleteAccount,
+    checkStatus
 }
