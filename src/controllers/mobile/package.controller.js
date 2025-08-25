@@ -28,7 +28,7 @@ const getSubPackagesByPackageId=async(req,res)=>{
 
     try {
         const subPackages=await SubPackageService.getSubPackagesByPackageId(package_id);
-        if(!subPackages || subPackages.length===0){
+        if(!subPackages ||!subPackages.data || subPackages.data.length===0){
             return res.status(404).json({message:"No sub-packages found for this package"})
         }
         return res.status(200).json({message:"Sub-packages fetched successfully",data:subPackages})
@@ -39,21 +39,17 @@ const getSubPackagesByPackageId=async(req,res)=>{
 };
 
 // controller to get all cars
-const getAllCars = async (req, res) => {
+const getAllCarsBySubPackageId = async (req, res) => {
   try {
-    const { search, limit, page, sortBy, sortOrder, status } = req.query;
+    const {sub_package_id } = req.params;
+    if(!sub_package_id){
+      return res.status(400).json({message:"Sub-Package ID is required"})
+    }
 
-    const cars = await CarService.getAllCars({
-      search,
-      limit,
-      page,
-      sortBy,
-      sortOrder,
-      status,
-    });
+    const cars = await CarService.getCarsBySubPackageId(sub_package_id);
 
-    if (!cars || cars.data.length === 0) {
-      return res.status(404).json({ message: "No cars found" });
+    if (!cars || cars.length === 0) {
+      return res.status(404).json({ message: "No cars found with this sub-package" });
     }
 
     return res.status(200).json({
@@ -70,5 +66,5 @@ const getAllCars = async (req, res) => {
 module.exports={
     getAllPackages,
     getSubPackagesByPackageId,
-    getAllCars
+    getAllCarsBySubPackageId
 };
