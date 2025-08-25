@@ -30,7 +30,7 @@ const Driver = sequelize.define(
     phone: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique:true
+      unique: true
     },
     profile_pic: {
       type: DataTypes.STRING,
@@ -94,9 +94,9 @@ const Driver = sequelize.define(
       allowNull: true,
       defaultValue: false,
     },
-    reason:{
-        type:DataTypes.STRING,
-        allowNull:true,
+    reason: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     verified_by: {
       type: DataTypes.UUID,
@@ -128,7 +128,7 @@ const Driver = sequelize.define(
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM("active", "inactive", "blocked","rejected"),
+      type: DataTypes.ENUM("active", "inactive", "blocked", "rejected"),
       allowNull: false,
       defaultValue: "inactive",
     },
@@ -137,7 +137,7 @@ const Driver = sequelize.define(
       allowNull: true,
       defaultValue: 0,
     },
-        last_login: {
+    last_login: {
       type: DataTypes.DATE,
       allowNull: true,
       validate: {
@@ -145,11 +145,11 @@ const Driver = sequelize.define(
       },
     },
     social_login: {
-      type: DataTypes.ENUM( "google"),
+      type: DataTypes.ENUM("google"),
       allowNull: true,
       validate: {
         isIn: {
-          args: [[ "google"]],
+          args: [["google"]],
           msg: "Social login must be one of:google",
         },
       },

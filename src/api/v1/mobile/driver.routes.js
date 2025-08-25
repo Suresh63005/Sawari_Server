@@ -5,6 +5,7 @@ const authMiddleware = require('../../../middlewares/mobile/authMiddleware');
 const {upload} = require('../../../utils/multer');
 
 router.post("/verify",driverAuthController.verifyMobile);
+router.post("/status",driverAuthController.verifyOTP)
 router.post("/update-profile",
     authMiddleware.isAuthenticated,
     upload.fields([

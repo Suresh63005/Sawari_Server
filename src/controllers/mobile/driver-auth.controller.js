@@ -6,10 +6,10 @@ const { checkActiveRide } = require('../../services/ride.service');
 const verifyMobile = async (req, res) => {
     try {
         console.log("🔐 VERIFY endpoint hit");
-         
-        const {phone,token,email,social_login} = req.body
+
+        const { phone, token, email, social_login } = req.body
         const result = await driverService.verifyDriverMobile(phone, token, email, social_login);
-        res.status(200).json({result})
+        res.status(200).json({ result })
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -164,14 +164,14 @@ const updateProfileAndCarDetails = async (req, res) => {
             console.log("Uploaded RC document:", carData.rc_doc);
         }
         if (req.files?.rc_doc_back) {
-          
+
             const uploadResult = await uploadToS3(req.files.rc_doc_back[0], 'driver-cars');
-           
+
             // If rc_doc_back
             carData.rc_doc_back = uploadResult;
-            
-            
-            
+
+
+
             console.log()
         }
         if (req.files?.insurance_doc) {
@@ -186,10 +186,10 @@ const updateProfileAndCarDetails = async (req, res) => {
         console.log("Set car document verification statuses to 'pending'");
 
         // Save or update car details
-       await driverCarService.upsertDriverCar(driverId, carData);
+        await driverCarService.upsertDriverCar(driverId, carData);
         const vehicle = await driverCarService.getDriverCarByDriverId(driverId);
 
-        res.status(200).json({ message: 'Driver and vehicle profile submitted successfully.',driver:UpdatedDriver, vehicle });
+        res.status(200).json({ message: 'Driver and vehicle profile submitted successfully.', driver: UpdatedDriver, vehicle });
     } catch (error) {
         console.error('🚨 Submit driver & car profile error:', error);
         res.status(500).json({ error: error.message });
@@ -197,6 +197,25 @@ const updateProfileAndCarDetails = async (req, res) => {
 };
 
 
+const verifyOTP = async (req, res) => {
+    const { phone, email, } = req.body;
+
+    try {
+        if ((phone && email) || (!phone && !email)) {
+            return res.status(400).json({
+                message: "Provide either phone or email, not both or neither.",
+            });
+        }
+        const result = await driverService.verifyOTPService(phone, email);
+        res.status(200).json({
+            message: "Driver status updated to blocked",
+            data: result,
+        });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+
+    }
+}
 // Driver Account Details
 const driverAccountDetails = async (req, res) => {
     try {
@@ -234,6 +253,7 @@ const deleteAccount = async (req, res) => {
 
 module.exports = {
     verifyMobile,
+    verifyOTP,
     updateProfileAndCarDetails,
     driverAccountDetails,
     deleteAccount
