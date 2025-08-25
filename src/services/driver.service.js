@@ -153,7 +153,7 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
   return { message: "Driver verified", token: jwtToken, driver };
 };
 
-const verifyOTPService = async (phone, email) => {
+const blockDriverByPhoneOrEmail = async (phone, email) => {
   let driver = null;
 
   if (phone) {
@@ -186,7 +186,7 @@ const updateDriverProfile = async (driverId, data) => {
 };
 
 const getDriverById = async (driverId) => {
-  const driver = await Driver.findByPk(driverId, { attributes: ["first_name", "last_name", "email", "phone", "profile_pic", "dob", "experience", "emirates_id", "emirates_doc_front", "emirates_doc_back", "languages", "license_front", "license_back", "license_verification_status", "emirates_verification_status", "is_approved", "availability_status", "wallet_balance", "status"] });
+  const driver = await Driver.findByPk(driverId, { attributes: ["id","first_name", "last_name", "email", "phone", "profile_pic", "dob", "experience", "emirates_id", "emirates_doc_front", "emirates_doc_back", "languages", "license_front", "license_back", "license_verification_status", "emirates_verification_status", "is_approved", "availability_status", "wallet_balance", "status"] });
   if (!driver) throw new Error("Driver not found");
   return driver;
 };
@@ -327,7 +327,7 @@ const updateDriverBalance = async (driver_id, newBalance) => {
 
 module.exports = {
   verifyDriverMobile,
-  verifyOTPService,
+  blockDriverByPhoneOrEmail,
   updateDriverProfile,
   getDriverById,
   deactivateDriver,
