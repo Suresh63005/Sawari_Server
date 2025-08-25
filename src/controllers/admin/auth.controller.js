@@ -58,17 +58,17 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+      return res.status(400).json({ message: !email ? 'Email is required' : 'Password is required' });
     }
 
     const admin = await AuthService.getAdminByEmail(email);
     if (!admin) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid email' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, admin.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid password' });
     }
 
     const permissions = await AuthService.getAdminPermissions(admin.id);
@@ -95,18 +95,17 @@ const login = async (req, res) => {
       email: admin.email,
       role: admin.role,
       token: token,
-      // In login, getPermissions, getMe
-permissions: {
-  dashboard: permissions.dashboard_access,
-  drivers: permissions.manage_drivers,
-  vehicles: permissions.manage_vehicles,
-  rides: permissions.manage_ride,
-  earnings: permissions.manage_earnings,
-  support: permissions.manage_support_tickets,
-  push_notifications: permissions.manage_push_notifications, // Renamed
-  admin_management: permissions.manage_admin,
-  fleet: permissions.manage_fleet, // New
-}
+      permissions: {
+        dashboard: permissions.dashboard_access,
+        drivers: permissions.manage_drivers,
+        vehicles: permissions.manage_vehicles,
+        rides: permissions.manage_ride,
+        earnings: permissions.manage_earnings,
+        support: permissions.manage_support_tickets,
+        push_notifications: permissions.manage_push_notifications,
+        admin_management: permissions.manage_admin,
+        fleet: permissions.manage_fleet,
+      }
     });
   } catch (error) {
     console.error('Login error:', error);

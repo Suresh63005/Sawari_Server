@@ -28,6 +28,7 @@ Permissions.belongsTo(Admin, { foreignKey: 'granted_by', as: 'GrantorAdmin', con
 Admin.hasMany(Permissions, { foreignKey: 'user_id', as: 'AdminPermissions', constraints: false,  });
 Permissions.belongsTo(Admin, { foreignKey: 'user_id', as: 'Admin', constraints: false, });
 
+
 // Driver associations
 Driver.hasMany(Ride, { foreignKey: 'initiated_by_driver_id', as: 'InitiatedRides', onDelete: 'SET NULL', constraints: false });
 Ride.belongsTo(Driver, { foreignKey: 'initiated_by_driver_id', as: 'InitiatorDriver', constraints: false });
