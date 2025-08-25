@@ -90,7 +90,6 @@ const getAllPackagePrices = async ({
   page = 1,
   sortBy = "createdAt",
   sortOrder = "DESC",
-  status,
 }) => {
   const where = {};
   const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -101,10 +100,6 @@ const getAllPackagePrices = async ({
       { sub_package_id: { [Op.like]: `%${search}%` } },
       { car_id: { [Op.like]: `%${search}%` } },
     ];
-  }
-
-  if (status !== undefined) {
-    where.status = status === "true" ? true : false;
   }
 
   const { rows, count } = await PackagePrice.findAndCountAll({
@@ -121,7 +116,6 @@ const getAllPackagePrices = async ({
     data: rows.map(packagePriceResponseDTO),
   };
 };
-
 // Get by ID
 const getPackagePriceById = async (id) => {
   const pp = await PackagePrice.findByPk(id);

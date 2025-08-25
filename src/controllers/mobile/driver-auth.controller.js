@@ -6,9 +6,10 @@ const { checkActiveRide } = require('../../services/ride.service');
 const verifyMobile = async (req, res) => {
     try {
         console.log("🔐 VERIFY endpoint hit");
-        const { phone } = req.body
-        const result = await driverService.verifyDriverMobile(phone);
-        res.status(200).json({ result })
+         
+        const {phone,token,email,social_login} = req.body
+        const result = await driverService.verifyDriverMobile(phone, token, email, social_login);
+        res.status(200).json({result})
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

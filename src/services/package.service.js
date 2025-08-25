@@ -77,9 +77,9 @@ const getAllPackages = async ({ search, limit = 10, page = 1, sortBy = 'createdA
   }
 
   // Optional status filter
-  if (status) {
-    where.status = status;
-  }
+  // if (status) {
+  //   where.status = status;
+  // }
 
   const offset = (page - 1) * limit;
 

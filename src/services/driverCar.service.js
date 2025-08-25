@@ -18,13 +18,22 @@ const carDTO = (data) => {
 };
 
 const carResponseDTO = (data) => {
+  let carPhotos = [];
+  try {
+    carPhotos = Array.isArray(data.car_photos) 
+      ? data.car_photos 
+      : JSON.parse(data.car_photos || '[]');
+  } catch (e) {
+    carPhotos = [];
+  }
+
   return {
     id: data.id,
     driver_id: data.driver_id,
     car_model: data.car_model,
     car_brand: data.car_brand,
     license_plate: data.license_plate,
-    car_photos: data.car_photos,
+    car_photos: carPhotos,
     rc_doc: data.rc_doc,
     insurance_doc: data.insurance_doc,
     rc_doc_status: data.rc_doc_status,
@@ -36,6 +45,7 @@ const carResponseDTO = (data) => {
     updatedAt: data.updatedAt,
   };
 };
+
 
 const upsertDriverCar = async (driverId, data) => {
   const sanitizedData = carDTO(data);
@@ -107,6 +117,8 @@ const getAllVehicles = async ({ page = 1, limit = 5, search = '', status = 'all'
     limit,
     offset
   });
+
+  console.log(rows,"yyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
 
   return {
     data: rows.map(vehicle => carResponseDTO(vehicle)),

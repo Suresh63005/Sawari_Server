@@ -10,6 +10,8 @@ exports.getAllVehicles = async (req, res) => {
       search,
       status
     });
+
+    console.log('vehiclessssssssssssss:', vehicles);
     res.status(200).json(vehicles);
   } catch (error) {
     res.status(500).json({ message: error.message });

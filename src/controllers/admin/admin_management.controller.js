@@ -22,7 +22,10 @@ const listAdmins = async (req, res) => {
   try {
     const currentUser = req.user;
     console.log('Listing admins for user:', currentUser.id, currentUser.role); // Debug log
-    const admins = await AuthService.getAllAdmins();
+    const { search, page, limit, sortBy, sortOrder } = req.query;
+const { data, total } = await AuthService.getAllAdmins({ search, page, limit, sortBy, sortOrder });
+const admins = data;
+
     
 
     // Filter admins based on role
@@ -72,7 +75,16 @@ const listAdmins = async (req, res) => {
       };
     });
 
-    return res.json(response);
+    return res.json({
+  data: response,
+  pagination: {
+    total,
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 10,
+    totalPages: Math.ceil(total / (parseInt(limit) || 10))
+  }
+});
+
   } catch (error) {
     console.error('List admins error:', error);
     return res.status(500).json({ message: 'Internal server error' });
