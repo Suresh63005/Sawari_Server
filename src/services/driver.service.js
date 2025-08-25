@@ -97,7 +97,7 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
     console.log("xxxxxxxxxxxxxxxxxxxxxxx,", normalizedPhone);
 
     // Find driver first
-    driver = await Driver.findOne({ where: { phone: normalizePhone } })
+    driver = await Driver.findOne({ where: { phone: normalizedPhone } })
     if (driver && driver.status === "blocked") {
       throw new Error("Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance.");
     }
