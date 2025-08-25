@@ -22,9 +22,9 @@ const DriverCar = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    color:{
+    color: {
       type: DataTypes.STRING,
-      allowNull:true
+      allowNull: true
     },
     license_plate: {
       type: DataTypes.STRING,
@@ -62,10 +62,10 @@ const DriverCar = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
-      reason:{
-            type:DataTypes.STRING,
-            allowNull:true,
-        },
+    reason: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     verified_by: {
       type: DataTypes.UUID,
       allowNull: true,

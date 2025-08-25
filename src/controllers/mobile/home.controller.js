@@ -1,6 +1,6 @@
 const { Op } = require("sequelize");
 const HomeService = require("../../services/home.service");
-const { conditionalRides, getRideById, getRideByIdData } = require("../../services/ride.service");
+const { conditionalRides, getRideById, getRideByIdData, rideStatuUpdate } = require("../../services/ride.service");
 const { getEarningsSum } = require("../../services/earnings.service");
 const { driverProfileWithCar, getDriverById } = require("../../services/driver.service");
 const Package = require("../../models/package.model");
@@ -208,9 +208,9 @@ const updateRideStatus = async (req, res) => {
   const { status } = req.body;
 
   try {
-    const ride= await getRideByIdData(driver_id, ride_id);
+    const ride = await getRideByIdData(driver_id, ride_id);
     if (ride.status !== "accepted") {
-        throw new Error("Ride must be in 'accepted' status to start or cancel");
+      throw new Error("Ride must be in 'accepted' status to start or cancel");
     }
 
     ride.status = status;
@@ -219,7 +219,7 @@ const updateRideStatus = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `Ride status updated to '${status}'`,
-      data:ride
+      data: ride
     });
   } catch (error) {
     return res.status(400).json({
@@ -255,6 +255,7 @@ const getRidesByStatus = async (req, res) => {
   }
 };
 
+//7 driver can create a new ride and they got commission when ride is completed.
 const upsertRide = async (req, res) => {
   const driver_id = req.driver?.id;
   if (!driver_id) {
@@ -437,5 +438,6 @@ module.exports = {
   updateRideStatus,
   getRidesByStatus,
   upsertRide,
-  earningsHistory
+  earningsHistory,
+  endRide,
 };

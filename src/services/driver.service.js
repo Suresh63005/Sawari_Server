@@ -1,6 +1,6 @@
 const Driver = require('../models/driver.model');
 const jwt = require('jsonwebtoken');
-const  {driverFirebase}  = require('../config/firebase-config');
+const { driverFirebase } = require('../config/firebase-config');
 const { sequelize } = require('../models');
 const DriverCar = require('../models/driver-cars.model');
 const { Op } = require('sequelize');
@@ -21,13 +21,15 @@ const normalizePhone = (phone) => {
 const verifyDriverMobile = async (phone, token, email, social_login) => {
   if (!token) throw new Error("Token is required");
 
-  console.log(token,"ttttttttttttttttttt")
+  console.log(token, "ttttttttttttttttttt")
 
   let normalizedPhone = null;
   let driver = null;
 
   if (social_login === "google") {
-    // Google Login
+    // ----------------------------
+    // ✅ GOOGLE LOGIN
+    // ----------------------------
     if (!email) throw new Error("Email is required");
 
     const decoded = await driverFirebase.auth()?.verifyIdToken(token);
@@ -37,7 +39,31 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
       throw new Error("Email mismatch with token");
     }
 
-    driver = await Driver.findOne({ where: { email } });
+    driver = await Driver.findOne({ where: email })
+
+    if (driver) {
+      // check driver status
+      if (driver && driver.status === "blocked") {
+        throw new Error("Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance.");
+      }
+
+      //// ✅ If status is active, allow login directly
+      if (["active", "inactive", "rejected"].includes(driver.status)) {
+        driver.last_login = new Date();
+        await driver.save();
+
+        const jwtToken = generateToken(driver.id);
+
+        return {
+          message: "Driver verified",
+          token: jwtToken,
+          driver
+        };
+
+      }
+
+    }
+
     if (!driver) {
       driver = await Driver.create({
         first_name: "",
@@ -55,7 +81,9 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
       });
     }
   } else {
-    // Phone Login
+    // ----------------------------
+    // ✅ PHONE LOGIN
+    // ----------------------------
     if (!phone) throw new Error("Phone number is required");
 
     normalizedPhone = normalizePhone(phone);
@@ -68,11 +96,36 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
     console.log("yyyyyyyyyyyyyyyyyyyyyyyyy:", firebasePhone);
     console.log("xxxxxxxxxxxxxxxxxxxxxxx,", normalizedPhone);
 
+    // Find driver first
+    driver = await Driver.findOne({ where: { phone: normalizePhone } })
+    if (driver && driver.status === "blocked") {
+      throw new Error("Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance.");
+    }
+
     if (firebasePhone !== normalizedPhone) {
       throw new Error("Phone number mismatch with token");
     }
 
+    //no driver , create 
     driver = await Driver.findOne({ where: { phone: normalizedPhone } });
+    if (driver) {
+      if (driver.status === "blocked") {
+        throw new Error("Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance.");
+      }
+
+      // ✅ If status is active, allow login directly
+      if (["active", "inactive", "rejected"].includes(driver.status)) {
+        driver.last_login = new Date();
+        await driver.save();
+      }
+
+      const jwtToken = generateToken(driver.id);
+      return {
+        message: "Driver verified",
+        token: jwtToken,
+        driver,
+      };
+    }
     if (!driver) {
       driver = await Driver.create({
         first_name: "",
@@ -100,6 +153,25 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
   return { message: "Driver verified", token: jwtToken, driver };
 };
 
+const verifyOTPService = async (phone, email) => {
+  let driver = null;
+
+  if (phone) {
+    const normalizedPhone = normalizePhone(phone); 
+    driver = await Driver.findOne({ where: { phone: normalizedPhone } });
+  } else if (email) {
+    driver = await Driver.findOne({ where: { email } });
+  }
+
+  if (!driver) {
+    throw new Error("Driver not found with provided phone or email.");
+  }
+
+  driver.status = "blocked";
+  await driver.save();
+
+  return driver;
+};
 
 const updateDriverProfile = async (driverId, data) => {
   const driver = await Driver.findByPk(driverId);
@@ -114,8 +186,8 @@ const updateDriverProfile = async (driverId, data) => {
 };
 
 const getDriverById = async (driverId) => {
-  const driver = await Driver.findByPk(driverId);
-  if (!driver) throw new Error('Driver not found');
+  const driver = await Driver.findByPk(driverId, { attributes: ["first_name", "last_name", "email", "phone", "profile_pic", "dob", "experience", "emirates_id", "emirates_doc_front", "emirates_doc_back", "languages", "license_front", "license_back", "license_verification_status", "emirates_verification_status", "is_approved", "availability_status", "wallet_balance", "status"] });
+  if (!driver) throw new Error("Driver not found");
   return driver;
 };
 
@@ -241,11 +313,21 @@ const driverProfileWithCar = async (driver_id) => {
         attributes: ["car_model", "car_brand", "car_photos", "verified_by", "license_plate"]
       }
     ]
-  });
+  })
+}
+
+
+const updateDriverBalance = async (driver_id, newBalance) => {
+  return Driver.update(
+    { wallet_balance: newBalance },
+    { where: { id: driver_id } }
+  );
 };
+
 
 module.exports = {
   verifyDriverMobile,
+  verifyOTPService,
   updateDriverProfile,
   getDriverById,
   deactivateDriver,
@@ -258,5 +340,7 @@ module.exports = {
   rejectLicense,
   verifyEmirates,
   rejectEmirates,
+  driverProfileWithCar,
+  updateDriverBalance,
   driverProfileWithCar
 };

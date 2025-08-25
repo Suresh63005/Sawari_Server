@@ -314,7 +314,6 @@ module.exports = {
     acceptRide,
     DriverStatus,
     RideDetails,
-    
     getCompletedOrCancelledAndAcceptedRides,
     upsertRide,
     getDriverEarningsHistory
