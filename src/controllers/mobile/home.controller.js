@@ -1,6 +1,6 @@
 const { Op } = require("sequelize");
 const HomeService = require("../../services/home.service");
-const { conditionalRides, getRideById, getRideByIdData, rideStatuUpdate } = require("../../services/ride.service");
+const { conditionalRides, getRideById, getRideByIdData } = require("../../services/ride.service");
 const { getEarningsSum } = require("../../services/earnings.service");
 const { driverProfileWithCar, getDriverById } = require("../../services/driver.service");
 const Package = require("../../models/package.model");
@@ -64,10 +64,19 @@ const getAllHomeData = async (req, res) => {
     });
 
     // 5. Available Rides (unassigned)
+    const driverCar = await getDriverCarByDriverId(driver_id);
+    if(!driverCar){
+      return res.status(404).json({
+        success:false,
+        message:"Driver has no registered car."
+      })
+    }
+
     const availableRides = await conditionalRides({
       where: {
         driver_id: null,
-        status: "pending"
+        status: "pending",
+        car_model:driverCar.car_model
       },
       attributes: [
         "id","customer_name", "email", "phone", "pickup_address", "pickup_location",
@@ -208,9 +217,9 @@ const updateRideStatus = async (req, res) => {
   const { status } = req.body;
 
   try {
-    const ride = await getRideByIdData(driver_id, ride_id);
+    const ride= await getRideByIdData(driver_id, ride_id);
     if (ride.status !== "accepted") {
-      throw new Error("Ride must be in 'accepted' status to start or cancel");
+        throw new Error("Ride must be in 'accepted' status to start or cancel");
     }
 
     ride.status = status;
@@ -219,7 +228,7 @@ const updateRideStatus = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `Ride status updated to '${status}'`,
-      data: ride
+      data:ride
     });
   } catch (error) {
     return res.status(400).json({
@@ -255,7 +264,6 @@ const getRidesByStatus = async (req, res) => {
   }
 };
 
-//7 driver can create a new ride and they got commission when ride is completed.
 const upsertRide = async (req, res) => {
   const driver_id = req.driver?.id;
   if (!driver_id) {
@@ -438,6 +446,5 @@ module.exports = {
   updateRideStatus,
   getRidesByStatus,
   upsertRide,
-  earningsHistory,
-  endRide,
+  earningsHistory
 };
