@@ -158,6 +158,12 @@ const Driver = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    document_check_count: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+
   },
   {
     tableName: "Driver",
