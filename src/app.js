@@ -15,8 +15,6 @@ const loadRoutes = require('./routes/index');
 const reddisConnect = require("./config/connectRedis");
 const CacheManager=require("./utils/cache-manager");
 const Ticket = require('./models/ticket.model');
-const { isAuthenticated } = require('./middlewares/mobile/authMiddleware');
-const { addMoneyToWallet } = require('./controllers/mobile/wallet.controller');
 
 const app = express();
 const port = process.env.PORT || 4445;
@@ -152,5 +150,4 @@ const startServer = async () => {
 
 startServer()
 
-app.post("/add-money",isAuthenticated,addMoneyToWallet)
 module.exports = app;
