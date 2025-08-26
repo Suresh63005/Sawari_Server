@@ -8,6 +8,7 @@ const SubPackage = require("../../models/sub-package.model");
 const Ride = require("../../models/ride.model");
 const driverCarService = require('../../services/driverCar.service'); 
 const Car = require("../../models/cars.model");
+const Driver = require("../../models/driver.model");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -144,24 +145,46 @@ const acceptRide = async (req, res) => {
   }
 
   try {
-    const rideGetById = await getRideById(ride_id);
+    // 1. Fetch ride
+    const ride = await getRideById(ride_id);
     // console.log(rideGetById,"iddddddddddddddddddddddddd")
-    if (!rideGetById) {
+    if (!ride) {
       return res.status(404).json({
         success: false,
         message: "Ride not found."
       });
     }
 
-    const result = await Ride.update(
-      { driver_id, status: "accepted" },
+    // 2. Fetch driver wallet
+    const driver = await Driver.findByPk(driver_id,{
+      attributes:["id","wallet_balance"]
+    })
+
+    if(!driver){
+      return res.status(404).json({
+        success:false,
+        message:"Driver not found."
+      })
+    }
+
+    // 3. Check the wallet balance vs ride total
+    if(!driver.wallet_balance || parseFloat(driver.wallet_balance) < parseFloat(ride.Total)) {
+      return res.status(403).json({
+        success:false,
+        message:"Insufficient wallet balance to accept this ride."
+      })
+    }
+
+    // 4. Update ride
+    await Ride.update(
+      { driver_id, status: "accepted", accept_time: new Date() },
       { where: { id: ride_id } }
     );
     
     return res.status(200).json({
       success: true,
       message: "Ride accepted successfully!",
-      data: rideGetById,
+      data: ride,
     });
   } catch (error) {
     console.error("Error accepting ride:", error);
