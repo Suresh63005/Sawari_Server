@@ -77,9 +77,9 @@ const verifyPayment = async (req, res) => {
   try {
     const secret = process.env.KEY_SECRET;
     const generatedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(`${order_id}|${payment_id}`)
-      .digest("hex");
+        .createHmac("sha256", process.env.KEY_SECRET)
+        .update(order_id + "|" + payment_id)
+        .digest("hex");
 
     if (generatedSignature !== signature) {
       return res.status(401).json({ success: false, message: "Invalid signature" });
