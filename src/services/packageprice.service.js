@@ -163,11 +163,33 @@ const getSubPackagesByPackageId = async (package_id) => {
   };
 };
 
+// Fetch Price by package_id, sub_package_id, car_id
+const getPrice = async (package_id, sub_package_id, car_id) => {
+  if (!package_id || !sub_package_id || !car_id) {
+    throw new Error("Missing required parameters");
+  }
+
+  const price = await PackagePrice.findOne({
+    where: {
+      package_id,
+      sub_package_id,
+      car_id,
+    },
+  });
+
+  if (!price) {
+    throw new Error("Price not found");
+  }
+
+  return packagePriceResponseDTO(price);
+};
+
 module.exports = {
   upsertPackagePrice,
   getAllPackagePrices,
   getPackagePriceById,
   deletePackagePriceById,
+  getPrice,
   togglePackagePriceStatus,
   getSubPackagesByPackageId,
 };

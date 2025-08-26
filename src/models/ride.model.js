@@ -37,11 +37,11 @@ const Ride = sequelize.define(
       allowNull: true,
     },
     pickup_location: {
-      type: DataTypes.STRING,
+      type: DataTypes.JSON,
       allowNull: false,
     },
     drop_location: {
-      type: DataTypes.STRING,
+      type: DataTypes.JSON,
       allowNull: true,
     },
     ride_date: {

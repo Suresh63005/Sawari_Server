@@ -6,6 +6,8 @@ const { driverProfileWithCar, getDriverById } = require("../../services/driver.s
 const Package = require("../../models/package.model");
 const SubPackage = require("../../models/sub-package.model");
 const Ride = require("../../models/ride.model");
+const driverCarService = require('../../services/driverCar.service'); 
+const Car = require("../../models/cars.model");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -64,7 +66,7 @@ const getAllHomeData = async (req, res) => {
     });
 
     // 5. Available Rides (unassigned)
-    const driverCar = await getDriverCarByDriverId(driver_id);
+    const driverCar = await driverCarService.getDriverCarByDriverId(driver_id);
     if(!driverCar){
       return res.status(404).json({
         success:false,
@@ -76,13 +78,23 @@ const getAllHomeData = async (req, res) => {
       where: {
         driver_id: null,
         status: "pending",
-        car_model:driverCar.car_model
       },
       attributes: [
         "id","customer_name", "email", "phone", "pickup_address", "pickup_location",
         "drop_location", "scheduled_time", "pickup_time", "dropoff_time","Price"
       ],
       include:[
+        {
+          model:Car,
+          as:"Car",
+          attributes:["id","brand","model"],
+          where: {
+            [Op.or]: [
+              { model: driverCar.car_model },   // correct case
+              { brand: driverCar.car_model }    // fallback if stored wrongly
+            ]
+          }
+        },
         {
           model: Package,
           as: "Package",

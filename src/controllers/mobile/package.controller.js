@@ -1,6 +1,7 @@
 const CarService = require("../../services/car.service");
 const PackageService = require("../../services/package.service");
 const SubPackageService = require("../../services/subPackage.service");
+const PackagePriceService = require("../../services/packageprice.service");
 
 
 // controller to get all packages
@@ -62,9 +63,22 @@ const getAllCarsBySubPackageId = async (req, res) => {
   }
 };
 
+// Fetch Price by package_id, sub_package_id, car_id
+const getPrice = async (req, res) => {
+  const { package_id, sub_package_id, car_id } = req.params;
+
+  try {
+    const price = await PackagePriceService.getPrice(package_id, sub_package_id, car_id);
+    return res.status(200).json({ message: "Price fetched successfully", data: price });
+  } catch (error) {
+    console.error("Error in getPrice:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
 
 module.exports={
     getAllPackages,
     getSubPackagesByPackageId,
-    getAllCarsBySubPackageId
+    getAllCarsBySubPackageId,
+    getPrice
 };
