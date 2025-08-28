@@ -9,6 +9,8 @@ const Ride = require("../../models/ride.model");
 const driverCarService = require('../../services/driverCar.service'); 
 const Car = require("../../models/cars.model");
 const Driver = require("../../models/driver.model");
+const {Transaction} = require('sequelize');
+const { sequelize } = require("../../models");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -144,23 +146,39 @@ const acceptRide = async (req, res) => {
     });
   }
 
+  const t = await sequelize.transaction({
+    isolationLevel:Transaction.ISOLATION_LEVELS.REPEATABLE_READ
+  })
+
   try {
     // 1. Fetch ride
     const ride = await getRideById(ride_id);
     // console.log(rideGetById,"iddddddddddddddddddddddddd")
     if (!ride) {
+      await t.rollback()
       return res.status(404).json({
         success: false,
         message: "Ride not found."
       });
     }
 
+    if(ride.driver_id || ride.status !== "pending"){
+      await t.rollback()
+      return res.status(409).json({
+        success: false,
+        message: "Ride already accepted by another driver or not available."
+      });
+    }
+
     // 2. Fetch driver wallet
     const driver = await Driver.findByPk(driver_id,{
-      attributes:["id","wallet_balance"]
+      attributes:["id","wallet_balance"],
+      transaction:t,
+      lock:t.LOCK.UPDATE
     })
 
     if(!driver){
+      await t.rollback()
       return res.status(404).json({
         success:false,
         message:"Driver not found."
@@ -169,6 +187,7 @@ const acceptRide = async (req, res) => {
 
     // 3. Check the wallet balance vs ride total
     if(!driver.wallet_balance || parseFloat(driver.wallet_balance) < parseFloat(ride.Total)) {
+      await t.rollback()
       return res.status(403).json({
         success:false,
         message:"Insufficient wallet balance to accept this ride."
@@ -176,10 +195,12 @@ const acceptRide = async (req, res) => {
     }
 
     // 4. Update ride
-    await Ride.update(
+    await ride.update(
       { driver_id, status: "accepted", accept_time: new Date() },
-      { where: { id: ride_id } }
+      { where: { id: ride_id } },
+      { transaction: t }
     );
+    await t.commit()
     
     return res.status(200).json({
       success: true,
@@ -187,6 +208,7 @@ const acceptRide = async (req, res) => {
       data: ride,
     });
   } catch (error) {
+    await t.rollback()
     console.error("Error accepting ride:", error);
 
     return res.status(400).json({

@@ -2,6 +2,7 @@ const { uploadToS3, deleteFromS3 } = require('../../config/fileUpload.aws');
 const driverService = require('../../services/driver.service');
 const driverCarService = require('../../services/driverCar.service');
 const { checkActiveRide } = require('../../services/ride.service');
+const walletService =require('../../services/wallet.service');
 
 const verifyMobile = async (req, res) => {
     try {
@@ -188,6 +189,9 @@ const updateProfileAndCarDetails = async (req, res) => {
         res.status(200).json({ message: 'Driver and vehicle profile submitted successfully.', driver: UpdatedDriver, vehicle });
     } catch (error) {
         console.error('🚨 Submit driver & car profile error:', error);
+        if (error.name === 'SequelizeUniqueConstraintError' && error.fields?.emirates_id) {
+            return res.status(400).json({ error: 'Emirates ID is already in use.' });
+        }
         res.status(500).json({ error: error.message });
     }
 };
@@ -223,11 +227,14 @@ const driverAccountDetails = async (req, res) => {
         // Fetch driver and vehicle details
         const driver = await driverService.getDriverById(driverId);
         const vehicle = await driverCarService.getDriverCarByDriverId(driverId);
+        const walletBalance = await walletService.getWalletBalance(driverId);
+        driver.wallet_balance = walletBalance;
 
         return res.status(200).json({
             message: "Driver account details fetched successfully.",
             driver,
             vehicle,
+            walletBalance
         });
     } catch (error) {
         console.error("Error fetching driver account:", error);

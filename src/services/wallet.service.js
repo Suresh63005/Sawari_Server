@@ -6,7 +6,7 @@ const wallet = async (driver_id) => {
         where: {
             driver_id: driver_id
         },
-        attributes: ["driver_id", "amount", "transaction_date", "description", "status", "createdAt"],
+        attributes: ["driver_id", "amount","transaction_type", "transaction_date", "description", "status", "createdAt"],
         order: [['createdAt', 'DESC']]
     })
 }
@@ -39,8 +39,19 @@ const createWalletReport = async (driver_id, amount, newBalance, order_id, trans
   }
 };
 
+// fetch wallet balance
+const getWalletBalance = async(driver_id)=>{
+    const walletEntries = await WalletReports.findAll({
+        where: { driver_id },
+        attributes: ['transaction_type', 'balance_after'],
+    });
+    if (walletEntries.length === 0) return 0;
+    return walletEntries[0].balance_after;
+}
+
 module.exports = {
     wallet,
-    bulkCreateWalletTransactions ,
+    bulkCreateWalletTransactions,
+    getWalletBalance,
     createWalletReport
 }
