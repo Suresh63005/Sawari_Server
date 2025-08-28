@@ -186,7 +186,7 @@ const updateDriverProfile = async (driverId, data) => {
 };
 
 const getDriverById = async (driverId) => {
-  const driver = await Driver.findByPk(driverId, { attributes: ["id","first_name", "last_name", "email", "phone", "profile_pic", "dob", "experience", "emirates_id", "emirates_doc_front", "emirates_doc_back", "languages", "license_front", "license_back", "license_verification_status", "emirates_verification_status", "is_approved", "availability_status", "wallet_balance", "status","document_check_count"] });
+  const driver = await Driver.findByPk(driverId, { attributes: ["id","first_name", "last_name", "email", "phone", "profile_pic", "dob", "experience","full_address", "emirates_id", "emirates_doc_front", "emirates_doc_back", "languages", "license_front", "license_back", "license_verification_status", "emirates_verification_status", "is_approved", "availability_status", "wallet_balance", "status","document_check_count"] });
   if (!driver) throw new Error("Driver not found");
   return driver;
 };
