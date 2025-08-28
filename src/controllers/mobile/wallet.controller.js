@@ -1,7 +1,7 @@
 const sequelize = require("../../config/db");
 const { razorpayInstance } = require("../../config/razorpay");
 const { getDriverById, updateDriverBalance } = require("../../services/driver.service");
-const { wallet, createWalletReport } = require("../../services/wallet.service");
+const { wallet, createWalletReport,getWalletBalance } = require("../../services/wallet.service");
 const crypto = require("crypto")
 const {v4:uuidv4} = require("uuid")
 
@@ -103,8 +103,28 @@ const verifyPayment = async (req, res) => {
   }
 };
 
+const myWalletBalance = async(req,res)=>{
+  const driver = req.driver?.id;
+  if(!driver) return res.status(401).json({message:"Unauthorized"})
+    try {
+      const balance = await getWalletBalance(driver);
+      return res.status(200).json({
+        success: true,
+        message: "Wallet balance fetched successfully",
+        data: { balance }
+      });
+    } catch (error) {
+      console.error("Error fetching wallet balance:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch wallet balance",
+      });
+    }
+}
+
 module.exports = {
   walletHistory,
   addMoneyToWallet,
+  myWalletBalance,
   verifyPayment
 }
