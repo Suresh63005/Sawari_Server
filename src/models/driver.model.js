@@ -29,7 +29,7 @@ const Driver = sequelize.define(
     },
     phone: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       unique: true
     },
     profile_pic: {
