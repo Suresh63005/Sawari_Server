@@ -157,14 +157,15 @@ const toggleCarStatus = async (id) => {
 const getCarsBySubPackageId = async (sub_package_id) => {
   const packagePrices = await PackagePrice.findAll({
     where: { sub_package_id },
-    include: [{ model: Car, attributes: ['id', 'name'] }],
+    include: [{ model: Car,as:"Car", attributes: ['id', 'brand','model'] }],
   });
   return packagePrices
     .map(pp => pp.Car)
     .filter(car => car)
     .map(car => ({
       id: car.id,
-      name: car.name, // Ensure name is a meaningful field (e.g., "Toyota Camry")
+      brand: car.brand, // Ensure name is a meaningful field (e.g., "Toyota Camry")
+      model:car.model
     }));
 };
 module.exports = {

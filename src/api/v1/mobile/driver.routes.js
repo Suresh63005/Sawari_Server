@@ -5,6 +5,7 @@ const authMiddleware = require('../../../middlewares/mobile/authMiddleware');
 const {upload} = require('../../../utils/multer');
 
 router.post("/verify",driverAuthController.verifyMobile);
+router.post("/status",driverAuthController.blockDriverByIdentifier)
 router.post("/update-profile",
     authMiddleware.isAuthenticated,
     upload.fields([
@@ -22,5 +23,6 @@ router.post("/update-profile",
 );
 router.get("/account-details",authMiddleware.isAuthenticated,driverAuthController.driverAccountDetails)
 router.delete("/account",authMiddleware.isAuthenticated,driverAuthController.deleteAccount)
+router.get("/check-status",authMiddleware.isAuthenticated,driverAuthController.checkStatus);
 
 module.exports = router;
