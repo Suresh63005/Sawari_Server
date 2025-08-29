@@ -3,6 +3,9 @@ const HomeService = require("../../services/home.service");
 const { conditionalRides, getRideById, getRideByIdData } = require("../../services/ride.service");
 const { getEarningsSum } = require("../../services/earnings.service");
 const { driverProfileWithCar, getDriverById } = require("../../services/driver.service");
+const Package = require("../../models/package.model");
+const SubPackage = require("../../models/sub-package.model");
+const Ride = require("../../models/ride.model");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -54,7 +57,7 @@ const getAllHomeData = async (req, res) => {
       },
       attributes: [
         "customer_name", "email", "phone", "pickup_address", "pickup_location",
-        "drop_location", "scheduled_time", "ride_type", "pickup_time", "dropoff_time"
+        "drop_location", "scheduled_time", "pickup_time", "dropoff_time"
       ],
       limit: 10,
       order: [["scheduled_time", "ASC"]]
@@ -67,8 +70,20 @@ const getAllHomeData = async (req, res) => {
         status: "pending"
       },
       attributes: [
-        "customer_name", "email", "phone", "pickup_address", "pickup_location",
-        "drop_location", "scheduled_time", "ride_type", "pickup_time", "dropoff_time"
+        "id","customer_name", "email", "phone", "pickup_address", "pickup_location",
+        "drop_location", "scheduled_time", "pickup_time", "dropoff_time","Price"
+      ],
+      include:[
+        {
+          model: Package,
+          as: "Package",
+          attributes: ["name"]
+        },
+        {
+          model: SubPackage,
+          as: "SubPackage",
+          attributes: ["name"]
+        }
       ],
       limit: 10,
       order: [["scheduled_time", "ASC"]]
@@ -117,14 +132,15 @@ const acceptRide = async (req, res) => {
       });
     }
 
-    rideGetById.driver_id = driver_id;
-    rideGetById.status = "accepted";
-    const result = await rideGetById.save();
+    const result = await Ride.update(
+      { driver_id, status: "accepted" },
+      { where: { id: ride_id } }
+    );
     
     return res.status(200).json({
       success: true,
       message: "Ride accepted successfully!",
-      data: result,
+      data: rideGetById,
     });
   } catch (error) {
     console.error("Error accepting ride:", error);
@@ -141,7 +157,7 @@ const acceptRide = async (req, res) => {
 // 3. Toggle Driver Status (active/inactive)
 const toggleDriverStatus = async (req, res) => {
   const driver_id = req.driver?.id;
-  const { status } = req.body; // expecting "active" or "inactive"
+  const { status } = req.body; // expecting "online" or "offline"
 
   if (!driver_id || !status) {
     return res.status(400).json({ message: "Driver ID and status required." });
@@ -149,8 +165,8 @@ const toggleDriverStatus = async (req, res) => {
 
   try {
     const driverGetById = await getDriverById(driver_id);
-    driverGetById.status=status
-    const result=await driverGetById.save()
+    driverGetById.availability_status=status
+    const result=await driverGetById.save();
     return res.status(200).json({
       success: true,
       message: `Driver status updated to ${status}`,
@@ -260,8 +276,13 @@ const upsertRide = async (req, res) => {
       pickup_location,
       drop_location,
       ride_type,
+      accept_time,
+      package_id,
+      subpackage_id,
+      car_id,
+      Price,
+      Total
     } = req.body;
-    
 
     const ride = await HomeService.upsertRide({
       id,
@@ -274,7 +295,13 @@ const upsertRide = async (req, res) => {
       pickup_address,
       pickup_location,
       drop_location,
-      ride_type
+      ride_type,
+      accept_time,
+      package_id,
+      subpackage_id,
+      car_id,
+      Price,
+      Total
     });
 
     return res.status(200).json({
@@ -287,10 +314,11 @@ const upsertRide = async (req, res) => {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Server error",
+      message: error.message || "Server error",
     });
   }
 };
+
 
 const earningsHistory = async (req, res) => {
   const driver_id = req.driver?.id;
@@ -316,11 +344,95 @@ const earningsHistory = async (req, res) => {
   }
 }
 
+// controller for revealing/after accepting ride
+const releaseDriverFromRide = async (req, res) => {
+  const driver_id = req.driver?.id;
+  const { rideId } = req.params;
+
+  if (!driver_id) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
+  }
+
+  try {
+    const ride = await HomeService.releaseRide(rideId, driver_id);
+    return res.status(200).json({
+      success: true,
+      message: "Driver released from ride successfully",
+      data: ride,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// controller for start the ride
+const startRide = async (req, res) => {
+  const driver_id = req.driver?.id;
+  const { rideId } = req.params;
+
+  if (!driver_id) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
+  }
+
+  try {
+    const ride = await HomeService.startRide(rideId, driver_id);
+    return res.status(200).json({
+      success: true,
+      message: "Ride started successfully",
+      data: ride,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// controller for end the ride
+const endRide = async (req, res) => {
+  const driver_id = req.driver?.id;
+  const { rideId } = req.params;
+
+  if (!driver_id) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
+  }
+
+  try {
+    const ride = await HomeService.endRide(rideId, driver_id);
+    return res.status(200).json({
+      success: true,
+      message: "Ride ended successfully",
+      data: ride,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   getAllHomeData,
   acceptRide,
+  startRide,
+  endRide,
   toggleDriverStatus,
+  releaseDriverFromRide,
   getRideDetails,
   updateRideStatus,
   getRidesByStatus,

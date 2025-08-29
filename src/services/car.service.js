@@ -107,6 +107,16 @@ const getAllCars = async ({ search, limit = 10, page = 1, sortBy = 'createdAt', 
   };
 };
 
+const getCarsForList = async () => {
+  const cars = await Car.findAll({
+    where: { status: 'active' }, // only active cars for list
+    attributes: ['id', 'brand', 'model'], // only essential fields
+    order: [['brand', 'ASC'], ['model', 'ASC']],
+  });
+
+  return cars.map(car => carResponseDTO(car));
+};
+
 // Service to get a car by ID
 const getCarById = async (id) => {
   const car = await Car.findByPk(id);
@@ -163,5 +173,6 @@ module.exports = {
   getCarById,
   deleteCarById,
   toggleCarStatus,
-  getCarsBySubPackageId
+  getCarsBySubPackageId,
+  getCarsForList
 };

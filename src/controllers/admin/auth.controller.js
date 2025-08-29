@@ -66,6 +66,14 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email' });
     }
 
+    // ✅ Check account status
+    if (!admin.status || admin.status !== 'active') {
+      return res.status(403).json({ message: 'This account is inactive. Please contact support.' });
+    }
+    if (admin.status === 'blocked') {
+      return res.status(403).json({ message: 'This account is blocked. Please contact support.' });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, admin.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid password' });
@@ -112,6 +120,7 @@ const login = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 const register = async (req, res) => {
   try {

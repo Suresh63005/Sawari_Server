@@ -2,7 +2,10 @@ const { Op } = require("sequelize");
 const Ride = require("../models/ride.model")
 const Earnings = require("../models/earnings.model")
 const Driver = require("../models/driver.model")
-const DriverCar = require("../models/driver-cars.model")
+const DriverCar = require("../models/driver-cars.model");
+const Package = require("../models/package.model");
+const SubPackage = require("../models/sub-package.model");
+const Car = require("../models/cars.model");
 
 const acceptRide = async (ride_id, driver_id) => {
     const ride = await Ride.findOne({
@@ -74,60 +77,88 @@ const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
     return rides;
 };
 
+
 const upsertRide = async (rideData) => {
-    const {
-        id,
-        driver_id,
-        customer_name,
-        phone,
-        email,
-        car_model,
-        pickup_time,
-        pickup_address,
-        pickup_location,
-        drop_location,
-        ride_type
-    } = rideData;
+  const {
+    id,
+    driver_id,
+    customer_name,
+    phone,
+    email,
+    car_model,
+    pickup_time,
+    pickup_address,
+    pickup_location,
+    drop_location,
+    ride_type,
+    accept_time,
+    package_id,
+    subpackage_id,
+    car_id,
+    Price,
+    Total
+  } = rideData;
 
-    if (id) {
+  // ✅ Validate related IDs
+  const pkg = await Package.findByPk(package_id);
+  if (!pkg) throw new Error("Invalid package_id");
 
-        const ride = await Ride.findByPk(id);
-        if (!ride) {
-            throw new Error("Ride not found");
-        }
+  const subPkg = await SubPackage.findByPk(subpackage_id);
+  if (!subPkg) throw new Error("Invalid subpackage_id");
 
-        await ride.update({
-            initiated_by_driver_id: driver_id,
-            customer_name,
-            phone,
-            email,
-            car_model,
-            pickup_time,
-            pickup_address,
-            pickup_location,
-            drop_location,
-            ride_type
-        });
+  const car = await Car.findByPk(car_id);
+  if (!car) throw new Error("Invalid car_id");
 
-        return ride;
-    } else {
-
-        const newRide = await Ride.create({
-            initiated_by_driver_id: driver_id,
-            customer_name,
-            phone,
-            email,
-            car_model,
-            pickup_time,
-            pickup_address,
-            pickup_location,
-            drop_location,
-            ride_type
-        });
-
-        return newRide;
+  if (id) {
+    const ride = await Ride.findByPk(id);
+    if (!ride) {
+      throw new Error("Ride not found");
     }
+
+    await ride.update({
+      initiated_by_driver_id: driver_id,
+      customer_name,
+      phone,
+      email,
+      car_model,
+      pickup_time,
+      pickup_address,
+      pickup_location: JSON.stringify(pickup_location), // stringify object
+      drop_location: JSON.stringify(drop_location),     // stringify object
+      ride_type,
+      accept_time,
+      package_id,
+      subpackage_id,
+      car_id,
+      Price,
+      Total,
+    });
+
+    return ride;
+  } else {
+    const newRide = await Ride.create({
+      initiated_by_driver_id: driver_id,
+      customer_name,
+      phone,
+      email,
+      car_model,
+      pickup_time,
+      pickup_address,
+      pickup_location: JSON.stringify(pickup_location),
+      drop_location: JSON.stringify(drop_location),
+      ride_type,
+      accept_time,
+      package_id,
+      subpackage_id,
+      car_id,
+      Price,
+      Total,
+    });
+
+    return newRide;
+  }
 };
+
 
 const getDriverEarningsHistory = async (driver_id, sortMonth = null) => {
     const today = new Date();
@@ -213,8 +244,73 @@ const getDriverEarningsHistory = async (driver_id, sortMonth = null) => {
     }
 }
 
+
+// Service for relieving driver from a ride
+const releaseRide = async (rideId, driver_id) => {
+    const ride = await Ride.findOne({
+        where: {
+            id: rideId,
+            driver_id: driver_id,
+            status: "accepted"
+        }
+    });
+
+    if (!ride) {
+        throw new Error("Ride not found or cannot be released.");
+    }
+
+    ride.driver_id = null;
+    ride.status = "pending";
+    await ride.save();
+
+    return ride;
+};
+
+// Start the ride service
+const startRide = async (rideId, driver_id) => {
+    const ride = await Ride.findOne({
+        where: {
+            id: rideId,
+            driver_id: driver_id,
+            status: "accepted"
+        }
+    });
+
+    if (!ride) {
+        throw new Error("Ride not found or cannot be started.");
+    }
+
+    ride.status = "on-route";
+    await ride.save();
+
+    return ride;
+};
+
+// service for end the ride
+const endRide = async (rideId, driver_id) => {
+    const ride = await Ride.findOne({
+        where: {
+            id: rideId,
+            driver_id: driver_id,
+            status: "on-route"
+        }
+    });
+
+    if (!ride) {
+        throw new Error("Ride not found or cannot be ended.");
+    }
+
+    ride.status = "completed";
+    await ride.save();
+
+    return ride;
+};
+
+
 module.exports = {
-    
+    releaseRide,
+    startRide,
+    endRide,
     acceptRide,
     DriverStatus,
     RideDetails,

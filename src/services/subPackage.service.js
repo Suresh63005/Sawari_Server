@@ -105,6 +105,14 @@ const getAllSubPackages = async ({
     limit: parseInt(limit),
   };
 };
+const getActiveSubPackages = async () => {
+  const subPackages = await SubPackage.findAll({
+    where: { status: true }, // only active
+    order: [["createdAt", "DESC"]],
+  });
+
+  return subPackages.map(subPackageResponseDTO);
+};
 
 // Get by ID
 const getSubPackageById = async (id) => {
@@ -167,4 +175,5 @@ module.exports = {
   deleteSubPackageById,
   toggleSubPackageStatus,
   getSubPackagesByPackageId,
+  getActiveSubPackages
 };

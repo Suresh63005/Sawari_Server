@@ -130,6 +130,15 @@ const getCarsBySubPackageId = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 }
+const getCarsForListController = async (req, res) => {
+  try {
+    const result = await carService.getCarsForList();
+    res.json(result);
+  } catch (error) {
+    console.error("Error in getCarsForListController:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 module.exports = {
   upsertCar,
   getAllCars,
@@ -137,4 +146,5 @@ module.exports = {
   deleteCarById,
   toggleCarStatus,
   getCarsBySubPackageId,
+  getCarsForListController
 };

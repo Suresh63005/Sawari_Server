@@ -5,8 +5,9 @@ const driverCarService = require('../../services/driverCar.service');
 const verifyMobile = async(req,res)=>{
     try {
         console.log("🔐 VERIFY endpoint hit");
-        const {phone} = req.body
-        const result = await driverService.verifyDriverMobile(phone);
+         
+        const {phone,token,email,social_login} = req.body
+        const result = await driverService.verifyDriverMobile(phone, token, email, social_login);
         res.status(200).json({result})
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -70,7 +71,7 @@ const updateProfileAndCarDetails = async(req,res)=>{
         // Handle profile related file uploads
         const profileFields = [
             'profile_pic', 'emirates_doc_front', 'emirates_doc_back',
-            'license_front', 'license_back'
+            'license_front', 'license_back',
         ];
 
         for (const field of profileFields) {
@@ -103,6 +104,8 @@ const updateProfileAndCarDetails = async(req,res)=>{
 
         await driverService.updateDriverProfile(driverId,updatedDriverData);
 
+        const UpdatedDriver = await driverService.getDriverById(driverId);
+
         // Handle Vehicle/ Car info
         const carData = {
             car_model:req.body.car_model,
@@ -119,6 +122,17 @@ const updateProfileAndCarDetails = async(req,res)=>{
         if (req.files?.rc_doc) {
             carData.rc_doc = await uploadToS3(req.files.rc_doc[0], 'driver-cars');
         }
+        if (req.files?.rc_doc_back) {
+          
+            const uploadResult = await uploadToS3(req.files.rc_doc_back[0], 'driver-cars');
+           
+            // If rc_doc_back
+            carData.rc_doc_back = uploadResult;
+            
+            
+            
+            console.log()
+        }
         if (req.files?.insurance_doc) {
             carData.insurance_doc = await uploadToS3(req.files.insurance_doc[0], 'driver-cars');
         }
@@ -127,10 +141,10 @@ const updateProfileAndCarDetails = async(req,res)=>{
         carData.insurance_doc_status = 'pending';
 
         // Save or update car details
-        await driverCarService.upsertDriverCar(driverId, carData);
+       await driverCarService.upsertDriverCar(driverId, carData);
         const vehicle = await driverCarService.getDriverCarByDriverId(driverId);
 
-        res.status(200).json({ message: 'Driver and vehicle profile submitted successfully.',driver, vehicle });
+        res.status(200).json({ message: 'Driver and vehicle profile submitted successfully.',driver:UpdatedDriver, vehicle });
     } catch (error) {
         console.error('Submit driver & car profile error:', error);
         res.status(500).json({ error: error.message });

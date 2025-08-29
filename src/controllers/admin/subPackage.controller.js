@@ -20,6 +20,16 @@ const getAllSubPackages = async (req, res) => {
   }
 };
 
+
+const getActiveSubPackagesController = async (req, res) => {
+  try {
+    const result = await subPackageService.getActiveSubPackages();
+    res.json(result);
+  } catch (error) {
+    console.error("Error in getActiveSubPackagesController:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 // Get by ID
 const getSubPackageById = async (req, res) => {
   try {
@@ -71,4 +81,5 @@ module.exports = {
   getSubPackagesByPackageId,
   deleteSubPackageById,
   toggleSubPackageStatus,
+  getActiveSubPackagesController
 };

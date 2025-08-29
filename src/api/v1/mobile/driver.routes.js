@@ -15,6 +15,7 @@ router.post("/update-profile",
         { name: 'license_back', maxCount: 1 },
         { name: 'car_photos', maxCount: 5 },
         { name: 'rc_doc', maxCount: 1 },
+        { name: 'rc_doc_back', maxCount: 1 },
         { name: 'insurance_doc', maxCount: 1 },
     ]),
     driverAuthController.updateProfileAndCarDetails

@@ -57,8 +57,7 @@ exports.verifyRc = async (req, res) => {
 exports.rejectRc = async (req, res) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
-    await vehicleService.rejectRc(id, reason, req.user.id);
+    await vehicleService.rejectRc(id, req.user.id);
     res.status(200).json({ message: 'RC document rejected' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -78,8 +77,7 @@ exports.verifyInsurance = async (req, res) => {
 exports.rejectInsurance = async (req, res) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
-    await vehicleService.rejectInsurance(id, reason, req.user.id);
+    await vehicleService.rejectInsurance(id, req.user.id);
     res.status(200).json({ message: 'Insurance document rejected' });
   } catch (error) {
     res.status(500).json({ message: error.message });
