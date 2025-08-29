@@ -462,6 +462,16 @@ const getRideByIdData=async(driver_id,ride_id)=>{
         },
         // attributes: ["customer_name", "pickup_location", "drop_location", "status"],
         include: [
+          {
+            model:Package,
+            as:"Package",
+            include:[
+              {
+                model:SubPackage,
+                as:"PackageRates"
+              }
+            ]
+          },
             {
                 model: Earnings,
                 as: "Earnings",

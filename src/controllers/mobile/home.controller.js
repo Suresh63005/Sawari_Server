@@ -467,7 +467,7 @@ const startRide = async (req, res) => {
   }
 };
 
-// controller for end the ride
+// controller for end the ride and create earning entry
 const endRide = async (req, res) => {
   const driver_id = req.driver?.id;
   const { rideId } = req.params;
