@@ -4,6 +4,7 @@ const PackagePrice = require('../models/packageprice.model');
 const Package = require('../models/package.model');
 const SubPackage = require('../models/sub-package.model');
 const Car = require('../models/cars.model');
+const Earnings = require('../models/earnings.model');
 
 // Response DTO
 const rideResponseDTO = (ride) => ({
@@ -459,7 +460,7 @@ const getRideByIdData=async(driver_id,ride_id)=>{
                 { initiated_by_driver_id: driver_id }
             ]
         },
-        attributes: ["customer_name", "pickup_location", "drop_location", "status", "ride_type"],
+        // attributes: ["customer_name", "pickup_location", "drop_location", "status"],
         include: [
             {
                 model: Earnings,
