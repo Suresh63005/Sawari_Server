@@ -90,6 +90,7 @@ const upsertRide = async (rideData) => {
     pickup_address,
     pickup_location,
     drop_location,
+    drop_address,
     ride_type,
     accept_time,
     package_id,
@@ -125,6 +126,7 @@ const upsertRide = async (rideData) => {
       pickup_address,
       pickup_location: JSON.stringify(pickup_location), // stringify object
       drop_location: JSON.stringify(drop_location),     // stringify object
+      drop_address,
       ride_type,
       accept_time,
       package_id,
