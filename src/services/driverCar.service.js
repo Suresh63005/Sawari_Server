@@ -5,6 +5,7 @@ const carDTO = (data) => {
   return {
     car_model: data.car_model,
     car_brand: data.car_brand,
+    color: data.color || null,
     license_plate: data.license_plate,
     car_photos: data.car_photos || [],
     rc_doc: data.rc_doc,
@@ -33,6 +34,7 @@ const carResponseDTO = (data) => {
     driver_id: data.driver_id,
     car_model: data.car_model,
     car_brand: data.car_brand,
+    color: data.color,
     license_plate: data.license_plate,
     car_photos: carPhotos,
     rc_doc: data.rc_doc,
