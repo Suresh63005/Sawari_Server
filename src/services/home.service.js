@@ -165,87 +165,84 @@ const upsertRide = async (rideData) => {
 
 const getDriverEarningsHistory = async (driver_id, sortMonth = null) => {
     const today = new Date();
-    const startOfToday = new Date(today.setHours(0, 0, 0, 0));
-    const endOfToday = new Date(today.setHours(23, 59, 59, 999));
 
-    const startOfWeek = new Date();
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-    startOfWeek.setHours(0, 0, 0, 0)
+    // Today range
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
-    const endOfWeek = new Date();
+    // Week range
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999)
+    endOfWeek.setHours(23, 59, 59, 999);
 
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1)
-    startOfMonth.setHours(0, 0, 0, 0)
+    // Month range (default current month)
+    let startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0);
+    let endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
 
-    const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0);
-    endOfMonth.setHours(23, 59, 59, 999);
-
-    let monthFilteredEarnings = [];
+    // If sortMonth is provided → override month range
     if (sortMonth) {
         const [year, month] = sortMonth.split("-");
-        const start = new Date(year, parseInt(month) - 1, 1, 0, 0, 0);
-        const end = new Date(year, parseInt(month), 0, 23, 59, 59);
-
-        monthFilteredEarnings = await Earnings.findAll({
-            where: {
-                driver_id: driver_id,
-                createdAt: {
-                    [Op.between]: [start, end]
-                },
-                status: "processed"
-            },
-            include:[
-                {
-                    model:Ride,
-                    as:"Ride",
-                }
-            ],
-            order: [['createdAt', 'DESC']]
-
-        })
+        startOfMonth = new Date(year, parseInt(month) - 1, 1, 0, 0, 0);
+        endOfMonth = new Date(year, parseInt(month), 0, 23, 59, 59);
     }
 
+    // Fetch today’s earnings
     const todayEarnings = await Earnings.sum("amount", {
         where: {
-            driver_id: driver_id,
-            createdAt: {
-                [Op.between]: [startOfToday, endOfToday]
-            },
+            driver_id,
+            createdAt: { [Op.between]: [startOfToday, endOfToday] },
             status: "processed"
         }
-    })
+    });
 
-    const weekEarnings  = await Earnings.sum("amount",{
+    // Fetch weekly earnings
+    const weekEarnings = await Earnings.sum("amount", {
         where: {
-            driver_id: driver_id,
-            createdAt: {
-                [Op.between]: [startOfWeek, endOfWeek]
-            },
+            driver_id,
+            createdAt: { [Op.between]: [startOfWeek, endOfWeek] },
             status: "processed"
         }
-    })
+    });
 
+    // Fetch month earnings (current month or requested)
     const monthEarnings = await Earnings.sum("amount", {
         where: {
-            driver_id: driver_id,
-            createdAt: {
-                [Op.between]: [startOfMonth, endOfMonth]
-            },
+            driver_id,
+            createdAt: { [Op.between]: [startOfMonth, endOfMonth] },
             status: "processed"
         }
-    })
+    });
+
+    // Fetch month earnings details (for listing rides)
+    const monthEarningsDetails = await Earnings.findAll({
+        where: {
+            driver_id,
+            createdAt: { [Op.between]: [startOfMonth, endOfMonth] },
+            status: "processed"
+        },
+        include: [
+            {
+                model: Ride,
+                as: "Ride"
+            }
+        ],
+        order: [["createdAt", "DESC"]]
+    });
 
     return {
         todayEarnings: todayEarnings || 0,
         weekEarnings: weekEarnings || 0,
         monthEarnings: monthEarnings || 0,
-        sortedMonth: sortMonth || null,
-        sortedMonthEarnings: monthFilteredEarnings
-    }
-}
+        selectedMonth: sortMonth || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`,
+        monthEarningsDetails
+    };
+};
+
+module.exports = { getDriverEarningsHistory };
 
 
 // Service for relieving driver from a ride
