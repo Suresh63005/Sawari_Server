@@ -6,6 +6,7 @@ const DriverCar = require("../models/driver-cars.model");
 const Package = require("../models/package.model");
 const SubPackage = require("../models/sub-package.model");
 const Car = require("../models/cars.model");
+const Settings = require("../models/settings.model");
 
 const acceptRide = async (ride_id, driver_id) => {
     const ride = await Ride.findOne({
@@ -303,9 +304,28 @@ const endRide = async (rideId, driver_id) => {
     }
 
     ride.status = "completed";
+    ride.dropoff_time = new Date();
     await ride.save();
 
-    return ride;
+    // get tax/commisstion percentage from settings table
+    const settings = await Settings.findOne();
+    const percentage = settings?.tax_rate || 0;
+
+    // Calculate commission and driver's earnings
+    const amount = parseFloat(ride.Total) || 0;
+    const commission = (amount * percentage) / 100;
+
+    // create earnings record
+    const earnings = await Earnings.create({
+        driver_id: driver_id,
+        ride_id: ride.id,
+        amount,
+        commission,
+        percentage,
+        // payment_method:ride.payment_method,
+        status: "pending"
+    })
+    return {ride,earnings};
 };
 
 

@@ -483,7 +483,7 @@ const endRide = async (req, res) => {
     const ride = await HomeService.endRide(rideId, driver_id);
     return res.status(200).json({
       success: true,
-      message: "Ride ended successfully",
+      message: "Ride ended successfully and earning recorded",
       data: ride,
     });
   } catch (error) {
