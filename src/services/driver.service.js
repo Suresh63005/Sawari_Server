@@ -4,6 +4,7 @@ const { driverFirebase } = require('../config/firebase-config');
 const { sequelize } = require('../models');
 const DriverCar = require('../models/driver-cars.model');
 const { Op } = require('sequelize');
+const Ride = require('../models/ride.model');
 
 const generateToken = (driverId) => {
   return jwt.sign({ id: driverId }, process.env.JWT_SECRET);
@@ -324,6 +325,22 @@ const updateDriverBalance = async (driver_id, newBalance) => {
   );
 };
 
+const checkActiveRide= async (driver_id, status = ["pending", "accepted", "on-route"]) => {
+  try {
+    const activeRides = await Ride.findAll({
+      where: {
+        driver_id,
+        status: {
+          [Op.in]: status
+        }
+      }
+    });
+    return activeRides;
+  } catch (error) {
+    console.error('checkActiveRide error:', error);
+    throw error;
+  }
+};
 
 module.exports = {
   verifyDriverMobile,
@@ -342,5 +359,6 @@ module.exports = {
   rejectEmirates,
   driverProfileWithCar,
   updateDriverBalance,
-  driverProfileWithCar
+  driverProfileWithCar,
+  checkActiveRide
 };
