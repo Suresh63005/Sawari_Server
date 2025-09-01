@@ -22,7 +22,7 @@ router.post("/update-profile",
     driverAuthController.updateProfileAndCarDetails
 );
 router.get("/account-details",authMiddleware.isAuthenticated,driverAuthController.driverAccountDetails)
-router.delete("/account",authMiddleware.isAuthenticated,driverAuthController.deleteAccount)
+router.put("/delete-account",authMiddleware.isAuthenticated,driverAuthController.deleteAccount)
 router.get("/check-status",authMiddleware.isAuthenticated,driverAuthController.checkStatus);
 
 module.exports = router;

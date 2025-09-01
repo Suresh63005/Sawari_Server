@@ -521,6 +521,8 @@ const getRidesByStatusAndDriver = async (status, driverId) => {
 };
 
 
+
+
 module.exports = {
   createRide,
   updateRide,
