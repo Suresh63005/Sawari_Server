@@ -37,6 +37,11 @@ const Ticket = sequelize.define(
       defaultValue: "open",
       allowNull: false,
     },
+    images:{
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: [],
+    },
     priority: {
       type: DataTypes.ENUM("low", "medium", "high", "urgent"),
       defaultValue: "medium",
