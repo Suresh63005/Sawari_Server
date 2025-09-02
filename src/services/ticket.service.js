@@ -125,17 +125,38 @@ const getTickets = async (filters = {}) => {
   try {
     const { raised_by } = filters;
     const whereClause = {};
+
     if (raised_by) {
       whereClause.raised_by = raised_by;
     }
+
     const tickets = await Ticket.findAll({
       where: whereClause,
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
+      raw: true,
     });
-    return tickets;
+
+    // ✅ Force parse images
+    const formattedTickets = tickets.map(ticket => {
+      let images = [];
+      if (ticket.images) {
+        try {
+          // First remove extra escaping if it's double-stringified
+          const cleaned = ticket.images.startsWith('"') ? JSON.parse(ticket.images) : ticket.images;
+          images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
+        } catch (e) {
+          console.error("❌ Error parsing images for ticket", ticket.id, e.message);
+        }
+      }
+      return { ...ticket, images };
+    });
+
+    return formattedTickets;
   } catch (error) {
-    throw new Error('Error fetching tickets: ' + error.message);
+    throw new Error("Error fetching tickets: " + error.message);
   }
 };
+
+
 
 module.exports = { getOpenTickets, resolveTicket, createTicket, updateTicketStatus,getTickets };
