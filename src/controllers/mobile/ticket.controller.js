@@ -9,8 +9,8 @@ const createTicketByUser = async (req, res) => {
     const { title, description, priority } = req.body;
     const files = req.files;
 
-    if (!title || !priority ) {
-      return res.status(400).json({ message: 'Title, priority, and raised_by are required' });
+    if (!title || !description ) {
+      return res.status(400).json({ message: 'Title, description,  are required' });
     }
 
     const ticket = await createTicket({ title, description, priority, raised_by, files });
