@@ -192,6 +192,12 @@ const getDriverById = async (driverId) => {
   return driver;
 };
 
+const getStatusByDriver = async (driverId) => {
+  const driver = await Driver.findByPk(driverId, { attributes: ["ride_request","system_alerts","earning_updates"] }); 
+  if (!driver) throw new Error("Driver not found");
+  return driver;
+}
+
 const deactivateDriver = async (driverId) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
@@ -360,5 +366,6 @@ module.exports = {
   driverProfileWithCar,
   updateDriverBalance,
   driverProfileWithCar,
-  checkActiveRide
+  checkActiveRide,
+  getStatusByDriver
 };

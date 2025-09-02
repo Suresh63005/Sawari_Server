@@ -17,6 +17,7 @@ const noficationResponseDTO = (notification)=>{
         message:notification.message,
         image:notification.image,
         is_read:notification.is_read,
+          user_id:notification.user_id,
         createdAt:notification.createdAt
     }
 }
@@ -141,9 +142,33 @@ const deleteNotificationService = async (id) => {
     };
   }
 };
+
+const getNotificationsByUser  = async (driverId) => { 
+    try {
+        const notifications = await Notifications.findAll({
+            where: { user_id: driverId },
+            order: [['createdAt', 'DESC']],
+        });
+        return {
+            success: true,
+            data: notifications.map(noficationResponseDTO),
+        };
+    } catch (error) {
+        console.error('Error fetching notifications for driver:', error);
+        return {  
+            success: false,
+            message: 'Failed to fetch notifications',
+            error: error.message,
+        };
+    }
+}
+
+
+
 module.exports = {
     sendNotificationService,
     fetchAllNotifcationsService,
     fetchSingleNotificationService,
-    deleteNotificationService
+    deleteNotificationService,
+    getNotificationsByUser
 }

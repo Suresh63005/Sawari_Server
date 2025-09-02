@@ -272,11 +272,47 @@ const checkStatus = async (req, res) => {
     }
 }
 
+const getStatuses = async (req, res) => {
+    
+    try {
+        const driverId = req.driver.id;
+        if (!driverId) {
+            return res.status(400).json({ success: false, message: "Un Authorized" });
+        }
+        const driver = await driverService.getStatusByDriver(driverId);
+        return res.status(200).json({ success: true, message: "Driver statuses fetched successfully", data: driver });
+       
+    } catch (error) {
+        console.error("getStatuses error:", error);
+        return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+
+}
+
+const updateStatuses = async (req, res) => {
+    
+    try {
+        const driverId = req.driver.id;
+        if (!driverId) {
+            return res.status(400).json({ success: false, message: "Un Authorized" });
+        }
+        const { ride_request, system_alerts, earning_updates } = req.body;
+        const updatedDriver = await driverService.updateDriverProfile(driverId, { ride_request, system_alerts, earning_updates });
+        return res.status(200).json({ success: true, message: "Driver statuses updated successfully", data: updatedDriver });
+    } catch (error) {
+        console.error("updateStatuses error:", error);
+        return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+}
+
+
 module.exports = {
     verifyMobile,
     blockDriverByIdentifier,
     updateProfileAndCarDetails,
     driverAccountDetails,
     deleteAccount,
-    checkStatus
+    checkStatus,
+    getStatuses,
+    updateStatuses
 }

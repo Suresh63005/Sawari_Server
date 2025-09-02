@@ -23,6 +23,10 @@ const Notifications = sequelize.define('Notifications',{
     is_read:{
         type:DataTypes.BOOLEAN,
         allowNull:true
+    },
+    user_id:{
+        type:DataTypes.UUID,
+        allowNull:false
     }
 },{tableName:"Notifications",paranoid:true,timestamps:true})
 
