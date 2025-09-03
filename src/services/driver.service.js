@@ -28,26 +28,31 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
   let driver = null;
 
   if (social_login === "google") {
-    // ----------------------------
-    // ✅ GOOGLE LOGIN
-    // ----------------------------
-    if (!email) throw new Error("Email is required");
 
+    if (!email) throw new Error("Email is required");
+console.log("wwwwwwwwwwwwwwwwwwww:", email);
     const decoded = await driverFirebase.auth()?.verifyIdToken(token);
+    console.log(decoded, "ddddddddddddddddddd");
     const firebaseEmail = decoded.email;
+
+    console.log(firebaseEmail, "eeeeeeeeeeeeeeeeeeeee")
 
     if (firebaseEmail !== email) {
       throw new Error("Email mismatch with token");
     }
 
-    driver = await Driver.findOne({ where: email })
+  
+
+    driver = await Driver.findOne({ where: { email:firebaseEmail } });
+
+
 
     if (driver) {
       // check driver status
       if (driver && driver.status === "blocked") {
         throw new Error("Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance.");
       }
-
+console.log(driver.status, "sssssssssssssssssssss");
       //// ✅ If status is active, allow login directly
       if (["active", "inactive", "rejected"].includes(driver.status)) {
         driver.last_login = new Date();
@@ -66,19 +71,14 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
     }
 
     if (!driver) {
+      console.log("cccccccccccccccccccccc:");
       driver = await Driver.create({
-        first_name: "",
-        last_name: "",
-        email,
+       
+        email:firebaseEmail,
         social_login: "google",
-        dob: new Date(),
         last_login: new Date(),
-        phone: "",
-        experience: 0,
-        languages: [],
-        license_front: "",
-        license_back: "",
         status: "inactive",
+        document_check_count:0
       });
     }
   } else {
