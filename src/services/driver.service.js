@@ -22,7 +22,7 @@ const normalizePhone = (phone) => {
 const verifyDriverMobile = async (phone, token, email, social_login) => {
   if (!token) throw new Error("Token is required");
 
-  console.log(token, "ttttttttttttttttttt")
+  
 
   let normalizedPhone = null;
   let driver = null;
@@ -88,6 +88,7 @@ console.log(driver.status, "sssssssssssssssssssss");
     if (!phone) throw new Error("Phone number is required");
 
     normalizedPhone = normalizePhone(phone);
+    console.log(normalizedPhone, "nnnnnnnnnnnnnnnnnnnnn");
     if (!normalizedPhone) throw new Error("Invalid phone number format");
 
     const decoded = await driverFirebase.auth()?.verifyIdToken(token);
@@ -128,16 +129,11 @@ console.log(driver.status, "sssssssssssssssssssss");
     }
     if (!driver) {
       driver = await Driver.create({
-        first_name: "",
-        last_name: "",
+
         phone: normalizedPhone,
-        dob: new Date(),
-        email: "",
+
+        email: email || null,
         last_login: new Date(),
-        experience: 0,
-        languages: [],
-        license_front: "",
-        license_back: "",
         status: "inactive",
       });
     }
