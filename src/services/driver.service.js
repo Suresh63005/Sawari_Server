@@ -94,8 +94,7 @@ console.log(driver.status, "sssssssssssssssssssss");
     // const firebasePhone = decoded.phone_number;
     const firebasePhone = decoded.phone_number?.replace("+91", "");
 
-    console.log("yyyyyyyyyyyyyyyyyyyyyyyyy:", firebasePhone);
-    console.log("xxxxxxxxxxxxxxxxxxxxxxx,", normalizedPhone);
+  
 
     // Find driver first
     driver = await Driver.findOne({ where: { phone: normalizedPhone } })

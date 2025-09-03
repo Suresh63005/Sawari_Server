@@ -157,6 +157,40 @@ const getTickets = async (filters = {}) => {
   }
 };
 
+const getTicketsById = async (data) => {
+  const { raised_by, id } = data;
+
+  try {
+    const ticket = await Ticket.findOne({
+      where: { id, raised_by },
+      raw: true, // returns plain object instead of Sequelize instance
+    });
+
+    if (!ticket) {
+      throw new Error("Ticket not found");
+    }
+
+    let images = [];
+    if (ticket.images) {
+      try {
+        // Remove extra escaping if it's double-stringified
+        const cleaned = ticket.images.startsWith('"')
+          ? JSON.parse(ticket.images)
+          : ticket.images;
+
+        images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
+      } catch (e) {
+        console.error("❌ Error parsing images for ticket", ticket.id, e.message);
+      }
+    }
+
+    return { ...ticket, images };
+  } catch (error) {
+    throw new Error("Error fetching ticket: " + error.message);
+  }
+};
 
 
-module.exports = { getOpenTickets, resolveTicket, createTicket, updateTicketStatus,getTickets };
+
+
+module.exports = { getOpenTickets, resolveTicket, createTicket, updateTicketStatus,getTickets,getTicketsById };

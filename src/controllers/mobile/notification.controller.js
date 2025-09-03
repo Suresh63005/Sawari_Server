@@ -1,3 +1,4 @@
+const Notifications = require("../../models/notifications.model");
 const { getNotificationsByUser } = require("../../services/notifications.service");
 
 
