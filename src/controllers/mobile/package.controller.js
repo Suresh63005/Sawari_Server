@@ -76,9 +76,21 @@ const getPrice = async (req, res) => {
   }
 };
 
+// Fetch all cars
+const getAllCars = async (req, res) => {
+  try {
+    const cars = await CarService.getAllCars(req.query);
+    return res.status(200).json({ message: "Cars fetched successfully", data: cars });
+  } catch (error) {
+    console.error("Error in getAllCars:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports={
     getAllPackages,
     getSubPackagesByPackageId,
     getAllCarsBySubPackageId,
-    getPrice
+    getPrice,   
+    getAllCars
 };
