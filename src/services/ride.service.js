@@ -15,7 +15,7 @@ const rideResponseDTO = (ride) => ({
   pickup_address: ride.pickup_address,
   pickup_location: ride.pickup_location,
   drop_location: ride.drop_location,
-  ride_date: ride.ride_date,
+  // ride_date: ride.ride_date,
   car_id: ride.car_id,
   package_id: ride.package_id,
   subpackage_id: ride.subpackage_id,
@@ -53,15 +53,15 @@ const createRide = async (data) => {
     if (!data.customer_name || !data.phone || !data.pickup_location || !data.drop_location) {
       throw new Error('Missing required fields: customer_name, phone, pickup_location, or drop_location');
     }
-    if (!data.ride_date) {
-      throw new Error('Missing required fields: ride_date');
-    }
+    // if (!data.ride_date) {
+    //   throw new Error('Missing required fields: ride_date');
+    // }
 
     // Validate date formats
-    const rideDate = new Date(data.ride_date);
+    // const rideDate = new Date(data.ride_date);
     const scheduledTime = data.scheduled_time ? new Date(data.scheduled_time) : null;
-    if (isNaN(rideDate.getTime()) || (scheduledTime && isNaN(scheduledTime.getTime()))) {
-      throw new Error('Invalid ride_date or scheduled_time: Must be valid ISO datetime strings');
+    if (scheduledTime && isNaN(scheduledTime.getTime())) {
+      throw new Error('Invalid scheduled_time: Must be a valid ISO datetime string');
     }
 
     // Validate package exists
@@ -121,7 +121,7 @@ const createRide = async (data) => {
         pickup_address: data.pickup_address,
         pickup_location: data.pickup_location,
         drop_location: data.drop_location,
-        ride_date: rideDate.toISOString(),
+        // ride_date: rideDate.toISOString(),
         car_id: data.car_id,
         package_id: data.package_id,
         subpackage_id: data.subpackage_id,
@@ -155,15 +155,15 @@ const updateRide = async (id, data) => {
     if (!ride) throw new Error('Ride not found with the given ID');
 
     // Validate date formats if provided
-    let rideDate = ride.ride_date;
+    // let rideDate = ride.ride_date;
     let scheduledTime = ride.scheduled_time;
-    if (data.ride_date) {
-      rideDate = new Date(data.ride_date);
-      if (isNaN(rideDate.getTime())) {
-        throw new Error('Invalid ride_date: Must be a valid ISO datetime string');
-      }
-      rideDate = rideDate.toISOString();
-    }
+    // if (data.ride_date) {
+    //   rideDate = new Date(data.ride_date);
+    //   if (isNaN(rideDate.getTime())) {
+    //     throw new Error('Invalid ride_date: Must be a valid ISO datetime string');
+    //   }
+    //   rideDate = rideDate.toISOString();
+    // }
     if (data.scheduled_time) {
       scheduledTime = new Date(data.scheduled_time);
       if (isNaN(scheduledTime.getTime())) {
@@ -235,7 +235,7 @@ const updateRide = async (id, data) => {
         pickup_address: data.pickup_address || ride.pickup_address,
         pickup_location: data.pickup_location || ride.pickup_location,
         drop_location: data.drop_location || ride.drop_location,
-        ride_date: rideDate,
+        // ride_date: rideDate,
         car_id: data.car_id || ride.car_id,
         package_id: data.package_id || ride.package_id,
         subpackage_id: data.subpackage_id || ride.subpackage_id,

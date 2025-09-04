@@ -4,7 +4,7 @@ const { Op } = require('sequelize');
 
 const getAdminByEmail = async (email) => {
   return await Admin.findOne({
-    where: { email, status: { [Op.ne]: 'blocked' } },
+    where: { email },
   });
 };
 
@@ -61,6 +61,14 @@ const createPermissions = async (data) => {
     manage_admin: data.manage_admin ? 1 : 0,
     granted_by: data.granted_by,
   });
+};
+const updateAdmin = async (id, updates) => {
+  const admin = await Admin.findByPk(id);
+  if (!admin) throw new Error("Admin not found");
+
+  Object.assign(admin, updates);
+  await admin.save();
+  return admin;
 };
 
 const updateAdminStatus = async (id, status) => {
@@ -147,6 +155,7 @@ module.exports = {
   getAdminByEmail,
   getAdminById,
   createAdmin,
+  updateAdmin,
   getAdminPermissions,
   createPermissions,
   updateAdminStatus,

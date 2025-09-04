@@ -16,7 +16,7 @@ const authMiddleware = async (req, res, next) => {
     const admin = await Admin.findByPk(decoded.id);
     if (!admin || admin.status === 'blocked') {
       console.log('Invalid or blocked admin:', admin);
-      return res.status(401).json({ message: 'Invalid or blocked account' });
+      return res.status(401).json({ message: 'invalid or this account is blocked' });
     }
 
     const permissions = await Permissions.findOne({ where: { user_id: admin.id } });

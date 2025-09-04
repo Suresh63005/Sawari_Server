@@ -1,15 +1,15 @@
-const AuthService = require('../../services/auth.service');
-const { getRolePermissions } = require('./auth.controller');
+const AuthService = require("../../services/auth.service");
+const { getRolePermissions } = require("./auth.controller");
 
 // Define admin hierarchy for role-based filtering
 const getAdminHierarchy = (currentRole) => {
   const hierarchy = {
-    super_admin: ['super_admin', 'admin', 'executive_admin', 'ride_manager'],
-    admin: ['admin', 'executive_admin', 'ride_manager'],
-    executive_admin: ['executive_admin', 'ride_manager'],
-    ride_manager: ['ride_manager'],
+    super_admin: ["super_admin", "admin", "executive_admin", "ride_manager"],
+    admin: ["admin", "executive_admin", "ride_manager"],
+    executive_admin: ["executive_admin", "ride_manager"],
+    ride_manager: ["ride_manager"],
   };
-  return hierarchy[currentRole] || ['ride_manager'];
+  return hierarchy[currentRole] || ["ride_manager"];
 };
 
 // Check if the current user can create a new admin role
@@ -21,16 +21,20 @@ const canCreateAdmin = (currentRole, newRole) => {
 const listAdmins = async (req, res) => {
   try {
     const currentUser = req.user;
-    console.log('Listing admins for user:', currentUser.id, currentUser.role); // Debug log
+    console.log("Listing admins for user:", currentUser.id, currentUser.role); // Debug log
     const { search, page, limit, sortBy, sortOrder } = req.query;
-const { data, total } = await AuthService.getAllAdmins({ search, page, limit, sortBy, sortOrder });
-const admins = data;
-
-    
+    const { data, total } = await AuthService.getAllAdmins({
+      search,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    });
+    const admins = data;
 
     // Filter admins based on role
-    const filteredAdmins = admins.filter(admin => {
-      if (currentUser.role === 'super_admin') return true;
+    const filteredAdmins = admins.filter((admin) => {
+      if (currentUser.role === "super_admin") return true;
       const allowedRoles = getAdminHierarchy(currentUser.role);
       return (
         allowedRoles.includes(admin.role) &&
@@ -40,7 +44,7 @@ const admins = data;
     });
 
     // Map admins to response format
-    const response = filteredAdmins.map(admin => {
+    const response = filteredAdmins.map((admin) => {
       const permissions = admin.AdminPermissions[0] || {
         dashboard_access: false,
         manage_drivers: false,
@@ -52,7 +56,10 @@ const admins = data;
         manage_admin: false,
         manage_fleet: false,
       };
-      console.log(`Mapping admin ${admin.id} (${admin.first_name} ${admin.last_name}):`, { permissions });
+      console.log(
+        `Mapping admin ${admin.id} (${admin.first_name} ${admin.last_name}):`,
+        { permissions }
+      );
       return {
         id: admin.id,
         name: `${admin.first_name} ${admin.last_name}`,
@@ -60,7 +67,7 @@ const admins = data;
         phone: admin.phone,
         role: admin.role,
         status: admin.status, // 'active', 'inactive', or 'blocked'
-        created_at: admin.createdAt.toISOString().split('T')[0],
+        created_at: admin.createdAt.toISOString().split("T")[0],
         permissions: {
           dashboard: Boolean(permissions.dashboard_access),
           drivers: Boolean(permissions.manage_drivers),
@@ -76,22 +83,21 @@ const admins = data;
     });
 
     return res.json({
-  data: response,
-  pagination: {
-    total,
-    page: parseInt(page) || 1,
-    limit: parseInt(limit) || 10,
-    totalPages: Math.ceil(total / (parseInt(limit) || 10))
-  }
-});
-
+      data: response,
+      pagination: {
+        total,
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+        totalPages: Math.ceil(total / (parseInt(limit) || 10)),
+      },
+    });
   } catch (error) {
-    console.error('List admins error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("List admins error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcrypt");
 
 const createAdmin = async (req, res) => {
   try {
@@ -99,16 +105,20 @@ const createAdmin = async (req, res) => {
     const { first_name, last_name, email, phone, role, password } = req.body;
 
     if (!first_name || !last_name || !email || !phone || !role || !password) {
-      return res.status(400).json({ message: 'All required fields must be provided' });
+      return res
+        .status(400)
+        .json({ message: "All required fields must be provided" });
     }
 
     if (!canCreateAdmin(currentUser.role, role)) {
-      return res.status(403).json({ message: 'Insufficient permissions to create this role' });
+      return res
+        .status(403)
+        .json({ message: "Insufficient permissions to create this role" });
     }
 
     const existingAdmin = await AuthService.getAdminByEmail(email);
     if (existingAdmin) {
-      return res.status(400).json({ message: 'Email already exists' });
+      return res.status(400).json({ message: "Email already exists" });
     }
 
     // 🔐 Hash password before saving
@@ -122,7 +132,7 @@ const createAdmin = async (req, res) => {
       phone,
       role,
       password: hashedPassword,
-      status: 'active',
+      status: "active",
       created_by: currentUser.id,
     });
 
@@ -148,38 +158,73 @@ const createAdmin = async (req, res) => {
       phone: admin.phone,
       role: admin.role,
       status: admin.status,
-      created_at: admin.createdAt.toISOString().split('T')[0],
+      created_at: admin.createdAt.toISOString().split("T")[0],
     });
   } catch (error) {
-    console.error('Create admin error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Create admin error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
+const updateAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { first_name, last_name, email, phone, role, status } = req.body;
 
+    const admin = await AuthService.getAdminById(id);
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    const updatedAdmin = await AuthService.updateAdmin(id, {
+      first_name,
+      last_name,
+      email,
+      phone,
+      role,
+      status,
+    });
+
+    return res.json({
+      message: "Admin updated successfully",
+      data: updatedAdmin,
+    });
+  } catch (error) {
+    console.error("Update admin error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 const updateAdminStatus = async (req, res) => {
   try {
     const currentUser = req.user;
     const { id } = req.params;
     const { status } = req.body;
-    console.log(`Updating status for admin ${id} to: ${status} by user ${currentUser.id}`); // Debug log
+    console.log(
+      `Updating status for admin ${id} to: ${status} by user ${currentUser.id}`
+    ); // Debug log
 
-    if (!['active', 'inactive', 'blocked'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status. Must be "active", "inactive", or "blocked"' });
+    if (!["active", "inactive", "blocked"].includes(status)) {
+      return res
+        .status(400)
+        .json({
+          message: 'Invalid status. Must be "active", "inactive", or "blocked"',
+        });
     }
 
     const admin = await AuthService.getAdminById(id);
     if (!admin) {
-      return res.status(404).json({ message: 'Admin not found' });
+      return res.status(404).json({ message: "Admin not found" });
     }
 
     if (currentUser.id === admin.id) {
-      return res.status(403).json({ message: 'Cannot modify own status' });
+      return res.status(403).json({ message: "Cannot modify own status" });
     }
 
     const allowedRoles = getAdminHierarchy(currentUser.role);
     if (!allowedRoles.includes(admin.role)) {
-      return res.status(403).json({ message: 'Insufficient permissions to modify this admin' });
+      return res
+        .status(403)
+        .json({ message: "Insufficient permissions to modify this admin" });
     }
 
     const updatedAdmin = await AuthService.updateAdminStatus(id, status);
@@ -190,8 +235,8 @@ const updateAdminStatus = async (req, res) => {
       status: updatedAdmin.status,
     });
   } catch (error) {
-    console.error('Update admin status error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Update admin status error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -204,16 +249,18 @@ const updatePermissions = async (req, res) => {
 
     const admin = await AuthService.getAdminById(id);
     if (!admin) {
-      return res.status(404).json({ message: 'Admin not found' });
+      return res.status(404).json({ message: "Admin not found" });
     }
 
     if (currentUser.id === admin.id) {
-      return res.status(403).json({ message: 'Cannot modify own permissions' });
+      return res.status(403).json({ message: "Cannot modify own permissions" });
     }
 
     const allowedRoles = getAdminHierarchy(currentUser.role);
     if (!allowedRoles.includes(admin.role)) {
-      return res.status(403).json({ message: 'Insufficient permissions to modify this admin' });
+      return res
+        .status(403)
+        .json({ message: "Insufficient permissions to modify this admin" });
     }
 
     const updatedPermissions = await AuthService.updatePermissions(id, {
@@ -231,7 +278,7 @@ const updatePermissions = async (req, res) => {
     console.log(`Permissions updated for admin ${id}:`, updatedPermissions); // Debug log
 
     return res.json({
-      message: 'Permissions updated successfully',
+      message: "Permissions updated successfully",
       permissions: {
         dashboard: !!updatedPermissions.dashboard_access,
         drivers: !!updatedPermissions.manage_drivers,
@@ -245,14 +292,15 @@ const updatePermissions = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Update permissions error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Update permissions error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 module.exports = {
   listAdmins,
   createAdmin,
+  updateAdmin,
   updateAdminStatus,
   updatePermissions,
 };

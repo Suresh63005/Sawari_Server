@@ -37,6 +37,15 @@ const getAllPackages = async (req, res) => {
   }
 };
 
+const getActivePackagesController = async (req, res) => {
+  try {
+    const result = await packageService.getActivePackages();
+    res.json(result);
+  } catch (error) {
+    console.error("Error in getActivePackagesController:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 // Controller to get a package by ID
 const getPackageById = async (req, res) => {
   try {
@@ -73,4 +82,5 @@ module.exports = {
   getPackageById,
   deletePackageById,
   togglePackageStatus,
+  getActivePackagesController
 };
