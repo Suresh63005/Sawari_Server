@@ -14,12 +14,16 @@ const DriverCar = sequelize.define(
       type: DataTypes.UUID,
       allowNull: false,
     },
-    car_model: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    car_brand: {
-      type: DataTypes.STRING,
+    // car_model: {
+    //   type: DataTypes.STRING,
+    //   allowNull: false,
+    // },
+    // car_brand: {
+    //   type: DataTypes.STRING,
+    //   allowNull: true,
+    // },
+    car_id:{
+      type: DataTypes.UUID,
       allowNull: false,
     },
     color: {
