@@ -88,6 +88,11 @@ SubPackage.belongsTo(Car, { foreignKey: 'car_details_id', as: 'CarDetails', cons
 // Package associations
 Package.hasMany(SubPackage, { foreignKey: 'package_id', as: 'PackageRates', onDelete: 'CASCADE', constraints: false });
 SubPackage.belongsTo(Package, { foreignKey: 'package_id', as: 'Package', constraints: false });
+
+// DriverCar associations
+DriverCar.belongsTo(Car, { foreignKey: 'car_id', as: 'Car', constraints: false });
+Car.hasMany(DriverCar, { foreignKey: 'car_id', as: 'DriverCars', onDelete: 'SET NULL', constraints: false });
+
 // Export models
 module.exports = {
   Admin,
