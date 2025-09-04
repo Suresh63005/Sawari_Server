@@ -17,6 +17,7 @@ router.put('/admins/:id/status', authMiddleware, updateStatus);
 // Admin management routes
 router.get('/admin-management', authMiddleware, adminManagementController.listAdmins);
 router.post('/admin-management', authMiddleware, adminManagementController.createAdmin);
+router.put('/admin-management/:id', authMiddleware, adminManagementController.updateAdmin);
 router.put('/admin-management/:id/status', authMiddleware, adminManagementController.updateAdminStatus);
 router.put('/admin-management/:id/permissions', authMiddleware, adminManagementController.updatePermissions);
 

@@ -137,10 +137,10 @@ const verifyRc = async (carId, verifiedBy) => {
   return { message: 'RC document verified' };
 };
 
-const rejectRc = async (carId, reason, verifiedBy) => {
+const rejectRc = async (carId, verifiedBy) => {
   const car = await DriverCar.findByPk(carId);
   if (!car) throw new Error('Vehicle not found');
-  await car.update({ rc_doc_status: 'rejected', reason, verified_by: verifiedBy });
+  await car.update({ rc_doc_status: 'rejected', verified_by: verifiedBy });
   return { message: 'RC document rejected' };
 };
 
@@ -151,10 +151,10 @@ const verifyInsurance = async (carId, verifiedBy) => {
   return { message: 'Insurance document verified' };
 };
 
-const rejectInsurance = async (carId, reason, verifiedBy) => {
+const rejectInsurance = async (carId, verifiedBy) => {
   const car = await DriverCar.findByPk(carId);
   if (!car) throw new Error('Vehicle not found');
-  await car.update({ insurance_doc_status: 'rejected', reason, verified_by: verifiedBy });
+  await car.update({ insurance_doc_status: 'rejected', verified_by: verifiedBy });
   return { message: 'Insurance document rejected' };
 };
 

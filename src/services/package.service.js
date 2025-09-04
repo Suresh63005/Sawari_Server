@@ -98,6 +98,14 @@ const getAllPackages = async ({ search, limit = 10, page = 1, sortBy = 'createdA
   };
 };
 
+const getActivePackages = async () => {
+  const packages = await Package.findAll({
+    where: { status: 'active' }, // filter only active
+    order: [['createdAt', 'DESC']],
+  });
+
+  return packages.map(pkg => packageResponseDTO(pkg));
+};
 // Service to get a package by ID
 const getPackageById = async (id) => {
   const pkg = await Package.findByPk(id);
@@ -134,4 +142,5 @@ module.exports = {
   getPackageById,
   deletePackageById,
   togglePackageStatus,
+  getActivePackages
 };

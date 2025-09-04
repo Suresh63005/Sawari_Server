@@ -4,6 +4,7 @@ const subPackageController = require('../../../controllers/admin/subPackage.cont
 
 router.post("/upsert", subPackageController.upsertSubPackage);
 router.get("/", subPackageController.getAllSubPackages);
+router.get("/active", subPackageController.getActiveSubPackagesController);
 router.get("/:id", subPackageController.getSubPackageById);
 router.delete("/:id", subPackageController.deleteSubPackageById);
 router.patch("/:id/status", subPackageController.toggleSubPackageStatus);

@@ -280,29 +280,71 @@ const getAllDrivers = async (page = 1, limit = 10, search = '', status = '') => 
 const verifyLicense = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
-  await driver.update({ license_verification_status: 'verified', verified_by: verifiedBy });
+
+  await driver.update({
+    license_verification_status: 'verified',
+    verified_by: verifiedBy,
+    document_check_count: 0 // reset on success
+  });
+
   return { message: 'License verified' };
 };
 
 const rejectLicense = async (driverId, reason, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
-  await driver.update({ license_verification_status: 'rejected', reason, verified_by: verifiedBy });
-  return { message: 'License rejected' };
+
+  let newCount = driver.document_check_count + 1;
+  let updateData = {
+    license_verification_status: 'rejected',
+    verified_by: verifiedBy,
+    reason,
+    document_check_count: newCount
+  };
+
+  // If rejected 3 times → block driver
+  if (newCount >= 3) {
+    updateData.status = 'blocked';
+  }
+
+  await driver.update(updateData);
+
+  return { message: newCount >= 3 ? 'Driver blocked due to repeated rejections' : 'License rejected' };
 };
 
 const verifyEmirates = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
-  await driver.update({ emirates_verification_status: 'verified', verified_by: verifiedBy });
+
+  await driver.update({
+    emirates_verification_status: 'verified',
+    verified_by: verifiedBy,
+    document_check_count: 0 // reset on success
+  });
+
   return { message: 'Emirates ID verified' };
 };
 
 const rejectEmirates = async (driverId, reason, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
-  await driver.update({ emirates_verification_status: 'rejected', reason, verified_by: verifiedBy });
-  return { message: 'Emirates ID rejected' };
+
+  let newCount = driver.document_check_count + 1;
+  let updateData = {
+    emirates_verification_status: 'rejected',
+    verified_by: verifiedBy,
+    reason,
+    document_check_count: newCount
+  };
+
+  // If rejected 3 times → block driver
+  if (newCount >= 3) {
+    updateData.status = 'blocked';
+  }
+
+  await driver.update(updateData);
+
+  return { message: newCount >= 3 ? 'Driver blocked due to repeated rejections' : 'Emirates ID rejected' };
 };
 
 const driverProfileWithCar = async (driver_id) => {
