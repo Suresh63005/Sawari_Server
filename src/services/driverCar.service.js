@@ -59,7 +59,7 @@ const upsertDriverCar = async (driverId, data) => {
     return carResponseDTO(existing);
   } else {
     // Ensure all required fields are provided when creating a new record
-    if (!sanitizedData.car_model || !sanitizedData.car_brand || !sanitizedData.license_plate || !sanitizedData.rc_doc || !sanitizedData.insurance_doc) {
+    if (!sanitizedData.car_model || !sanitizedData.license_plate || !sanitizedData.rc_doc || !sanitizedData.insurance_doc) {
       throw new Error('All required vehicle fields must be provided');
     }
     const created = await DriverCar.create({ ...sanitizedData, driver_id: driverId });
