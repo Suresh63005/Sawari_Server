@@ -65,135 +65,158 @@ const verifyMobile = async (req, res) => {
 // }
 
 const updateProfileAndCarDetails = async (req, res) => {
-    try {
-        console.log("=== Start: updateProfileAndCarDetails ===");
+  try {
+    console.log("=== Start: updateProfileAndCarDetails ===");
 
-        // Step 1: Get driver ID from request
-        const driverId = req?.driver?.id;
-        console.log("Driver ID:", driverId);
+    // Step 1: Get driver ID from request
+    const driverId = req?.driver?.id;
+    console.log("Driver ID:", driverId);
 
-        if (!driverId) {
-            return res.status(400).json({ error: "Driver ID is missing in the request." });
-        }
-
-        // Step 2: Clone and log request body
-        const updatedDriverData = { ...req.body };
-        console.log("Request Body (updatedDriverData):", updatedDriverData);
-
-        // Step 3: Fetch driver from DB
-        const driver = await driverService.getDriverById(driverId);
-        console.log("Fetched Driver Data from DB:", driver);
-
-        if (!driver) {
-            return res.status(404).json({ error: "Driver not found" });
-        }
-
-        // Step 4: Handle profile-related file uploads
-        const profileFields = [
-            'profile_pic', 'emirates_doc_front', 'emirates_doc_back',
-            'license_front', 'license_back',
-        ];
-
-        for (const field of profileFields) {
-            if (req.files?.[field]) {
-                console.log(`Uploading ${field}...`);
-                const uploadedUrl = await uploadToS3(req.files[field][0], 'drivers');
-                console.log(`${field} uploaded to S3:`, uploadedUrl);
-
-                // If old file exists and is different, delete it
-                if (driver?.[field] && driver[field] !== uploadedUrl) {
-                    console.log(`Deleting old ${field} from S3:`, driver[field]);
-                    await deleteFromS3(driver[field]);
-                }
-
-                updatedDriverData[field] = uploadedUrl;
-
-                if (['emirates_doc_front', 'emirates_doc_back'].includes(field)) {
-                    updatedDriverData.emirates_verification_status = 'pending';
-                    console.log("Set emirates_verification_status to 'pending'");
-                }
-
-                if (['license_front', 'license_back'].includes(field)) {
-                    updatedDriverData.license_verification_status = 'pending';
-                    console.log("Set license_verification_status to 'pending'");
-                }
-            }
-        }
-
-        console.log("All profile files processed. Current uploaded file list:", req.files);
-
-        // Step 5: Parse languages field (if exists)
-        if (updatedDriverData.languages) {
-            try {
-                const parsedLanguages = JSON.parse(updatedDriverData.languages);
-                updatedDriverData.languages = Array.isArray(parsedLanguages) ? parsedLanguages : [];
-                console.log("Parsed languages:", updatedDriverData.languages);
-            } catch (err) {
-                console.warn("Invalid JSON in languages field. Setting to empty array.");
-                updatedDriverData.languages = [];
-            }
-        }
-
-        // Step 6: Update driver profile in DB
-        await driverService.updateDriverProfile(driverId, updatedDriverData); //update 1
-        console.log("Driver profile updated in DB.");
-
-        const UpdatedDriver = await driverService.getDriverById(driverId);
-
-        // Handle Vehicle/ Car info
-        const carData = {
-            car_model: req.body.car_model,
-            car_brand: req.body.car_brand,
-            license_plate: req.body.license_plate
-        };
-        console.log("Initial car data:", carData);
-
-        // Step 8: Handle car photo uploads
-        if (req.files?.car_photos) {
-            console.log("Uploading car photos...");
-            const carPhotos = await Promise.all(
-                req.files.car_photos.map(file => uploadToS3(file, 'driver-cars'))
-            );
-            carData.car_photos = carPhotos;
-            console.log("Uploaded car photos:", carPhotos);
-        }
-
-        // Step 9: Upload RC document
-        if (req.files?.rc_doc) {
-            console.log("Uploading RC document...");
-            carData.rc_doc = await uploadToS3(req.files.rc_doc[0], 'driver-cars');
-            console.log("Uploaded RC document:", carData.rc_doc);
-        }
-        if (req.files?.rc_doc_back) {
-            const uploadResult = await uploadToS3(req.files.rc_doc_back[0], 'driver-cars');
-
-            // If rc_doc_back
-            carData.rc_doc_back = uploadResult;
-
-        }
-        if (req.files?.insurance_doc) {
-            console.log("Uploading insurance document...");
-            carData.insurance_doc = await uploadToS3(req.files.insurance_doc[0], 'driver-cars');
-            console.log("Uploaded insurance document:", carData.insurance_doc);
-        }
-
-        // Step 11: Set verification statuses
-        carData.rc_doc_status = 'pending';
-        carData.insurance_doc_status = 'pending';
-        console.log("Set car document verification statuses to 'pending'");
-
-        // Save or update car details
-        await driverCarService.upsertDriverCar(driverId, carData); // update 2
-        const vehicle = await driverCarService.getDriverCarByDriverId(driverId);
-
-        res.status(200).json({ message: 'Driver and vehicle profile submitted successfully.', driver: UpdatedDriver, vehicle });
-    } catch (error) {
-        console.error('🚨 Submit driver & car profile error:', error);
-        if (error.name === 'SequelizeUniqueConstraintError' && error.fields?.emirates_id) {
-            return res.status(400).json({ error: 'Emirates ID is already in use.' });
-        }
-        res.status(500).json({ error: error.message });
+    if (!driverId) {
+      return res.status(400).json({ error: "Driver ID is missing in the request." });
     }
+
+    // Step 2: Clone and log request body
+    const updatedDriverData = { ...req.body };
+    console.log("Request Body (updatedDriverData):", updatedDriverData);
+
+    // Step 3: Fetch driver from DB
+    const driver = await driverService.getDriverById(driverId);
+    console.log("Fetched Driver Data from DB:", driver);
+
+    if (!driver) {
+      return res.status(404).json({ error: "Driver not found" });
+    }
+
+    // Step 4: Handle profile-related file uploads
+    const profileFields = [
+      "profile_pic",
+      "emirates_doc_front",
+      "emirates_doc_back",
+      "license_front",
+      "license_back",
+    ];
+
+    for (const field of profileFields) {
+      if (req.files?.[field]) {
+        console.log(`Uploading ${field}...`);
+        const uploadedUrl = await uploadToS3(req.files[field][0], "drivers");
+        console.log(`${field} uploaded to S3:`, uploadedUrl);
+
+        // If old file exists and is different, delete it
+        if (driver?.[field] && driver[field] !== uploadedUrl) {
+          console.log(`Deleting old ${field} from S3:`, driver[field]);
+          await deleteFromS3(driver[field]);
+        }
+
+        updatedDriverData[field] = uploadedUrl;
+
+        if (["emirates_doc_front", "emirates_doc_back"].includes(field)) {
+          updatedDriverData.emirates_verification_status = "pending";
+          console.log("Set emirates_verification_status to 'pending'");
+        }
+
+        if (["license_front", "license_back"].includes(field)) {
+          updatedDriverData.license_verification_status = "pending";
+          console.log("Set license_verification_status to 'pending'");
+        }
+      }
+    }
+
+    console.log("All profile files processed. Current uploaded file list:", req.files);
+
+    // Step 5: Parse languages field (if exists)
+    if (updatedDriverData.languages) {
+      try {
+        const parsedLanguages = JSON.parse(updatedDriverData.languages);
+        updatedDriverData.languages = Array.isArray(parsedLanguages) ? parsedLanguages : [];
+        console.log("Parsed languages:", updatedDriverData.languages);
+      } catch (err) {
+        console.warn("Invalid JSON in languages field. Setting to empty array.");
+        updatedDriverData.languages = [];
+      }
+    }
+
+    // Step 6: Update driver profile in DB
+    await driverService.updateDriverProfile(driverId, updatedDriverData); // update 1
+    console.log("Driver profile updated in DB.");
+
+    const UpdatedDriver = await driverService.getDriverById(driverId);
+
+    // Step 7: Handle Vehicle/Car info
+    const carData = {
+      car_id: req.body.car_id,
+      license_plate: req.body.license_plate,
+      color: req.body.color, // Added color field
+    };
+    console.log("Initial car data:", carData);
+
+    // Step 8: Handle car photo uploads
+    if (req.files?.car_photos) {
+      console.log("Uploading car photos...");
+      const carPhotos = await Promise.all(
+        req.files.car_photos.map((file) => uploadToS3(file, "driver-cars"))
+      );
+      carData.car_photos = carPhotos;
+      console.log("Uploaded car photos:", carPhotos);
+    }
+
+    // Step 9: Upload RC document
+    if (req.files?.rc_doc) {
+      console.log("Uploading RC document...");
+      carData.rc_doc = await uploadToS3(req.files.rc_doc[0], "driver-cars");
+      console.log("Uploaded RC document:", carData.rc_doc);
+    }
+    if (req.files?.rc_doc_back) {
+      console.log("Uploading RC document back...");
+      carData.rc_doc_back = await uploadToS3(req.files.rc_doc_back[0], "driver-cars");
+      console.log("Uploaded RC document back:", carData.rc_doc_back);
+    }
+    if (req.files?.insurance_doc) {
+      console.log("Uploading insurance document...");
+      carData.insurance_doc = await uploadToS3(req.files.insurance_doc[0], "driver-cars");
+      console.log("Uploaded insurance document:", carData.insurance_doc);
+    }
+
+    // Step 10: Set verification statuses
+    if (req.files?.rc_doc || req.files?.rc_doc_back) {
+      carData.rc_doc_status = "pending";
+    }
+    if (req.files?.insurance_doc) {
+      carData.insurance_doc_status = "pending";
+    }
+    console.log("Set car document verification statuses to 'pending'");
+
+    // Step 11: Save or update car details
+    await driverCarService.upsertDriverCar(driverId, carData); // update 2
+    const vehicle = await driverCarService.getDriverCarByDriverId(driverId);
+
+    res.status(200).json({
+      message: "Driver and vehicle profile submitted successfully.",
+      driver: UpdatedDriver,
+      vehicle,
+    });
+  } catch (error) {
+    console.error("🚨 Submit driver & car profile error:", error);
+    if (error.name === "SequelizeUniqueConstraintError") {
+      if (error.fields?.email) {
+        return res.status(400).json({ error: "Email is already in use." });
+      }
+      if (error.fields?.phone) {
+        return res.status(400).json({ error: "Phone number is already in use." });
+      }
+      if (error.fields?.emirates_id) {
+        return res.status(400).json({ error: "Emirates ID is already in use." });
+      }
+      if (error.fields?.license_plate) {
+        return res.status(400).json({ error: "License plate is already in use." });
+      }
+      if (error.fields?.one_signal_id) {
+        return res.status(400).json({ error: "OneSignal ID is already in use." });
+      }
+    }
+    res.status(500).json({ error: error.message });
+  }
 };
 
 
