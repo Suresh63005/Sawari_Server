@@ -11,7 +11,7 @@ const Car = sequelize.define(
     },
     brand: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     model: {
       type: DataTypes.STRING,
