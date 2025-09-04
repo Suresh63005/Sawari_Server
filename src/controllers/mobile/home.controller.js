@@ -405,6 +405,8 @@ const earningsHistory = async (req, res) => {
 
     const earnings = await HomeService.getDriverEarningsHistory(driver_id, filters);
 
+ 
+
     return res.status(200).json({
       success: true,
       message: "Earnings history fetched successfully",

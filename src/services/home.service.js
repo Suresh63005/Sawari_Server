@@ -163,11 +163,14 @@ const upsertRide = async (rideData) => {
 };
 
 
+
+
 const getDriverEarningsHistory = async (driver_id, filters) => {
   const where = { driver_id };
 
-  
-  if (filters.months.length > 0) {
+  // ------------------- FILTERS -------------------
+  // Filter by months
+  if (filters?.months?.length > 0) {
     const monthConditions = filters.months.map(month => {
       const [year, monthNum] = month.split("-");
       return {
@@ -181,7 +184,7 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
   }
 
   // Filter by days
-  if (filters.days.length > 0) {
+  if (filters?.days?.length > 0) {
     where[Op.or] = [
       ...(where[Op.or] || []),
       {
@@ -195,7 +198,7 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
   }
 
   // Filter by years
-  if (filters.years.length > 0) {
+  if (filters?.years?.length > 0) {
     where[Op.or] = [
       ...(where[Op.or] || []),
       {
@@ -206,8 +209,63 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
     ];
   }
 
-  return await Earnings.findAll({ where, order: [["createdAt", "DESC"]] });
+  // ------------------- HISTORY DATA -------------------
+  const history = await Earnings.findAll({
+    where,
+    order: [["createdAt", "DESC"]],
+  });
+
+  // ------------------- TOTAL CALCULATIONS -------------------
+  const today = new Date();
+  const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+  const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+
+  const startOfWeek = new Date();
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  // Aggregate Queries
+  const todayTotal = await Earnings.sum("amount", {
+    where: {
+      driver_id,
+      createdAt: { [Op.between]: [startOfToday, endOfToday] }
+    }
+  }) || 0;
+
+  const weekTotal = await Earnings.sum("amount", {
+    where: {
+      driver_id,
+      createdAt: { [Op.between]: [startOfWeek, endOfWeek] }
+    }
+  }) || 0;
+
+  const monthTotal = await Earnings.sum("amount", {
+    where: {
+      driver_id,
+      createdAt: { [Op.between]: [startOfMonth, endOfMonth] }
+    }
+  }) || 0;
+
+  return {
+    history,
+    totals: {
+      today: todayTotal,
+      week: weekTotal,
+      month: monthTotal
+    }
+  };
 };
+
 
 module.exports = { getDriverEarningsHistory };
 
