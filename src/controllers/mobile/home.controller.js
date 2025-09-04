@@ -390,14 +390,21 @@ const upsertRide = async (req, res) => {
 
 const earningsHistory = async (req, res) => {
   const driver_id = req.driver?.id;
-  const sortMonth = req.query.month;
+  const { months, days, years } = req.query;
 
   if (!driver_id) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   try {
-    const earnings = await HomeService.getDriverEarningsHistory(driver_id, sortMonth);
+    const filters = {
+      months: months ? months.split(",") : [],
+      days: days ? days.split(",") : [],
+      years: years ? years.split(",") : [],
+    };
+
+    const earnings = await HomeService.getDriverEarningsHistory(driver_id, filters);
+
     return res.status(200).json({
       success: true,
       message: "Earnings history fetched successfully",
@@ -410,7 +417,7 @@ const earningsHistory = async (req, res) => {
       message: "Failed to fetch earnings history"
     });
   }
-}
+};
 
 // controller for revealing/after accepting ride
 const releaseDriverFromRide = async (req, res) => {
