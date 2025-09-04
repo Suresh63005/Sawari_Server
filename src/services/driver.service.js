@@ -22,32 +22,37 @@ const normalizePhone = (phone) => {
 const verifyDriverMobile = async (phone, token, email, social_login) => {
   if (!token) throw new Error("Token is required");
 
-  console.log(token, "ttttttttttttttttttt")
+  
 
   let normalizedPhone = null;
   let driver = null;
 
   if (social_login === "google") {
-    // ----------------------------
-    // ✅ GOOGLE LOGIN
-    // ----------------------------
-    if (!email) throw new Error("Email is required");
 
+    if (!email) throw new Error("Email is required");
+console.log("wwwwwwwwwwwwwwwwwwww:", email);
     const decoded = await driverFirebase.auth()?.verifyIdToken(token);
+    console.log(decoded, "ddddddddddddddddddd");
     const firebaseEmail = decoded.email;
+
+    console.log(firebaseEmail, "eeeeeeeeeeeeeeeeeeeee")
 
     if (firebaseEmail !== email) {
       throw new Error("Email mismatch with token");
     }
 
-    driver = await Driver.findOne({ where: email })
+  
+
+    driver = await Driver.findOne({ where: { email:firebaseEmail } });
+
+
 
     if (driver) {
       // check driver status
       if (driver && driver.status === "blocked") {
         throw new Error("Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance.");
       }
-
+console.log(driver.status, "sssssssssssssssssssss");
       //// ✅ If status is active, allow login directly
       if (["active", "inactive", "rejected"].includes(driver.status)) {
         driver.last_login = new Date();
@@ -66,19 +71,14 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
     }
 
     if (!driver) {
+      console.log("cccccccccccccccccccccc:");
       driver = await Driver.create({
-        first_name: "",
-        last_name: "",
-        email,
+       
+        email:firebaseEmail,
         social_login: "google",
-        dob: new Date(),
         last_login: new Date(),
-        phone: "",
-        experience: 0,
-        languages: [],
-        license_front: "",
-        license_back: "",
         status: "inactive",
+        document_check_count:0
       });
     }
   } else {
@@ -88,14 +88,14 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
     if (!phone) throw new Error("Phone number is required");
 
     normalizedPhone = normalizePhone(phone);
+    console.log(normalizedPhone, "nnnnnnnnnnnnnnnnnnnnn");
     if (!normalizedPhone) throw new Error("Invalid phone number format");
 
     const decoded = await driverFirebase.auth()?.verifyIdToken(token);
     // const firebasePhone = decoded.phone_number;
     const firebasePhone = decoded.phone_number?.replace("+91", "");
 
-    console.log("yyyyyyyyyyyyyyyyyyyyyyyyy:", firebasePhone);
-    console.log("xxxxxxxxxxxxxxxxxxxxxxx,", normalizedPhone);
+  
 
     // Find driver first
     driver = await Driver.findOne({ where: { phone: normalizedPhone } })
@@ -129,16 +129,11 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
     }
     if (!driver) {
       driver = await Driver.create({
-        first_name: "",
-        last_name: "",
+
         phone: normalizedPhone,
-        dob: new Date(),
-        email: "",
+
+        email: email || null,
         last_login: new Date(),
-        experience: 0,
-        languages: [],
-        license_front: "",
-        license_back: "",
         status: "inactive",
       });
     }
@@ -191,6 +186,12 @@ const getDriverById = async (driverId) => {
   if (!driver) throw new Error("Driver not found");
   return driver;
 };
+
+const getStatusByDriver = async (driverId) => {
+  const driver = await Driver.findByPk(driverId, { attributes: ["ride_request","system_alerts","earning_updates"] }); 
+  if (!driver) throw new Error("Driver not found");
+  return driver;
+}
 
 const deactivateDriver = async (driverId) => {
   const driver = await Driver.findByPk(driverId);
@@ -360,5 +361,6 @@ module.exports = {
   driverProfileWithCar,
   updateDriverBalance,
   driverProfileWithCar,
-  checkActiveRide
+  checkActiveRide,
+  getStatusByDriver
 };

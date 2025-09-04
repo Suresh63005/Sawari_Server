@@ -24,5 +24,7 @@ router.post("/update-profile",
 router.get("/account-details",authMiddleware.isAuthenticated,driverAuthController.driverAccountDetails)
 router.put("/delete-account",authMiddleware.isAuthenticated,driverAuthController.deleteAccount)
 router.get("/check-status",authMiddleware.isAuthenticated,driverAuthController.checkStatus);
+router.get("/get-notify-statuses",authMiddleware.isAuthenticated,driverAuthController.getStatuses);
+router.put("/update-notify-statuses",authMiddleware.isAuthenticated,driverAuthController.updateStatuses);
 
 module.exports = router;
