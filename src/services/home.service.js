@@ -1,4 +1,4 @@
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
 const Ride = require("../models/ride.model")
 const Earnings = require("../models/earnings.model")
 const Driver = require("../models/driver.model")
@@ -163,83 +163,50 @@ const upsertRide = async (rideData) => {
 };
 
 
-const getDriverEarningsHistory = async (driver_id, sortMonth = null) => {
-    const today = new Date();
+const getDriverEarningsHistory = async (driver_id, filters) => {
+  const where = { driver_id };
 
-    // Today range
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-
-    // Week range
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
-
-    // Month range (default current month)
-    let startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0);
-    let endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
-
-    // If sortMonth is provided → override month range
-    if (sortMonth) {
-        const [year, month] = sortMonth.split("-");
-        startOfMonth = new Date(year, parseInt(month) - 1, 1, 0, 0, 0);
-        endOfMonth = new Date(year, parseInt(month), 0, 23, 59, 59);
-    }
-
-    // Fetch today’s earnings
-    const todayEarnings = await Earnings.sum("amount", {
-        where: {
-            driver_id,
-            createdAt: { [Op.between]: [startOfToday, endOfToday] },
-            status: "processed"
-        }
+  
+  if (filters.months.length > 0) {
+    const monthConditions = filters.months.map(month => {
+      const [year, monthNum] = month.split("-");
+      return {
+        [Op.and]: [
+          Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("createdAt")), year),
+          Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("createdAt")), monthNum),
+        ]
+      };
     });
+    where[Op.or] = [...(where[Op.or] || []), ...monthConditions];
+  }
 
-    // Fetch weekly earnings
-    const weekEarnings = await Earnings.sum("amount", {
-        where: {
-            driver_id,
-            createdAt: { [Op.between]: [startOfWeek, endOfWeek] },
-            status: "processed"
-        }
-    });
+  // Filter by days
+  if (filters.days.length > 0) {
+    where[Op.or] = [
+      ...(where[Op.or] || []),
+      {
+        [Op.or]: filters.days.map(day => ({
+          [Op.and]: [
+            Sequelize.where(Sequelize.fn("DATE", Sequelize.col("createdAt")), day)
+          ]
+        }))
+      }
+    ];
+  }
 
-    // Fetch month earnings (current month or requested)
-    const monthEarnings = await Earnings.sum("amount", {
-        where: {
-            driver_id,
-            createdAt: { [Op.between]: [startOfMonth, endOfMonth] },
-            status: "processed"
-        }
-    });
+  // Filter by years
+  if (filters.years.length > 0) {
+    where[Op.or] = [
+      ...(where[Op.or] || []),
+      {
+        [Op.or]: filters.years.map(year =>
+          Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("createdAt")), year)
+        )
+      }
+    ];
+  }
 
-    // Fetch month earnings details (for listing rides)
-    const monthEarningsDetails = await Earnings.findAll({
-        where: {
-            driver_id,
-            createdAt: { [Op.between]: [startOfMonth, endOfMonth] },
-            status: "processed"
-        },
-        include: [
-            {
-                model: Ride,
-                as: "Ride"
-            }
-        ],
-        order: [["createdAt", "DESC"]]
-    });
-
-    return {
-        todayEarnings: todayEarnings || 0,
-        weekEarnings: weekEarnings || 0,
-        monthEarnings: monthEarnings || 0,
-        selectedMonth: sortMonth || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`,
-        monthEarningsDetails
-    };
+  return await Earnings.findAll({ where, order: [["createdAt", "DESC"]] });
 };
 
 module.exports = { getDriverEarningsHistory };
