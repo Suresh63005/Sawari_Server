@@ -5,6 +5,7 @@ const { sequelize } = require('../models');
 const DriverCar = require('../models/driver-cars.model');
 const { Op } = require('sequelize');
 const Ride = require('../models/ride.model');
+const Car = require('../models/cars.model');
 
 const generateToken = (driverId) => {
   return jwt.sign({ id: driverId }, process.env.JWT_SECRET);
@@ -354,7 +355,14 @@ const driverProfileWithCar = async (driver_id) => {
       {
         model: DriverCar,
         as: "Vehicles",
-        attributes: ["car_model", "car_brand", "car_photos", "verified_by", "license_plate"]
+        attributes: ["car_photos", "verified_by", "license_plate"],
+        include:[
+          {
+            model: Car,
+            as: "Car",
+            attributes: ["id", "brand", "model"]
+          }
+        ]
       }
     ]
   })
