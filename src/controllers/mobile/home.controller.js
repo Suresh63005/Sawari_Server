@@ -70,7 +70,7 @@ const getAllHomeData = async (req, res) => {
 
     // 5. Available Rides (unassigned)
     const driverCar = await driverCarService.getDriverCarByDriverId(driver_id);
-    if(!driverCar){
+    if (!driverCar) {
       return res.status(404).json({
         success:false,
         message:"Driver has no registered car."
@@ -78,40 +78,41 @@ const getAllHomeData = async (req, res) => {
     }
 
     const availableRides = await conditionalRides({
+  where: {
+    driver_id: null,
+    status: "pending",
+  },
+  attributes: [
+    "id","customer_name", "email", "phone", "pickup_address", "pickup_location",
+    "drop_location", "scheduled_time", "pickup_time", "dropoff_time","Price"
+  ],
+  include: [
+    {
+      model: Car,
+      as: "Car",   // must match Ride.belongsTo(Car, { as: "Car" })
+      attributes: ["id", "brand", "model"],
       where: {
-        driver_id: null,
-        status: "pending",
-      },
-      attributes: [
-        "id","customer_name", "email", "phone", "pickup_address", "pickup_location",
-        "drop_location", "scheduled_time", "pickup_time", "dropoff_time","Price"
-      ],
-      include:[
-        {
-          model:Car,
-          as:"Car",
-          attributes:["id","brand","model"],
-          where: {
-            [Op.or]: [
-              { model: driverCar.car_model },   // correct case
-              { brand: driverCar.car_model }    // fallback if stored wrongly
-            ]
-          }
-        },
-        {
-          model: Package,
-          as: "Package",
-          attributes: ["name"]
-        },
-        {
-          model: SubPackage,
-          as: "SubPackage",
-          attributes: ["name"]
-        }
-      ],
-      limit: 10,
-      order: [["scheduled_time", "ASC"]]
-    });
+        brand: driverCar.Car?.brand,
+        model: driverCar.Car?.model
+      }
+    },
+    {
+      model: Package,
+      as: "Package",
+      attributes: ["name"]
+    },
+    {
+      model: SubPackage,
+      as: "SubPackage",
+      attributes: ["name"]
+    }
+  ],
+  limit: 10,
+  order: [["scheduled_time", "ASC"]]
+});
+
+console.log("DriverCar with Car:", JSON.stringify(driverCar, null, 2));
+
 
     return res.status(200).json({
       success: true,

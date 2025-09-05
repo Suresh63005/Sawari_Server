@@ -78,19 +78,30 @@ const upsertDriverCar = async (driverId, data) => {
   }
 };
 
-const getDriverCarByDriverId = async (driver_id,car_id=null) => {
-  const whereClause = {driver_id}
-  if(car_id){
-    whereClause.id = car_id
+const getDriverCarByDriverId = async (driver_id, car_id = null) => {
+  const whereClause = { driver_id };
+  if (car_id) {
+    whereClause.id = car_id;
   }
 
-  const vehicle = await DriverCar.findOne({where:whereClause});
-  if(!vehicle) {
-    throw new Error('Vehicle not found');
+  const vehicle = await DriverCar.findOne({
+    where: whereClause,
+    include: [
+      {
+        model: Car,
+        as: "Car",
+        attributes: ["id", "brand", "model"]
+      }
+    ]
+  });
+
+  if (!vehicle) {
+    throw new Error("Vehicle not found");
   }
-  return vehicle
-  
+
+  return vehicle;
 };
+
 
 // Service for reject vehicle
 const rejectDriverCar = async (carId, reason, verifiedBy) => {
