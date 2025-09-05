@@ -175,8 +175,8 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
       const [year, monthNum] = month.split("-");
       return {
         [Op.and]: [
-          Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("createdAt")), year),
-          Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("createdAt")), monthNum),
+          Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("Earnings.createdAt")), year),
+          Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("Earnings.createdAt")), monthNum),
         ]
       };
     });
@@ -190,7 +190,7 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
       {
         [Op.or]: filters.days.map(day => ({
           [Op.and]: [
-            Sequelize.where(Sequelize.fn("DATE", Sequelize.col("createdAt")), day)
+            Sequelize.where(Sequelize.fn("DATE", Sequelize.col("Earnings.createdAt")), day)
           ]
         }))
       }
@@ -203,7 +203,7 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
       ...(where[Op.or] || []),
       {
         [Op.or]: filters.years.map(year =>
-          Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("createdAt")), year)
+          Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("Earnings.createdAt")), year)
         )
       }
     ];
@@ -213,6 +213,22 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
   const history = await Earnings.findAll({
     where,
     order: [["createdAt", "DESC"]],
+    include: [
+      {
+        model: Ride,
+        as: "Ride",
+        attributes: [
+          "pickup_address",
+          "drop_address",
+          "pickup_time",
+          "dropoff_time",
+          "status",
+          "Total",
+          "customer_name",
+          "status"
+        ]
+      }
+    ]
   });
 
   // ------------------- TOTAL CALCULATIONS -------------------
@@ -232,7 +248,15 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0, 23, 59, 59, 999);
+  const endOfMonth = new Date(
+    startOfMonth.getFullYear(),
+    startOfMonth.getMonth() + 1,
+    0,
+    23,
+    59,
+    59,
+    999
+  );
 
   // Aggregate Queries
   const todayTotal = await Earnings.sum("amount", {
@@ -267,7 +291,8 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
 };
 
 
-module.exports = { getDriverEarningsHistory };
+
+
 
 
 // Service for relieving driver from a ride
