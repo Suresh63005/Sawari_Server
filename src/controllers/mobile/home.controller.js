@@ -62,7 +62,7 @@ const getAllHomeData = async (req, res) => {
       },
       attributes: [
         "customer_name", "email", "phone", "pickup_address", "pickup_location",
-        "drop_location", "scheduled_time", "pickup_time", "dropoff_time"
+        "drop_location","drop_address", "scheduled_time", "pickup_time", "dropoff_time"
       ],
       limit: 10,
       order: [["scheduled_time", "ASC"]]
@@ -84,7 +84,7 @@ const getAllHomeData = async (req, res) => {
   },
   attributes: [
     "id","customer_name", "email", "phone", "pickup_address", "pickup_location",
-    "drop_location", "scheduled_time", "pickup_time", "dropoff_time","Price"
+    "drop_location","drop_address", "scheduled_time", "pickup_time", "dropoff_time","Price"
   ],
   include: [
     {
