@@ -296,22 +296,32 @@ const deleteAccount = async (req, res) => {
 }
 
 const checkStatus = async (req, res) => {
-    const driverId = req.driver.id;
-    if (!driverId) {
-        return res.status(400).json({ success: false, message: "driver ID is required" });
-    }
-    try {
-        const driver = await driverService.getDriverById(driverId);
-        console.log(driver,"driverrrrrrrrrrrr")
-        const vehicle = await driverCarService.getDriverCarByDriverId(driver.id)
-        console.log(vehicle,"vehicleeeeeeeeeeeeeeeee")
-        return res.status(200).json({ success: true, message: "Driver data fetched successfully", data: {driver,vehicle} });
+  const driverId = req.driver.id;
+  if (!driverId) {
+    return res.status(400).json({ success: false, message: "Driver ID is required" });
+  }
 
-    } catch (error) {
-        console.error("check status error:", error);
-        return res.status(500).json({ success: false, message: "Internal server error" });
-    }
-}
+  try {
+    // Fetch driver data
+    const driver = await driverService.getDriverById(driverId);
+    console.log("Driver data:", driver);
+
+    // Fetch vehicle data (may return null if no vehicle exists)
+    const vehicle = await driverCarService.getDriverCarByDriverId(driver.id);
+    console.log("Vehicle data:", vehicle || "No vehicle found");
+
+    return res.status(200).json({
+      success: true,
+      message: vehicle
+        ? "Driver and vehicle data fetched successfully"
+        : "Driver data fetched successfully (no vehicle data available)",
+      data: { driver, vehicle },
+    });
+  } catch (error) {
+    console.error("checkStatus error:", error);
+    return res.status(500).json({ success: false, message: `Internal server error: ${error.message}` });
+  }
+};
 
 const getStatuses = async (req, res) => {
     
