@@ -18,6 +18,7 @@ const getAllPackagePrices = async (req, res) => {
     res.status(200).json({ message: "Package Prices retrieved successfully", result });
   } catch (error) {
     res.status(400).json({ error: error.message });
+    console.log(error,"eeeeeeeeeeeeeeeeeeeeeeee")
   }
 };
 

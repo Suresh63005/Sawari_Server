@@ -128,7 +128,7 @@ const getAllVehicles = async ({ page = 1, limit = 5, search = '', status = 'all'
 
   const { rows, count } = await DriverCar.findAndCountAll({
     where,
-    include: [{ model: Car, attributes: [] }],
+    include: [{ model: Car, as: 'Car', attributes: [] }],
     limit,
     offset
   });

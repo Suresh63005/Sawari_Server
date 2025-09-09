@@ -2,25 +2,28 @@ const { Op } = require('sequelize');
 const Notifications = require('../models/notifications.model');
 const { deleteFromS3 } = require('../config/fileUpload.aws');
 
-const notificationDTO = (data)=>{
-    return{
-    title:data.title,
-    message:data.message,
-    image:data.image,
-    is_read:data.is_read || false
-}}
+const notificationDTO = (data) => {
+  return {
+    title: data.title,
+    message: data.message,
+    image: data.image,
+    is_read: data.is_read || false,
+    is_global: data.user_id ? false : true, // Set is_global based on user_id presence
+    user_id: data.user_id || null, // Will be handled by is_global
+  };
+};
 
-const noficationResponseDTO = (notification)=>{
-    return{
-        id:notification.id,
-        title:notification.title,
-        message:notification.message,
-        image:notification.image,
-        is_read:notification.is_read,
-          user_id:notification.user_id,
-        createdAt:notification.createdAt
-    }
-}
+const noficationResponseDTO = (notification) => {
+  return {
+    id: notification.id,
+    title: notification.title,
+    message: notification.message,
+    image: notification.image,
+    is_read: notification.is_read,
+    user_id: notification.user_id,
+    createdAt: notification.createdAt
+  };
+};
 
 /**
  * 
@@ -30,6 +33,9 @@ const noficationResponseDTO = (notification)=>{
 const sendNotificationService = async (notificationData) => {
   try {
     const payload = notificationDTO(notificationData);
+    if (!payload.is_global && !payload.user_id) {
+      throw new Error('user_id is required for non-global notifications');
+    }
     const newNotification = await Notifications.create(payload);
     return {
       success: true,
@@ -46,24 +52,31 @@ const sendNotificationService = async (notificationData) => {
   }
 };
 
-const fetchAllNotifcationsService = async(queryParams)=>{
-    const {search = '',is_read,sort_by = 'createdAt',order = 'DESC',limit = 10,page = 1,} = queryParams;
-    const whereClause = {};
+const fetchAllNotifcationsService = async (queryParams) => {
+  const {
+    search = '',
+    is_read,
+    sort_by = 'createdAt',
+    order = 'DESC',
+    limit = 10,
+    page = 1,
+  } = queryParams;
+  const whereClause = {};
 
-    if(search){
-        whereClause[Op.or]=[
-            { title: { [Op.like]: `%${search}%` } },
-            { message: { [Op.like]: `%${search}%` } },
-        ]
-    }
-    if (typeof is_read !== 'undefined') {
-        whereClause.is_read = is_read === 'true';
-    }
-    try {
-        const offset = (parseInt(page)-1)*parseInt(limit);
-        const { rows, count } = await Notifications.findAndCountAll({
-            where: whereClause,
-            order: [[sort_by, order.toUpperCase()]],
+  if (search) {
+    whereClause[Op.or] = [
+      { title: { [Op.like]: `%${search}%` } },
+      { message: { [Op.like]: `%${search}%` } },
+    ];
+  }
+  if (typeof is_read !== 'undefined') {
+    whereClause.is_read = is_read === 'true';
+  }
+  try {
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const { rows, count } = await Notifications.findAndCountAll({
+      where: whereClause,
+      order: [[sort_by, order.toUpperCase()]],
             limit: parseInt(limit),
             offset,
         });
