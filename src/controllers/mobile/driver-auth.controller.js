@@ -138,20 +138,38 @@ const updateProfileAndCarDetails = async (req, res) => {
     }
 
     // Step 6: Update driver profile in DB
-    await driverService.updateDriverProfile(driverId, updatedDriverData); // update 1
+    await driverService.updateDriverProfile(driverId, updatedDriverData);
     console.log("Driver profile updated in DB.");
 
-    const UpdatedDriver = await driverService.getDriverById(driverId);
+    const updatedDriver = await driverService.getDriverById(driverId);
 
     // Step 7: Handle Vehicle/Car info
     const carData = {
       car_id: req.body.car_id,
       license_plate: req.body.license_plate,
-      color: req.body.color, // Added color field
+      color: req.body.color,
     };
     console.log("Initial car data:", carData);
 
-    // Step 8: Handle car photo uploads
+    // Step 8: Validate required fields for new DriverCar entry
+    const requiredFields = ['car_id', 'license_plate'];
+    const missingFields = requiredFields.filter(field => !carData[field]);
+    if (missingFields.length > 0 && !req.files?.rc_doc && !req.files?.rc_doc_back && !req.files?.insurance_doc && !req.files?.car_photos) {
+      console.log("Skipping car update: No car-related data provided.");
+      return res.status(200).json({
+        message: "Driver profile updated successfully. No car data provided.",
+        driver: updatedDriver,
+        vehicle: null,
+      });
+    }
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        error: `Missing required car fields: ${missingFields.join(", ")}`,
+      });
+    }
+
+    // Step 9: Handle car photo uploads
     if (req.files?.car_photos) {
       console.log("Uploading car photos...");
       const carPhotos = await Promise.all(
@@ -161,7 +179,7 @@ const updateProfileAndCarDetails = async (req, res) => {
       console.log("Uploaded car photos:", carPhotos);
     }
 
-    // Step 9: Upload RC document
+    // Step 10: Upload RC document
     if (req.files?.rc_doc) {
       console.log("Uploading RC document...");
       carData.rc_doc = await uploadToS3(req.files.rc_doc[0], "driver-cars");
@@ -178,7 +196,7 @@ const updateProfileAndCarDetails = async (req, res) => {
       console.log("Uploaded insurance document:", carData.insurance_doc);
     }
 
-    // Step 10: Set verification statuses
+    // Step 11: Set verification statuses
     if (req.files?.rc_doc || req.files?.rc_doc_back) {
       carData.rc_doc_status = "pending";
     }
@@ -187,13 +205,13 @@ const updateProfileAndCarDetails = async (req, res) => {
     }
     console.log("Set car document verification statuses to 'pending'");
 
-    // Step 11: Save or update car details
-    await driverCarService.upsertDriverCar(driverId, carData); // update 2
-    const vehicle = await driverCarService.getDriverCarByDriverId(driverId);
+    // Step 12: Save or update car details
+    const vehicle = await driverCarService.upsertDriverCar(driverId, carData);
+    console.log("DriverCar upsert result:", vehicle);
 
     res.status(200).json({
       message: "Driver and vehicle profile submitted successfully.",
-      driver: UpdatedDriver,
+      driver: updatedDriver,
       vehicle,
     });
   } catch (error) {
@@ -215,7 +233,7 @@ const updateProfileAndCarDetails = async (req, res) => {
         return res.status(400).json({ error: "OneSignal ID is already in use." });
       }
     }
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: `Failed to update profile or car details: ${error.message}` });
   }
 };
 
@@ -278,22 +296,32 @@ const deleteAccount = async (req, res) => {
 }
 
 const checkStatus = async (req, res) => {
-    const driverId = req.driver.id;
-    if (!driverId) {
-        return res.status(400).json({ success: false, message: "driver ID is required" });
-    }
-    try {
-        const driver = await driverService.getDriverById(driverId);
-        console.log(driver,"driverrrrrrrrrrrr")
-        const vehicle = await driverCarService.getDriverCarByDriverId(driver.id)
-        console.log(vehicle,"vehicleeeeeeeeeeeeeeeee")
-        return res.status(200).json({ success: true, message: "Driver data fetched successfully", data: {driver,vehicle} });
+  const driverId = req.driver.id;
+  if (!driverId) {
+    return res.status(400).json({ success: false, message: "Driver ID is required" });
+  }
 
-    } catch (error) {
-        console.error("check status error:", error);
-        return res.status(500).json({ success: false, message: "Internal server error" });
-    }
-}
+  try {
+    // Fetch driver data
+    const driver = await driverService.getDriverById(driverId);
+    console.log("Driver data:", driver);
+
+    // Fetch vehicle data (may return null if no vehicle exists)
+    const vehicle = await driverCarService.getDriverCarByDriverId(driver.id);
+    console.log("Vehicle data:", vehicle || "No vehicle found");
+
+    return res.status(200).json({
+      success: true,
+      message: vehicle
+        ? "Driver and vehicle data fetched successfully"
+        : "Driver data fetched successfully (no vehicle data available)",
+      data: { driver, vehicle },
+    });
+  } catch (error) {
+    console.error("checkStatus error:", error);
+    return res.status(500).json({ success: false, message: `Internal server error: ${error.message}` });
+  }
+};
 
 const getStatuses = async (req, res) => {
     

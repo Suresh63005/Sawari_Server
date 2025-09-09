@@ -417,24 +417,27 @@ const getAllRides = async ({ search = '', status = '', limit = '10', page = '1',
 };
 
 // Get ride by ID
-const getRideById = async (id) => {
+const getRideById = async (id, transaction = null, lock = null) => {
   try {
     console.log('getRideById id:', id);
     const ride = await Ride.findByPk(id, {
       include: [
-        { model: Package, as:"Package", attributes: ['id', 'name'] },
-        { model: SubPackage, as:"SubPackage", attributes: ['id', 'name'] },
-        { model: Car, as:"Car", attributes: ['id', 'model'] },
+        { model: Package, as: "Package", attributes: ['id', 'name'] },
+        { model: SubPackage, as: "SubPackage", attributes: ['id', 'name'] },
+        { model: Car, as: "Car", attributes: ['id', 'model'] },
       ],
+      transaction,
+      lock
     });
     if (!ride) throw new Error('Ride not found with the given ID');
     return {
+      ride, // Return the raw Sequelize model for updates
       data: {
         ...rideResponseDTO(ride),
         package_name: ride.Package ? ride.Package.name : null,
         subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
-        car_name: ride.Car ? ride.Car.model : null,
-      },
+        car_name: ride.Car ? ride.Car.model : null
+      }
     };
   } catch (error) {
     console.error('getRideById error:', error);

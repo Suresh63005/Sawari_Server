@@ -5,6 +5,7 @@ const { sequelize } = require('../models');
 const DriverCar = require('../models/driver-cars.model');
 const { Op } = require('sequelize');
 const Ride = require('../models/ride.model');
+const Car = require('../models/cars.model');
 
 const generateToken = (driverId) => {
   return jwt.sign({ id: driverId }, process.env.JWT_SECRET);
@@ -354,18 +355,32 @@ const driverProfileWithCar = async (driver_id) => {
       {
         model: DriverCar,
         as: "Vehicles",
-        attributes: ["car_model", "car_brand", "car_photos", "verified_by", "license_plate"]
+        attributes: ["car_photos", "verified_by", "license_plate"],
+        include:[
+          {
+            model: Car,
+            as: "Car",
+            attributes: ["id", "brand", "model"]
+          }
+        ]
       }
     ]
   })
 }
 
 
-const updateDriverBalance = async (driver_id, newBalance) => {
-  return Driver.update(
-    { wallet_balance: newBalance },
-    { where: { id: driver_id } }
-  );
+const updateDriverBalance = async (driver_id, balance, transaction = null) => {
+  try {
+    const driver = await Driver.findByPk(driver_id, { transaction });
+    if (!driver) {
+      throw new Error("Driver not found");
+    }
+    await driver.update({ wallet_balance: balance }, { transaction });
+    return driver;
+  } catch (error) {
+    console.error("Error updating driver balance:", error);
+    throw new Error("Failed to update driver balance");
+  }
 };
 
 const checkActiveRide= async (driver_id, status = ["pending", "accepted", "on-route"]) => {
