@@ -39,7 +39,7 @@ const addMoneyToWallet = async (req, res) => {
 
   try {
     const options = {
-      amount: amount, // Razorpay expects paise
+      amount: amount * 100, // Razorpay expects paise
       currency: "INR",
       receipt: uuidv4(),
       notes: { driver_id }

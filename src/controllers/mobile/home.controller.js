@@ -364,6 +364,22 @@ const upsertRide = async (req, res) => {
       Total
     } = req.body;
 
+    // Validate pickup_location and drop_location
+    if(!pickup_location || typeof pickup_location !== "object" || !pickup_location.lat || !pickup_location.lng){
+      return res.status(400).json({
+        success:false,
+        message:"Invalid pickup_location format. Must be an object with lat and lng"
+      })
+    }
+
+    if (
+      !drop_location || typeof drop_location !== 'object' || !drop_location.lat || !drop_location.lng) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid drop_location format. Must be an object with lat and lng.',
+      });
+    }
+
     const ride = await HomeService.upsertRide({
       id,
       driver_id,
