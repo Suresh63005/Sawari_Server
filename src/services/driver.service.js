@@ -369,11 +369,18 @@ const driverProfileWithCar = async (driver_id) => {
 }
 
 
-const updateDriverBalance = async (driver_id, newBalance) => {
-  return Driver.update(
-    { wallet_balance: newBalance },
-    { where: { id: driver_id } }
-  );
+const updateDriverBalance = async (driver_id, balance, transaction = null) => {
+  try {
+    const driver = await Driver.findByPk(driver_id, { transaction });
+    if (!driver) {
+      throw new Error("Driver not found");
+    }
+    await driver.update({ wallet_balance: balance }, { transaction });
+    return driver;
+  } catch (error) {
+    console.error("Error updating driver balance:", error);
+    throw new Error("Failed to update driver balance");
+  }
 };
 
 const checkActiveRide= async (driver_id, status = ["pending", "accepted", "on-route"]) => {
