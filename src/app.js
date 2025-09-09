@@ -106,6 +106,24 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 //     console.error("❌ Failed to sync Ticket table:", err);
 //   });
 
+const multer = require('multer');
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    // Handle file size limit error
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File size exceeds 1 MB limit.' });
+    }
+    return res.status(400).json({ error: err.message });
+  }
+
+  // Other errors (from your controllers/services)
+  if (err) {
+    return res.status(500).json({ error: err.message || 'Something went wrong' });
+  }
+
+  next();
+});
+
 const startServer = async () => {
   if (process.env.NODE_ENV === 'test') {
     console.log("🧪 Test mode: Skipping Redis and server startup");

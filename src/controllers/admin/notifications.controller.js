@@ -73,23 +73,31 @@ const sendNotificationController = async (req, res) => {
       imageUrl = await uploadToS3(req.file);
     }
 
-    // Step 1: Always store the notification in the DB
+    // Save notification to database
     const result = await notificationService.sendNotificationService({
       title,
       message,
       image: imageUrl,
     });
 
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.message || "Failed to save notification",
+        error: result.error,
+      });
+    }
+
     let oneSignalResponse = null;
     let pushError = null;
 
-    // Step 2: Attempt to send OneSignal push notification
+    // Send OneSignal push notification to all drivers
     try {
       const response = await axios.post(
         'https://onesignal.com/api/v1/notifications',
         {
           app_id: process.env.ONE_SIGNAL_APP_ID,
-          included_segments: ['All'],
+          included_segments: ['All'], // Targets all drivers
           headings: { en: title },
           contents: { en: message },
           big_picture: imageUrl || undefined,
@@ -101,14 +109,12 @@ const sendNotificationController = async (req, res) => {
           },
         }
       );
-
       oneSignalResponse = response.data;
     } catch (err) {
       console.error('OneSignal Push Error:', err.response?.data || err.message);
       pushError = err.response?.data || err.message;
     }
 
-    // Step 3: Return response
     return res.status(200).json({
       success: true,
       message: "Notification saved. Push " + (pushError ? "failed" : "sent successfully."),

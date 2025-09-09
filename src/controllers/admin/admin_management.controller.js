@@ -21,30 +21,23 @@ const canCreateAdmin = (currentRole, newRole) => {
 const listAdmins = async (req, res) => {
   try {
     const currentUser = req.user;
-    console.log("Listing admins for user:", currentUser.id, currentUser.role); // Debug log
-    const { search, page, limit, sortBy, sortOrder } = req.query;
-    const { data, total } = await AuthService.getAllAdmins({
+    console.log("Listing admins for user:", currentUser.id, currentUser.role);
+
+    const { search = '', page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+
+    const { data, total, page: currentPage, limit: currentLimit } = await AuthService.getAllAdmins({
       search,
       page,
       limit,
       sortBy,
       sortOrder,
+      currentUser, // Pass currentUser to apply role-based filtering in the service
     });
-    const admins = data;
 
-    // Filter admins based on role
-    const filteredAdmins = admins.filter((admin) => {
-      if (currentUser.role === "super_admin") return true;
-      const allowedRoles = getAdminHierarchy(currentUser.role);
-      return (
-        allowedRoles.includes(admin.role) &&
-        admin.role !== currentUser.role &&
-        admin.id !== currentUser.id
-      );
-    });
+    console.log(`getAllAdmins: page=${currentPage}, limit=${currentLimit}, count=${total}, rows=${data.length}`);
 
     // Map admins to response format
-    const response = filteredAdmins.map((admin) => {
+    const response = data.map((admin) => {
       const permissions = admin.AdminPermissions[0] || {
         dashboard_access: false,
         manage_drivers: false,
@@ -66,7 +59,7 @@ const listAdmins = async (req, res) => {
         email: admin.email,
         phone: admin.phone,
         role: admin.role,
-        status: admin.status, // 'active', 'inactive', or 'blocked'
+        status: admin.status,
         created_at: admin.createdAt.toISOString().split("T")[0],
         permissions: {
           dashboard: Boolean(permissions.dashboard_access),
@@ -77,7 +70,7 @@ const listAdmins = async (req, res) => {
           support: Boolean(permissions.manage_support_tickets),
           push_notifications: Boolean(permissions.manage_push_notifications),
           admin_management: Boolean(permissions.manage_admin),
-          fleet: Boolean(permissions.manage_fleet), // New
+          fleet: Boolean(permissions.manage_fleet),
         },
       };
     });
@@ -86,9 +79,9 @@ const listAdmins = async (req, res) => {
       data: response,
       pagination: {
         total,
-        page: parseInt(page) || 1,
-        limit: parseInt(limit) || 10,
-        totalPages: Math.ceil(total / (parseInt(limit) || 10)),
+        page: currentPage,
+        limit: currentLimit,
+        totalPages: Math.ceil(total / currentLimit),
       },
     });
   } catch (error) {
