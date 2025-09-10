@@ -85,33 +85,64 @@ const updateAdminStatus = async (id, status) => {
 };
 
 
-const getAllAdmins = async ({ search = '', limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC' }) => {
-  const where = {};
-  const offset = (parseInt(page) - 1) * parseInt(limit);
+const getAllAdmins = async ({
+  search = '',
+  limit = 10,
+  page = 1,
+  sortBy = 'createdAt',
+  sortOrder = 'DESC',
+  currentUser, // Add currentUser to apply role-based filtering
+}) => {
+  // Validate query parameters
+  const parsedPage = parseInt(page) > 0 ? parseInt(page) : 1;
+  const parsedLimit = parseInt(limit) > 0 ? parseInt(limit) : 10;
+  const validSortBy = ['createdAt', 'first_name', 'last_name', 'email', 'role'].includes(sortBy) ? sortBy : 'createdAt';
+  const validSortOrder = sortOrder && ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+  const offset = (parsedPage - 1) * parsedLimit;
 
+  // Build where clause with role-based filtering
+  let where = {};
   if (search) {
     where[Op.or] = [
       { first_name: { [Op.like]: `%${search}%` } },
       { last_name: { [Op.like]: `%${search}%` } },
       { email: { [Op.like]: `%${search}%` } },
       { phone: { [Op.like]: `%${search}%` } },
-      { role: { [Op.like]: `%${search}%` } }
+      { role: { [Op.like]: `%${search}%` } },
     ];
   }
 
+  // Apply role-based filtering and exclude current user
+  if (currentUser.role !== 'super_admin') {
+    const allowedRoles = getAdminHierarchy(currentUser.role);
+    where = {
+      ...where,
+      role: { [Op.in]: allowedRoles },
+      id: { [Op.ne]: currentUser.id },
+    };
+  } else {
+    where = {
+      ...where,
+      id: { [Op.ne]: currentUser.id },
+    };
+  }
+
   const { rows, count } = await Admin.findAndCountAll({
-    where,
-    include: [{ model: Permissions, as: 'AdminPermissions' }],
-    order: [[sortBy, sortOrder.toUpperCase()]],
-    limit: parseInt(limit),
-    offset
-  });
+  where,
+  include: [{ model: Permissions, as: 'AdminPermissions' }],
+  order: [[validSortBy, validSortOrder]],
+  limit: parsedLimit,
+  offset,
+  distinct: true // 👈 tells Sequelize to count only distinct Admins
+});
+
+  console.log(`getAllAdmins: page=${parsedPage}, limit=${parsedLimit}, count=${count}, rows=${rows.length}`);
 
   return {
     total: count,
-    page: parseInt(page),
-    limit: parseInt(limit),
-    data: rows
+    page: parsedPage,
+    limit: parsedLimit,
+    data: rows,
   };
 };
 

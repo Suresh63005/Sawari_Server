@@ -202,9 +202,21 @@ const getPendingApprovals = async () => {
     });
 
     const pendingVehicles = await DriverCar.findAll({
-      where: { is_approved: false, status: 'inactive', deletedAt: null },
-      attributes: ['id', 'car_model', 'license_plate'],
-    });
+  where: { 
+    is_approved: false,
+    status: "inactive",
+    deletedAt: null
+  },
+  attributes: ["id", "license_plate"],   // only DriverCar columns here
+  include: [
+    {
+      model: Car,
+      as: "Car",                         // must match alias
+      attributes: ["id", "brand", "model", "image_url"], // Car columns here
+    },
+  ],
+});
+
 
     return [
       ...pendingDrivers.map((driver) => ({
@@ -218,7 +230,7 @@ const getPendingApprovals = async () => {
       ...pendingVehicles.map((vehicle) => ({
         id: vehicle.id,
         type: 'Vehicle',
-        name: `${vehicle.car_model} - ${vehicle.license_plate}`,
+        name: `${vehicle.model} - ${vehicle.license_plate}`,
         status: 'pending',
         priority: 'medium',
         permission: 'vehicles',
@@ -230,6 +242,7 @@ const getPendingApprovals = async () => {
       stack: error.stack,
       name: error.name,
     });
+    console.log("Error details:", error);
     throw new Error(`Failed to fetch pending approvals: ${error.message}`);
   }
 };

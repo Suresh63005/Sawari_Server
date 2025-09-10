@@ -26,7 +26,7 @@ const Notifications = sequelize.define('Notifications',{
     },
     user_id:{
         type:DataTypes.UUID,
-        allowNull:false
+        allowNull:true
     }
 },{tableName:"Notifications",paranoid:true,timestamps:true})
 
