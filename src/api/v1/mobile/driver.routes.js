@@ -26,5 +26,7 @@ router.put("/delete-account",authMiddleware.isAuthenticated,driverAuthController
 router.get("/check-status",authMiddleware.isAuthenticated,driverAuthController.checkStatus);
 router.get("/get-notify-statuses",authMiddleware.isAuthenticated,driverAuthController.getStatuses);
 router.put("/update-notify-statuses",authMiddleware.isAuthenticated,driverAuthController.updateStatuses);
+router.put("/update-onesignal-id",authMiddleware.isAuthenticated,driverAuthController.updateOneSignalId);
+router.put("/delete-onesignal-id",authMiddleware.isAuthenticated,driverAuthController.deleteOneSignalId);
 
 module.exports = router;
