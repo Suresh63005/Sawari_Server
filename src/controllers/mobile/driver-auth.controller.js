@@ -356,6 +356,40 @@ const updateStatuses = async (req, res) => {
     }
 }
 
+// Controller to update one signal id
+const updateOneSignalId = async (req, res) => {
+    try {
+        const driverId = req.driver.id;
+        const { oneSignalId } = req.body;
+
+        if (!driverId || !oneSignalId) {
+            return res.status(400).json({ success: false, message: "Driver ID and OneSignal ID are required" });
+        }
+
+        const updatedDriver = await driverService.updateOneSignalPlayerId(driverId, oneSignalId);
+        return res.status(200).json({ success: true, message: "OneSignal ID updated successfully", data: updatedDriver });
+    } catch (error) {
+        console.error("updateOneSignalId error:", error);
+        return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// Controller to delete one signal id
+const deleteOneSignalId = async (req, res) => {
+    try {
+        const driverId = req.driver.id;
+
+        if (!driverId) {
+            return res.status(400).json({ success: false, message: "Driver ID is required" });
+        }
+
+        const updatedDriver = await driverService.deleteOneSignalPlayerId(driverId);
+        return res.status(200).json({ success: true, message: "OneSignal ID deleted successfully", data: updatedDriver });
+    } catch (error) {
+        console.error("deleteOneSignalId error:", error);
+        return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
 
 module.exports = {
     verifyMobile,
@@ -365,5 +399,7 @@ module.exports = {
     deleteAccount,
     checkStatus,
     getStatuses,
-    updateStatuses
+    updateStatuses,
+    updateOneSignalId,
+    deleteOneSignalId
 }
