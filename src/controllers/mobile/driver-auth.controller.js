@@ -146,13 +146,15 @@ const updateProfileAndCarDetails = async (req, res) => {
       }
     }
 
-    // Step 6: Prevent resetting is_approved unless new verification files are uploaded
+    // Step 6: Prevent resetting is_approved and set status to inactive if verification files are uploaded
     if (hasVerificationFiles) {
       updatedDriverData.is_approved = false; // Reset to false for re-verification
-      console.log("Set is_approved to false in Driver due to new verification files");
+      updatedDriverData.status = "inactive"; // Set driver status to inactive
+      console.log("Set is_approved to false and status to 'inactive' in Driver due to new verification files");
     } else {
       delete updatedDriverData.is_approved; // Preserve existing is_approved
-      console.log("Preserving existing is_approved value in Driver");
+      delete updatedDriverData.status; // Preserve existing status
+      console.log("Preserving existing is_approved and status values in Driver");
     }
 
     // Step 7: Validate if any driver data is provided
@@ -245,20 +247,26 @@ const updateProfileAndCarDetails = async (req, res) => {
       }
     }
 
-    // Step 12: Prevent resetting is_approved in carData unless new verification files are uploaded
+    // Step 12: Prevent resetting is_approved in carData and set driver status to inactive if car verification files are uploaded
     if (hasCarVerificationFiles) {
       carData.is_approved = false; // Reset to false for re-verification
-      console.log("Set is_approved to false in DriverCar due to new verification files");
+      updatedDriverData.status = "inactive"; // Set driver status to inactive
+      console.log("Set is_approved to false in DriverCar and status to 'inactive' in Driver due to new car verification files");
     } else {
       delete carData.is_approved; // Preserve existing is_approved
       console.log("Preserving existing is_approved value in DriverCar");
     }
 
-    // Step 13: Save or update car details
+    // Step 13: Update driver status if car verification files were uploaded
+    if (hasCarVerificationFiles && !hasDriverData) {
+      await driverService.updateDriverProfile(driverId, { status: "inactive" });
+      console.log("Driver status updated to 'inactive' due to car verification files");
+    }
+
+    // Step 14: Save or update car details
     if (hasCarFiles || carData.car_id || carData.license_plate || carData.color) {
       const vehicle = await driverCarService.upsertDriverCar(driverId, carData);
       console.log("DriverCar upsert result:", vehicle);
-
       res.status(200).json({
         message: "Driver and vehicle profile submitted successfully.",
         driver: updatedDriver,
