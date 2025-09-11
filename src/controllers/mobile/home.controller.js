@@ -61,7 +61,7 @@ const getAllHomeData = async (req, res) => {
         }
       },
       attributes: [
-        "customer_name", "email", "phone", "pickup_address", "pickup_location",
+        "customer_name", "email", "phone", "pickup_address", "pickup_location","initiated_by_driver_id",
         "drop_location","drop_address", "scheduled_time", "pickup_time", "dropoff_time"
       ],
       limit: 10,
@@ -83,7 +83,7 @@ const getAllHomeData = async (req, res) => {
     status: "pending",
   },
   attributes: [
-    "id","customer_name", "email", "phone", "pickup_address", "pickup_location",
+    "id","customer_name", "email", "phone", "pickup_address", "pickup_location","initiated_by_driver_id",
     "drop_location","drop_address", "scheduled_time", "pickup_time", "dropoff_time","Price"
   ],
   include: [
@@ -108,7 +108,7 @@ const getAllHomeData = async (req, res) => {
     }
   ],
   limit: 10,
-  order: [["scheduled_time", "ASC"]]
+  order: [["scheduled_time","DESC"]]
 });
 
 console.log("DriverCar with Car:", JSON.stringify(driverCar, null, 2));
