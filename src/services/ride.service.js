@@ -21,6 +21,7 @@ const rideResponseDTO = (ride) => ({
   subpackage_id: ride.subpackage_id,
   scheduled_time: ride.scheduled_time,
   driver_id: ride.driver_id,
+  initiated_by_driver_id: ride.initiated_by_driver_id,
   status: ride.status,
   notes: ride.notes,
   Price: ride.Price,
