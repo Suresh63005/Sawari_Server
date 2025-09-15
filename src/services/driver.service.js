@@ -214,14 +214,29 @@ const rejectDriver = async (driverId, reason, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
 
-  await driver.update({
-    is_approved: false,
-    status: 'rejected', // mark as rejected
-    reason,
-    verified_by: verifiedBy
-  });
+  const newCount = (driver.document_check_count || 0) + 1;
 
-  return { message: 'Driver rejected' };
+  const updateData = {
+    is_approved: false,
+    status: 'rejected', // default
+    reason,
+    verified_by: verifiedBy,
+    document_check_count: newCount,
+  };
+
+  // Block only after 3rd rejection
+  if (newCount >= 3) {
+    updateData.status = 'blocked';
+  }
+
+  await driver.update(updateData);
+
+  return {
+    message:
+      newCount >= 3
+        ? 'Driver blocked due to repeated rejections'
+        : 'Driver rejected',
+  };
 };
 
 
@@ -295,22 +310,15 @@ const rejectLicense = async (driverId, reason, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
 
-  let newCount = driver.document_check_count + 1;
-  let updateData = {
+  await driver.update({
     license_verification_status: 'rejected',
     verified_by: verifiedBy,
     reason,
-    document_check_count: newCount
-  };
+    // if you still want to count how many times license rejected, keep this line:
+    // document_check_count: (driver.document_check_count || 0) + 1,
+  });
 
-  // If rejected 3 times → block driver
-  if (newCount >= 3) {
-    updateData.status = 'blocked';
-  }
-
-  await driver.update(updateData);
-
-  return { message: newCount >= 3 ? 'Driver blocked due to repeated rejections' : 'License rejected' };
+  return { message: 'License rejected' };
 };
 
 const verifyEmirates = async (driverId, verifiedBy) => {
@@ -330,22 +338,15 @@ const rejectEmirates = async (driverId, reason, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');
 
-  let newCount = driver.document_check_count + 1;
-  let updateData = {
+  await driver.update({
     emirates_verification_status: 'rejected',
     verified_by: verifiedBy,
     reason,
-    document_check_count: newCount
-  };
+    // if you still want to count how many times emirates rejected, keep this line:
+    // document_check_count: (driver.document_check_count || 0) + 1,
+  });
 
-  // If rejected 3 times → block driver
-  if (newCount >= 3) {
-    updateData.status = 'blocked';
-  }
-
-  await driver.update(updateData);
-
-  return { message: newCount >= 3 ? 'Driver blocked due to repeated rejections' : 'Emirates ID rejected' };
+  return { message: 'Emirates ID rejected' };
 };
 
 const driverProfileWithCar = async (driver_id) => {

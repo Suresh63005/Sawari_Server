@@ -1,5 +1,6 @@
 const { Op } = require("sequelize");
 const SubPackage = require("../models/sub-package.model");
+const Package = require("../models/package.model");
 
 // Response DTO
 const subPackageResponseDTO = (subpackage) => ({
@@ -80,10 +81,13 @@ const getAllSubPackages = async ({
   const where = {};
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
+  // normal search (name + package_id)
   if (search) {
     where[Op.or] = [
       { name: { [Op.like]: `%${search}%` } },
       { package_id: { [Op.like]: `%${search}%` } },
+      {description: { [Op.like]: `%${search}%` } },
+      { "$Package.name$": { [Op.like]: `%${search}%` } },
     ];
   }
 
@@ -93,18 +97,31 @@ const getAllSubPackages = async ({
 
   const { rows, count } = await SubPackage.findAndCountAll({
     where,
+    include: [
+      {
+        model: Package,
+        as: "Package", // use your actual alias
+        attributes: ["id", "name"],
+        required: false, // so it doesn’t filter out if no package found
+      },
+    ],
     order: [[sortBy, sortOrder.toUpperCase()]],
     limit: parseInt(limit),
     offset,
   });
 
   return {
-    data: rows.map(subPackageResponseDTO),
+    data: rows.map((row) => {
+      const dto = subPackageResponseDTO(row);
+      dto.packageName = row.package?.name || null; // attach package name
+      return dto;
+    }),
     total: count,
     page: parseInt(page),
     limit: parseInt(limit),
   };
 };
+
 const getActiveSubPackages = async () => {
   const subPackages = await SubPackage.findAll({
     where: { status: true }, // only active
