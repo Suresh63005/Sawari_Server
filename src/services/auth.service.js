@@ -1,7 +1,7 @@
 const Admin = require('../models/admin.model');
 const Permissions = require('../models/permissions.model');
 const { Op } = require('sequelize');
-
+const  {getAdminHierarchy}  = require('../utils/adminHierarchy')
 const getAdminByEmail = async (email) => {
   return await Admin.findOne({
     where: { email },
@@ -58,6 +58,7 @@ const createPermissions = async (data) => {
     manage_support_tickets: data.manage_support_tickets ? 1 : 0,
     manage_push_notifications: data.manage_push_notifications ? 1 : 0,
     manage_fleet: data.manage_fleet ? 1 : 0, // New
+    manage_reports: data.manage_reports ? 1 : 0, // New
     manage_admin: data.manage_admin ? 1 : 0,
     granted_by: data.granted_by,
   });
@@ -160,6 +161,7 @@ const updatePermissions = async (id, permissions) => {
       manage_support_tickets: 0,
       manage_push_notifications: 0, // Renamed
       manage_fleet: 0, // New
+      manage_reports: 0, // New
       manage_admin: 0,
       granted_by: permissions.granted_by || null,
     },
@@ -174,6 +176,7 @@ const updatePermissions = async (id, permissions) => {
     manage_support_tickets: permissions.manage_support_tickets,
     manage_push_notifications: permissions.manage_push_notifications, // Renamed
     manage_fleet: permissions.manage_fleet, // New
+    manage_reports: permissions.manage_reports, // New
     manage_admin: permissions.manage_admin,
     granted_by: permissions.granted_by,
   };

@@ -48,6 +48,7 @@ const listAdmins = async (req, res) => {
         manage_push_notifications: false,
         manage_admin: false,
         manage_fleet: false,
+        manage_reports: false,
       };
       console.log(
         `Mapping admin ${admin.id} (${admin.first_name} ${admin.last_name}):`,
@@ -71,6 +72,7 @@ const listAdmins = async (req, res) => {
           push_notifications: Boolean(permissions.manage_push_notifications),
           admin_management: Boolean(permissions.manage_admin),
           fleet: Boolean(permissions.manage_fleet),
+          reports: Boolean(permissions.manage_reports),
         },
       };
     });
@@ -141,6 +143,7 @@ const createAdmin = async (req, res) => {
       manage_push_notifications: Boolean(permissions.manage_push_notifications),
       manage_admin: Boolean(permissions.manage_admin),
       manage_fleet: Boolean(permissions.manage_fleet),
+      manage_reports: Boolean(permissions.manage_reports),
       granted_by: currentUser.id,
     });
 
@@ -266,6 +269,7 @@ const updatePermissions = async (req, res) => {
       manage_push_notifications: permissions.push_notifications ? 1 : 0, // Renamed
       manage_admin: permissions.admin_management ? 1 : 0,
       manage_fleet: permissions.fleet ? 1 : 0, // New
+      manage_reports: permissions.reports ? 1 : 0, // New
       granted_by: currentUser.id,
     });
     console.log(`Permissions updated for admin ${id}:`, updatedPermissions); // Debug log
@@ -282,6 +286,7 @@ const updatePermissions = async (req, res) => {
         push_notifications: !!updatedPermissions.manage_push_notifications, // Renamed
         admin_management: !!updatedPermissions.manage_admin,
         fleet: !!updatedPermissions.manage_fleet, // New
+        reports: !!updatedPermissions.manage_reports, // New
       },
     });
   } catch (error) {
@@ -296,4 +301,5 @@ module.exports = {
   updateAdmin,
   updateAdminStatus,
   updatePermissions,
+  getAdminHierarchy
 };
