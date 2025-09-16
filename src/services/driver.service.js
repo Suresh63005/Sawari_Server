@@ -420,6 +420,8 @@ const deleteOneSignalPlayerId = async (driver_id) => {
   return driver;
 };
 
+
+
 module.exports = {
   verifyDriverMobile,
   blockDriverByPhoneOrEmail,

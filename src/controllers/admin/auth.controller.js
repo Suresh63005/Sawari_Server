@@ -15,6 +15,7 @@ const getRolePermissions = (role) => {
       manage_push_notifications: true, // Renamed from manage_notifications
       manage_admin: true,
       manage_fleet: true, // New permission
+      manage_reports: true, // New permission
     },
     admin: {
       dashboard_access: true,
@@ -26,6 +27,7 @@ const getRolePermissions = (role) => {
       manage_push_notifications: true, // Renamed
       manage_admin: true,
       manage_fleet: true, // New permission
+      manage_reports: true, // New permission
     },
     executive_admin: {
       dashboard_access: true,
@@ -37,6 +39,7 @@ const getRolePermissions = (role) => {
       manage_push_notifications: true, // Renamed
       manage_admin: false,
       manage_fleet: true, // New permission
+      manage_reports: true, // New permission
     },
     ride_manager: {
       dashboard_access: true,
@@ -47,7 +50,8 @@ const getRolePermissions = (role) => {
       manage_support_tickets: false,
       manage_push_notifications: false, // Renamed
       manage_admin: false,
-      manage_fleet: false, // New permission
+      manage_fleet: false,
+      manage_reports: true, // New permission
     },
   };
   return permissions[role] || permissions.ride_manager;
@@ -113,6 +117,7 @@ const login = async (req, res) => {
         push_notifications: permissions.manage_push_notifications,
         admin_management: permissions.manage_admin,
         fleet: permissions.manage_fleet,
+        reports: permissions.manage_reports,
       }
     });
   } catch (error) {
@@ -157,6 +162,7 @@ const register = async (req, res) => {
       manage_support_tickets: permissions.manage_support_tickets,
       manage_push_notifications: permissions.manage_push_notifications, // Renamed
       manage_fleet: permissions.manage_fleet, // New
+      manage_reports: permissions.manage_reports, // New
       manage_admin: permissions.manage_admin,
       granted_by: granted_by || req.user?.id || null,
     });
@@ -203,6 +209,7 @@ const getPermissions = async (req, res) => {
         push_notifications: permissions.manage_push_notifications, // Renamed
         admin_management: permissions.manage_admin,
         fleet: permissions.manage_fleet, // New
+        reports: permissions.manage_reports, // New
       },
     });
   } catch (error) {
@@ -238,6 +245,7 @@ const getMe = async (req, res) => {
         push_notifications: permissions.manage_push_notifications, // Renamed
         admin_management: permissions.manage_admin,
         fleet: permissions.manage_fleet, // New
+        reports: permissions.manage_reports, // New
       },
     });
   } catch (error) {

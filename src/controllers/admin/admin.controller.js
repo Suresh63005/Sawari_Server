@@ -27,6 +27,7 @@ const getAdmins = async (req, res) => {
             push_notifications: admin.permissions ? admin.permissions.manage_push_notifications : rolePermissions.manage_push_notifications, // Renamed
             admin_management: admin.permissions ? admin.permissions.manage_admin : rolePermissions.manage_admin,
             fleet: admin.permissions ? admin.permissions.manage_fleet : rolePermissions.manage_fleet, // New
+            reports: admin.permissions ? admin.permissions.manage_reports : rolePermissions.manage_reports, // New
           },
         };
       })
@@ -52,6 +53,7 @@ const updatePermissions = async (req, res) => {
       manage_push_notifications: permissions.push_notifications, // Renamed
       manage_admin: permissions.admin_management,
       manage_fleet: permissions.fleet, // New
+      manage_reports: permissions.reports, // New
       granted_by: req.user.id,
     });
 

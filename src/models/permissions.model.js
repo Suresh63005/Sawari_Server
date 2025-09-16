@@ -59,6 +59,11 @@ const Permissions = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
+    manage_reports: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
     granted_by: {
       type: DataTypes.UUID,
       allowNull: true,
