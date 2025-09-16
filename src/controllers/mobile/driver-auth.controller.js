@@ -198,7 +198,10 @@ const updateProfileAndCarDetails = async (req, res) => {
       }
     }
 
-    // Step 11: Handle car photo uploads
+    // Step 11: Handle car photo uploads and preserve existing photos
+    const currentCar = existingCar || {};
+    carData.car_photos = currentCar.car_photos || []; // Preserve existing car_photos
+
     if (req.files?.car_photos) {
       if (req.files.car_photos.some((file) => !file.size)) {
         console.log("Ignoring empty car_photos upload");
@@ -207,7 +210,7 @@ const updateProfileAndCarDetails = async (req, res) => {
         const carPhotos = await Promise.all(
           req.files.car_photos.map((file) => uploadToS3(file, "driver-cars"))
         );
-        carData.car_photos = carPhotos;
+        carData.car_photos = carPhotos; // Replace with new photos
         console.log("Uploaded car photos:", carPhotos);
       }
     }
@@ -215,10 +218,7 @@ const updateProfileAndCarDetails = async (req, res) => {
     // Step 12: Upload car documents and update specific statuses
     let hasCarVerificationFiles = false;
 
-    // Fetch existing car data to preserve statuses
-    const currentCar = existingCar || {};
-    
-    // Initialize carData statuses with existing values (if any) to preserve them
+    // Initialize carData statuses with existing values to preserve them
     carData.rc_doc_status = currentCar.rc_doc_status;
     carData.insurance_doc_status = currentCar.insurance_doc_status;
 
