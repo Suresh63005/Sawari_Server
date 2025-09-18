@@ -13,6 +13,7 @@ const rideResponseDTO = (ride) => ({
   phone: ride.phone,
   email: ride.email,
   pickup_address: ride.pickup_address,
+  drop_address: ride.drop_address,
   pickup_location: ride.pickup_location,
   drop_location: ride.drop_location,
   // ride_date: ride.ride_date,
