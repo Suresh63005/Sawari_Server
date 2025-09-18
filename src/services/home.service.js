@@ -98,6 +98,7 @@ const upsertRide = async (rideData) => {
     subpackage_id,
     car_id,
     Price,
+    tax,
     Total
   } = rideData;
 
@@ -134,6 +135,7 @@ const upsertRide = async (rideData) => {
       subpackage_id,
       car_id,
       Price,
+      tax,
       Total,
     });
 
@@ -155,6 +157,7 @@ const upsertRide = async (rideData) => {
       subpackage_id,
       car_id,
       Price,
+      tax,
       Total,
     });
 
