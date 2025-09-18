@@ -90,6 +90,12 @@ const Ride = sequelize.define(
       allowNull: false,
       comment: "Base fare for the ride, sourced from PackagePrice",
     },
+    tax:{
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue:0.0,
+      comment: "Tax amount for the ride",
+    },
     Total: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,

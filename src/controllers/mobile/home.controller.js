@@ -361,6 +361,7 @@ const upsertRide = async (req, res) => {
       subpackage_id,
       car_id,
       Price,
+      tax,
       Total
     } = req.body;
 
@@ -398,6 +399,7 @@ const upsertRide = async (req, res) => {
       subpackage_id,
       car_id,
       Price,
+      tax,
       Total
     });
 
