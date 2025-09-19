@@ -293,6 +293,7 @@ const getAllDrivers = async (page = 1, limit = 10, search = '', status = '') => 
 };
 
 
+
 const verifyLicense = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error('Driver not found');

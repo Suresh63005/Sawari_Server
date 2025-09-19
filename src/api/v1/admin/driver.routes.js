@@ -4,6 +4,7 @@ const driverController = require('../../../controllers/admin/driver.controller')
 const {authMiddleware} = require('../../../middlewares/admin/authMiddleware');
 
 router.get('/', authMiddleware, driverController.getAllDrivers);
+router.get("/:id", authMiddleware, driverController.getDriverById);
 router.post('/:id/approve', authMiddleware, driverController.approveDriver);
 router.post('/:id/reject', authMiddleware, driverController.rejectDriver);
 router.post('/:id/block', authMiddleware, driverController.blockDriver);

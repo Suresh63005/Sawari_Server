@@ -10,6 +10,16 @@ exports.getAllDrivers = async (req, res) => {
   }
 };
 
+exports.getDriverById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const driver = await driverService.getDriverById(id);
+    res.status(200).json(driver);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.approveDriver = async (req, res) => {
   try {
     const { id } = req.params;
