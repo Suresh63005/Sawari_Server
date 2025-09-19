@@ -99,6 +99,15 @@ const getDashboardStats = async () => {
     },
   });
 
+  const onlineDrivers = await Driver.count({
+  where: {
+    status: 'active',
+    is_approved: true,
+    availability_status: 'online', // 👈 your online flag
+    deletedAt: null,
+  },
+});
+
   return {
     totalRides: {
       value: totalRides,
@@ -130,7 +139,12 @@ const getDashboardStats = async () => {
       trend: calculateTrend(vehicles, previousVehicles),
       description: 'approved vehicles',
     },
-  };
+    onlineDrivers: {
+    value: onlineDrivers,
+    trend: '',                     // leave empty if you don’t want green/red arrow
+    description: 'drivers currently online',
+  },
+};
 };
 
 const getRecentActivity = async () => {
@@ -139,7 +153,7 @@ const getRecentActivity = async () => {
       where: { deletedAt: null },
       order: [['createdAt', 'DESC']],
       limit: 5,
-      attributes: ['id', 'pickup_location', 'drop_location', 'status', 'createdAt'],
+      attributes: ['id', 'pickup_address', 'drop_address', 'status', 'createdAt'],
       include: [
         {
           model: Driver,
@@ -165,7 +179,7 @@ const getRecentActivity = async () => {
           action: `Ride ${ride.status || 'unknown'}`,
           user: ride.Driver
             ? `${ride.Driver.first_name || 'Unknown'} ${ride.Driver.last_name || ''} - ${ride.Cars?.car_model || 'Unknown'}`
-            : `${ride.pickup_location || 'Unknown'} → ${ride.drop_location || 'Unknown'}`,
+            : `${ride.pickup_address || 'Unknown'} → ${ride.drop_address || 'Unknown'}`,
           time: ride.createdAt ? new Date(ride.createdAt).toLocaleString() : 'Unknown',
           type: 'ride',
         };
@@ -178,7 +192,7 @@ const getRecentActivity = async () => {
         return {
           id: index + 1,
           action: `Ride ${ride.status || 'unknown'}`,
-          user: `${ride.pickup_location || 'Unknown'} → ${ride.drop_location || 'Unknown'}`,
+          user: `${ride.pickup_address || 'Unknown'} → ${ride.drop_address || 'Unknown'}`,
           time: ride.createdAt ? new Date(ride.createdAt).toLocaleString() : 'Unknown',
           type: 'ride',
         };
