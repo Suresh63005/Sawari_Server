@@ -1,4 +1,5 @@
 const rideService = require('../../services/ride.service');
+const Settings = require('../../models/settings.model');
 
 // Create Ride
 const createRide = async (req, res) => {
@@ -57,7 +58,15 @@ const getAvailableCarsAndPrices = async (req, res) => {
       return res.status(400).json({ error: 'Missing required query parameters: package_id, sub_package_id' });
     }
     const result = await rideService.getAvailableCarsAndPrices(package_id, sub_package_id);
-    res.status(200).json(result);
+    // Fetch tax rate from Settings
+    const settings = await Settings.findOne();
+    const taxRate = settings ? parseFloat(settings.tax_rate) || 0 : 0;
+    // Include tax_rate in the response
+    const responseData = result.data.map(item => ({
+      ...item,
+      tax_rate: taxRate,
+    }));
+    res.status(200).json({ data: responseData });
   } catch (error) {
     console.error('getAvailableCarsAndPrices error:', error.message);
     res.status(400).json({ error: error.message });

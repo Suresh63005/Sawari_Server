@@ -5,7 +5,7 @@ const Package = require('../models/package.model');
 const SubPackage = require('../models/sub-package.model');
 const Car = require('../models/cars.model');
 const Earnings = require('../models/earnings.model');
-
+const Settings = require('../models/settings.model');
 // Response DTO
 const rideResponseDTO = (ride) => ({
   id: ride.id,
@@ -26,6 +26,7 @@ const rideResponseDTO = (ride) => ({
   status: ride.status,
   notes: ride.notes,
   Price: ride.Price,
+  tax: ride.tax,
   Total: ride.Total,
   payment_status: ride.payment_status,
   accept_time: ride.accept_time,
@@ -55,12 +56,8 @@ const createRide = async (data) => {
     if (!data.customer_name || !data.phone || !data.pickup_location || !data.drop_location) {
       throw new Error('Missing required fields: customer_name, phone, pickup_location, or drop_location');
     }
-    // if (!data.ride_date) {
-    //   throw new Error('Missing required fields: ride_date');
-    // }
 
     // Validate date formats
-    // const rideDate = new Date(data.ride_date);
     const scheduledTime = data.scheduled_time ? new Date(data.scheduled_time) : null;
     if (scheduledTime && isNaN(scheduledTime.getTime())) {
       throw new Error('Invalid scheduled_time: Must be a valid ISO datetime string');
@@ -103,17 +100,23 @@ const createRide = async (data) => {
       throw new Error('Invalid package, sub-package, or car combination');
     }
 
+    // Fetch tax rate from Settings
+    const settings = await Settings.findOne({ transaction });
+    const taxRate = settings ? parseFloat(settings.tax_rate) || 18 : 0;
+
     // Ensure the provided price matches the package price
-    if (data.Price && parseFloat(data.Price) !== parseFloat(packagePrice.base_fare)) {
+    const baseFare = parseFloat(packagePrice.base_fare);
+    if (data.Price && parseFloat(data.Price) !== baseFare) {
       throw new Error(
-        `Invalid price: Provided price (${data.Price}) does not match the base fare (${packagePrice.base_fare})`
+        `Invalid price: Provided price (${data.Price}) does not match the base fare (${baseFare})`
       );
     }
 
-    // Calculate Total based on sub-package type
-    const baseFare = parseFloat(packagePrice.base_fare);
+    // Calculate Total and Tax
     const riderHours = isOneHourSubPackage(subPackage) ? (data.rider_hours || 1) : 1;
-    const total = isOneHourSubPackage(subPackage) ? baseFare * riderHours : baseFare;
+    const subtotal = isOneHourSubPackage(subPackage) ? baseFare * riderHours : baseFare;
+    const tax = subtotal * (taxRate / 100);
+    const total = subtotal + tax;
 
     const ride = await Ride.create(
       {
@@ -124,14 +127,14 @@ const createRide = async (data) => {
         drop_address: data.drop_address,
         pickup_location: data.pickup_location,
         drop_location: data.drop_location,
-        // ride_date: rideDate.toISOString(),
         car_id: data.car_id,
         package_id: data.package_id,
         subpackage_id: data.subpackage_id,
         scheduled_time: scheduledTime ? scheduledTime.toISOString() : null,
         notes: data.notes,
         Price: baseFare,
-        Total: total,
+        tax: tax.toFixed(2), // Store tax amount
+        Total: total.toFixed(2), // Store total with tax
         rider_hours: riderHours,
         status: data.status || 'pending',
         payment_status: data.payment_status || 'pending',
@@ -158,15 +161,7 @@ const updateRide = async (id, data) => {
     if (!ride) throw new Error('Ride not found with the given ID');
 
     // Validate date formats if provided
-    // let rideDate = ride.ride_date;
     let scheduledTime = ride.scheduled_time;
-    // if (data.ride_date) {
-    //   rideDate = new Date(data.ride_date);
-    //   if (isNaN(rideDate.getTime())) {
-    //     throw new Error('Invalid ride_date: Must be a valid ISO datetime string');
-    //   }
-    //   rideDate = rideDate.toISOString();
-    // }
     if (data.scheduled_time) {
       scheduledTime = new Date(data.scheduled_time);
       if (isNaN(scheduledTime.getTime())) {
@@ -176,6 +171,7 @@ const updateRide = async (id, data) => {
     }
 
     let baseFare = ride.Price;
+    let tax = ride.tax;
     let total = ride.Total;
     let riderHours = ride.rider_hours;
 
@@ -218,16 +214,22 @@ const updateRide = async (id, data) => {
         throw new Error('Invalid package, sub-package, or car combination');
       }
 
+      // Fetch tax rate from Settings
+      const settings = await Settings.findOne({ transaction });
+      const taxRate = settings ? parseFloat(settings.tax_rate) || 0 : 0;
+
       // Ensure the provided price matches the package price
-      if (data.Price && parseFloat(data.Price) !== parseFloat(packagePrice.base_fare)) {
+      baseFare = parseFloat(packagePrice.base_fare);
+      if (data.Price && parseFloat(data.Price) !== baseFare) {
         throw new Error(
-          `Invalid price: Provided price (${data.Price}) does not match the base fare (${packagePrice.base_fare})`
+          `Invalid price: Provided price (${data.Price}) does not match the base fare (${baseFare})`
         );
       }
 
-      baseFare = parseFloat(packagePrice.base_fare);
       riderHours = isOneHourSubPackage(subPackage) ? (data.rider_hours || ride.rider_hours || 1) : 1;
-      total = isOneHourSubPackage(subPackage) ? baseFare * riderHours : baseFare;
+      const subtotal = isOneHourSubPackage(subPackage) ? baseFare * riderHours : baseFare;
+      tax = subtotal * (taxRate / 100);
+      total = subtotal + tax;
     }
 
     await ride.update(
@@ -239,14 +241,14 @@ const updateRide = async (id, data) => {
         drop_address: data.drop_address || ride.drop_address,
         pickup_location: data.pickup_location || ride.pickup_location,
         drop_location: data.drop_location || ride.drop_location,
-        // ride_date: rideDate,
         car_id: data.car_id || ride.car_id,
         package_id: data.package_id || ride.package_id,
         subpackage_id: data.subpackage_id || ride.subpackage_id,
         scheduled_time: scheduledTime,
         notes: data.notes || ride.notes,
         Price: baseFare,
-        Total: total,
+        tax: tax.toFixed(2), // Update tax amount
+        Total: total.toFixed(2), // Update total with tax
         rider_hours: riderHours,
         status: data.status || ride.status,
         payment_status: data.payment_status || ride.payment_status,
@@ -278,6 +280,7 @@ const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
     // Validate sub-package exists and belongs to the package
     const subPackage = await SubPackage.findOne({
       where: {
+        status: true,
         id: sub_package_id,
         package_id,
       },
@@ -289,6 +292,7 @@ const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
     // Fetch package prices with associated cars
     const packagePrices = await PackagePrice.findAll({
       where: {
+        status: true,
         package_id,
         sub_package_id,
       },
