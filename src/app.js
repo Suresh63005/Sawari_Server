@@ -22,7 +22,7 @@ const port = process.env.PORT || 4445;
 // Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100000,
+  max: 1000000,
   message: 'Too many requests from this IP, please try again later',
 });
 
@@ -44,8 +44,8 @@ app.use(hpp());
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'http://localhost:3002',
-  'https://sawari-admin.vercel.app',
+  'https://sawari-admin.vercel.app'
+  
 ];
 app.use(cors({
   origin: (origin, callback) => {
