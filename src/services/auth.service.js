@@ -148,42 +148,49 @@ const getAllAdmins = async ({
 };
 
 
+// auth.service.js
+const { sequelize } = require('../models'); // adjust to your export
 const updatePermissions = async (id, permissions) => {
-  const [updatedPermissions, created] = await Permissions.findOrCreate({
-    where: { user_id: id },
-    defaults: {
-      user_id: id,
-      dashboard_access: 0,
-      manage_drivers: 0,
-      manage_vehicles: 0,
-      manage_ride: 0,
-      manage_earnings: 0,
-      manage_support_tickets: 0,
-      manage_push_notifications: 0, // Renamed
-      manage_fleet: 0, // New
-      manage_reports: 0, // New
-      manage_admin: 0,
-      granted_by: permissions.granted_by || null,
-    },
-  });
-
   const updatedValues = {
-    dashboard_access: permissions.dashboard_access,
-    manage_drivers: permissions.manage_drivers,
-    manage_vehicles: permissions.manage_vehicles,
-    manage_ride: permissions.manage_ride,
-    manage_earnings: permissions.manage_earnings,
-    manage_support_tickets: permissions.manage_support_tickets,
-    manage_push_notifications: permissions.manage_push_notifications, // Renamed
-    manage_fleet: permissions.manage_fleet, // New
-    manage_reports: permissions.manage_reports, // New
-    manage_admin: permissions.manage_admin,
-    granted_by: permissions.granted_by,
+    dashboard_access: permissions.dashboard_access ? 1 : 0,
+    manage_drivers: permissions.manage_drivers ? 1 : 0,
+    manage_vehicles: permissions.manage_vehicles ? 1 : 0,
+    manage_ride: permissions.manage_ride ? 1 : 0,
+    manage_earnings: permissions.manage_earnings ? 1 : 0,
+    manage_support_tickets: permissions.manage_support_tickets ? 1 : 0,
+    manage_push_notifications: permissions.manage_push_notifications ? 1 : 0,
+    manage_fleet: permissions.manage_fleet ? 1 : 0,
+    manage_reports: permissions.manage_reports ? 1 : 0,
+    manage_admin: permissions.manage_admin ? 1 : 0,
+    granted_by: permissions.granted_by || null,
   };
 
-  await updatedPermissions.update(updatedValues);
-  return updatedPermissions;
+  return await sequelize.transaction(async (t) => {
+    // 1) Try update
+    const [affectedRows] = await Permissions.update(updatedValues, {
+      where: { user_id: id },
+      transaction: t,
+    });
+
+    if (affectedRows === 0) {
+      // 2) Nothing to update -> create
+      const created = await Permissions.create(
+        { user_id: id, ...updatedValues },
+        { transaction: t }
+      );
+      return created;
+    }
+
+    // 3) Fetch fresh record and return
+    const perm = await Permissions.findOne({
+      where: { user_id: id },
+      transaction: t,
+    });
+    return perm;
+  });
 };
+
+
 
 module.exports = {
   getAdminByEmail,
