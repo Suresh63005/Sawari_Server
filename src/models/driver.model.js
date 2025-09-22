@@ -163,7 +163,11 @@ const Driver = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
-
+    credit_ride_count:{
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    }
   },
   {
     tableName: "Driver",
