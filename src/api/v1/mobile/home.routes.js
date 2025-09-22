@@ -16,6 +16,7 @@ router.post("/upsert-ride",middleware.isAuthenticated,homeController.upsertRide)
 router.put("/release/:rideId",middleware.isAuthenticated,homeController.releaseDriverFromRide);
 router.put("/start-ride/:rideId",middleware.isAuthenticated,homeController.startRide);
 router.put("/end-ride/:rideId",middleware.isAuthenticated,homeController.endRide);
+router.get("/my-rides",middleware.isAuthenticated,homeController.getMyRides)
 
 
 router.get("/earnings-history",middleware.isAuthenticated,homeController.earningsHistory) // http://localhost:4445/api/v1/mobile/home/earnings-history?month=2025-07

@@ -119,6 +119,15 @@ const upsertRide = async (rideData) => {
       throw new Error("Ride not found");
     }
 
+    // ✅ Check if the ride was initiated by this driver and is still pending
+    if (ride.initiated_by_driver_id !== driver_id) {
+      throw new Error("Unauthorized: You can only update rides you initiated");
+    }
+
+    if (ride.status !== "pending") {
+      throw new Error("Unauthorized: Can only update pending rides before acceptance");
+    }
+
     await ride.update({
       initiated_by_driver_id: driver_id,
       customer_name,
@@ -163,6 +172,7 @@ const upsertRide = async (rideData) => {
       Price,
       tax,
       Total,
+      status:"pending"
     });
 
     return newRide;
@@ -382,6 +392,46 @@ const endRide = async (rideId, driver_id) => {
     return {ride,earnings};
 };
 
+// service for fetch initiated_by_driver_id rides (my rides)
+
+const fetchMyRides = async (driverId) => {
+  try {
+    const rides = await Ride.findAll({
+      where: {
+        initiated_by_driver_id: driverId,
+      },
+      attributes: [
+        "id",
+        "customer_name",
+        "pickup_address",
+        "drop_address",
+        "ride_date",
+        "scheduled_time",
+        "status",
+        "Price",
+        "tax",
+        "Total",
+        "payment_status",
+        "accept_time",
+        "pickup_time",
+        "dropoff_time",
+        "is_credit",
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    return {
+      success: true,
+      data: rides,
+    };
+  } catch (error) {
+    console.error("Error fetching my rides:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to fetch rides",
+    };
+  }
+};
 
 module.exports = {
     releaseRide,
@@ -392,5 +442,6 @@ module.exports = {
     RideDetails,
     getCompletedOrCancelledAndAcceptedRides,
     upsertRide,
-    getDriverEarningsHistory
+    getDriverEarningsHistory,
+    fetchMyRides
 }
