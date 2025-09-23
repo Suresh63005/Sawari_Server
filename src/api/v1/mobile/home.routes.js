@@ -16,6 +16,7 @@ router.post("/upsert-ride",middleware.isAuthenticated,homeController.upsertRide)
 router.put("/release/:rideId",middleware.isAuthenticated,homeController.releaseDriverFromRide);
 router.put("/start-ride/:rideId",middleware.isAuthenticated,homeController.startRide);
 router.put("/end-ride/:rideId",middleware.isAuthenticated,homeController.endRide);
+router.put("/cancel-ride",middleware.isAuthenticated,homeController.cancelRideController)
 router.get("/my-rides",middleware.isAuthenticated,homeController.getMyRides)
 
 

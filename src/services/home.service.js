@@ -513,11 +513,43 @@ const fetchMyRides = async (driverId, { statuses, sortBy, sortOrder, page, limit
   }
 };
 
+// service for cancel the ride before its accept
+const canceRide = async(driverId,rideId)=>{
+  try {
+    const ride = await Ride.findOne({
+      where:{
+        id:rideId,
+        initiated_by_driver_id:driverId,
+        status:'pending'
+      }
+    })
+    if(!ride){
+      throw new Error("Ride not found, not initiated by this driver, or not in pending status");
+    }
+
+    // Update the ride status to cancelled
+    await ride.update({status:"cancelled"})
+
+    return {
+      success:true,
+      message:"Ride cancelled successfully.",
+      data:{rideId}
+    }
+  } catch (error) {
+    console.error("Error cancelling ride:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to cancel ride",
+    };
+  }
+}
+
 module.exports = {
     releaseRide,
     startRide,
     endRide,
     acceptRide,
+    canceRide,
     DriverStatus,
     RideDetails,
     getCompletedOrCancelledAndAcceptedRides,
