@@ -398,6 +398,7 @@ const upsertRide = async (req, res) => {
       drop_location,
       drop_address,
       scheduled_time,
+      rider_hours,
       ride_type,
       accept_time,
       package_id,
@@ -437,6 +438,7 @@ const upsertRide = async (req, res) => {
       drop_location,
       drop_address,
       scheduled_time,
+      rider_hours,
       ride_type,
       accept_time,
       package_id,
@@ -618,11 +620,47 @@ const getMyRides = async (req, res) => {
   });
 };
 
+
+const cancelRideController = async(req,res)=>{
+  const driverId = req.driver?.id;
+  const {ride_id}=req.body;
+
+  if(!driverId){
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized: Driver ID is required",
+    });
+  }
+
+  if(!ride_id){
+    return res.status(400).json({
+      success: false,
+      message: "Ride ID is required",
+    });
+  }
+
+  const result = await HomeService.canceRide(driverId,ride_id);
+
+  if(!result.success){
+    return res.status(400).json({
+      success:false,
+      message:result.message,
+    })
+  }
+
+  return res.status(200).json({
+    success:true,
+    message:result.message,
+    data:result.data,
+  })
+}
+
 module.exports = {
   getAllHomeData,
   acceptRide,
   startRide,
   endRide,
+  cancelRideController,
   toggleDriverStatus,
   releaseDriverFromRide,
   getRideDetails,
