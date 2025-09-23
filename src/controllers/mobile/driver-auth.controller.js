@@ -169,6 +169,7 @@ const updateProfileAndCarDetails = async (req, res) => {
       car_id: req.body.car_id,
       license_plate: req.body.license_plate,
       color: req.body.color,
+      car_photos:[]
     };
     console.log("Initial car data:", carData);
 
@@ -212,6 +213,12 @@ const updateProfileAndCarDetails = async (req, res) => {
         );
         carData.car_photos = carPhotos; // Replace with new photos
         console.log("Uploaded car photos:", carPhotos);
+
+        // Delete old photos from S3 if they exist
+        if (currentCar.car_photos && currentCar.car_photos.length > 0) {
+          console.log("Deleting old car photos from S3:", currentCar.car_photos);
+          await Promise.all(currentCar.car_photos.map((photo) => deleteFromS3(photo)));
+        }
       }
     }
 
