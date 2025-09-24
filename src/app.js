@@ -168,4 +168,70 @@ const startServer = async () => {
 
 startServer()
 
+const { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+
+const s3 = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    }
+})
+
+// AWS S3 Presigned URL for Image Uploads
+app.post("/upload-token", async (req, res) => {
+    const timeStamp = Math.floor(Date.now() / 1000);
+    const folder = req.body.folder || "uploads";
+    const fileName = req.body.fileName;
+    const fileType = req.body.fileType;
+
+    console.log(timeStamp, folder, fileName, fileType, "before uploading.........");
+    // recived filetype and filename 
+    if (!fileType || !fileName) {
+        return res.status(400).json({ message: "fileName and fileType are required" });
+    }
+
+    // define key path for s3 bucket
+    const key = `${folder}/${fileName}`;
+    const command = new PutObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: key,
+        ContentType: fileType
+    });
+
+    try {
+        // Generate the presigned URL with a 5-minute expiration time
+        const url = await getSignedUrl(s3, command, { expiresIn: 300 });
+        // Return the presigned URL and additional data to the client
+        return json({
+            uploadUrl: url,
+            bucket: process.env.S3_BUCKET_NAME,
+            fileType: key
+        })
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Error generating upload URL' });
+    }
+})
+
+// for delete
+app.delete("/delete-image", async (req, res) => {
+    const filePath = req.body.filePath;
+    console.log(filePath, "kkkkkkkkkkkkkkkkkkkkkkkkkkkk")
+    if (!filePath) return res.status(400).json({ message: 'filePath is required' });
+
+    const deleteCommand = new DeleteObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: filePath
+    });
+
+    try {
+        const result = await s3.send(deleteCommand);
+        res.json({ message: 'File deleted successfully', result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Failed to delete image' });
+    }
+})
+
 module.exports = app;
