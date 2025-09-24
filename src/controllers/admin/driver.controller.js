@@ -13,10 +13,16 @@ exports.getAllDrivers = async (req, res) => {
 exports.getDriverById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ message: 'Driver ID is required' });
+    }
     const driver = await driverService.getDriverById(id);
     res.status(200).json(driver);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error in getDriverById:', error.message);
+    
+    const statusCode = error.message === 'Driver not found' ? 404 : 500;
+    res.status(statusCode).json({ message: error.message || 'Failed to fetch driver' });
   }
 };
 

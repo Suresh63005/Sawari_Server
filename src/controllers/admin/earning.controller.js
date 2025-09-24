@@ -1,14 +1,13 @@
 const { Op } = require("sequelize");
-const { monthFilteredEarnings, getEarningsSum, getPendingPayouts, getTotalCommission, generateExcel, singleEarnings, allEarnings, } = require("../../services/earnings.service");
-const { AbortController } = require("node-abort-controller")
+const { monthFilteredEarnings, getEarningsSum, getPendingPayouts, getTotalCommission, generateExcel, singleEarnings, allEarnings } = require("../../services/earnings.service");
+const { AbortController } = require("node-abort-controller");
 
 const earningsHistory = async (req, res) => {
   const sortMonth = req.query.month;
-
-  console.log(sortMonth, "monthhhhhhhh")
   const search = req.query.search || '';
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 5;
+
   try {
     let start, end;
 
@@ -24,26 +23,22 @@ const earningsHistory = async (req, res) => {
 
     const dateRange = {
       createdAt: {
-        [Op.between]: [start, end]
-      }
+        [Op.between]: [start, end],
+      },
     };
 
-    // 1. Get all earnings within date range with pagination and search
     const { earningsList, total } = await monthFilteredEarnings(dateRange, search, page, limit);
 
-    // 2. Get processed earnings sum
     const processedTotal = await getEarningsSum({
       ...dateRange,
       status: "processed",
     });
 
-    // 3. Get pending payouts
     const pendingTotal = await getPendingPayouts({
       ...dateRange,
       status: "pending",
     });
 
-    // 4. Get total commission from processed earnings
     const commissionTotal = await getTotalCommission({
       ...dateRange,
       status: "processed",
@@ -60,7 +55,6 @@ const earningsHistory = async (req, res) => {
         commissionTotal: parseFloat(commissionTotal),
       },
     });
-
   } catch (error) {
     console.error("Earnings fetch error:", error);
     return res.status(500).json({
@@ -71,45 +65,58 @@ const earningsHistory = async (req, res) => {
   }
 };
 
-// it worked for both single and multiple download 
 const Download = async (req, res) => {
   const controller = new AbortController();
-  const timeOut = setTimeout(()=>controller.abort(),10000)
+  const timeout = setTimeout(() => controller.abort(), 10000);
 
   try {
     const { id } = req.params;
+    const sortMonth = req.query.month;
+    const search = req.query.search || '';
     let earnings;
     let filename;
 
     if (id) {
-      earnings = await singleEarnings(id,controller.signal);
+      earnings = await singleEarnings(id, controller.signal);
       filename = `earnings_report_${id}.xlsx`;
     } else {
-      earnings = await allEarnings(controller.signal);
-      filename = `earnings_report_all.xlsx`;
+      let dateRange = {};
+      if (sortMonth) {
+        const [year, month] = sortMonth.split("-");
+        const start = new Date(year, parseInt(month) - 1, 1, 0, 0, 0);
+        const end = new Date(year, parseInt(month), 0, 23, 59, 59);
+        dateRange = {
+          createdAt: {
+            [Op.between]: [start, end],
+          },
+        };
+      }
+      earnings = await allEarnings(dateRange, search, controller.signal);
+      filename = sortMonth ? `earnings_${sortMonth}.xlsx` : `all_earnings.xlsx`;
     }
 
-    const buffer = await generateExcel(earnings,controller.signal);
-    clearTimeout(timeOut)
+    if (!earnings || (Array.isArray(earnings) && earnings.length === 0)) {
+      return res.status(404).json({ message: 'No earnings data available to download' });
+    }
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${filename}"`
-    )
+    const buffer = await generateExcel(earnings, controller.signal);
+    clearTimeout(timeout);
 
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(buffer);
-    res.end()
+    res.end();
   } catch (error) {
-    if(controller.signal.aborted){
+    clearTimeout(timeout);
+    if (controller.signal.aborted) {
       return res.status(408).json({ message: 'Request timed out or aborted' });
     }
     console.error('Error downloading earnings report:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
-}
+};
 
 module.exports = {
   earningsHistory,
-  Download
-}
+  Download,
+};
