@@ -169,7 +169,7 @@ const updateProfileAndCarDetails = async (req, res) => {
       car_id: req.body.car_id,
       license_plate: req.body.license_plate,
       color: req.body.color,
-      car_photos:[]
+      car_photos: [], // Initialize as empty array
     };
     console.log("Initial car data:", carData);
 
@@ -201,7 +201,7 @@ const updateProfileAndCarDetails = async (req, res) => {
 
     // Step 11: Handle car photo uploads and preserve existing photos
     const currentCar = existingCar || {};
-    carData.car_photos = currentCar.car_photos || []; // Preserve existing car_photos
+    carData.car_photos = Array.isArray(currentCar.car_photos) ? currentCar.car_photos : []; // Preserve existing car_photos or initialize as empty array
 
     if (req.files?.car_photos) {
       if (req.files.car_photos.some((file) => !file.size)) {
@@ -214,10 +214,21 @@ const updateProfileAndCarDetails = async (req, res) => {
         carData.car_photos = carPhotos; // Replace with new photos
         console.log("Uploaded car photos:", carPhotos);
 
-        // Delete old photos from S3 if they exist
-        if (currentCar.car_photos && currentCar.car_photos.length > 0) {
+        // Delete old photos from S3 if they exist and are an array
+        if (Array.isArray(currentCar.car_photos) && currentCar.car_photos.length > 0) {
           console.log("Deleting old car photos from S3:", currentCar.car_photos);
           await Promise.all(currentCar.car_photos.map((photo) => deleteFromS3(photo)));
+        } else if (typeof currentCar.car_photos === "string") {
+          console.log("Attempting to parse stringified car_photos for deletion:", currentCar.car_photos);
+          try {
+            const parsedPhotos = JSON.parse(currentCar.car_photos);
+            if (Array.isArray(parsedPhotos) && parsedPhotos.length > 0) {
+              console.log("Deleting parsed car photos from S3:", parsedPhotos);
+              await Promise.all(parsedPhotos.map((photo) => deleteFromS3(photo)));
+            }
+          } catch (e) {
+            console.warn("Failed to parse stringified car_photos for deletion:", e.message);
+          }
         }
       }
     }
@@ -238,6 +249,10 @@ const updateProfileAndCarDetails = async (req, res) => {
         carData.rc_doc_status = "pending";
         hasCarVerificationFiles = true;
         console.log("Uploaded RC document and set rc_doc_status to 'pending':", carData.rc_doc);
+        if (currentCar.rc_doc) {
+          console.log("Deleting old rc_doc from S3:", currentCar.rc_doc);
+          await deleteFromS3(currentCar.rc_doc);
+        }
       }
     }
     if (req.files?.rc_doc_back) {
@@ -249,6 +264,10 @@ const updateProfileAndCarDetails = async (req, res) => {
         carData.rc_doc_status = "pending"; // Assuming rc_doc and rc_doc_back share rc_doc_status
         hasCarVerificationFiles = true;
         console.log("Uploaded RC document back and set rc_doc_status to 'pending':", carData.rc_doc_back);
+        if (currentCar.rc_doc_back) {
+          console.log("Deleting old rc_doc_back from S3:", currentCar.rc_doc_back);
+          await deleteFromS3(currentCar.rc_doc_back);
+        }
       }
     }
     if (req.files?.insurance_doc) {
@@ -260,6 +279,10 @@ const updateProfileAndCarDetails = async (req, res) => {
         carData.insurance_doc_status = "pending";
         hasCarVerificationFiles = true;
         console.log("Uploaded insurance document and set insurance_doc_status to 'pending':", carData.insurance_doc);
+        if (currentCar.insurance_doc) {
+          console.log("Deleting old insurance_doc from S3:", currentCar.insurance_doc);
+          await deleteFromS3(currentCar.insurance_doc);
+        }
       }
     }
 
