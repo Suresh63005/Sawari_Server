@@ -11,6 +11,8 @@ const Car = require("../../models/cars.model");
 const Driver = require("../../models/driver.model");
 const {Transaction} = require('sequelize');
 const { sequelize } = require("../../models");
+const Settings = require("../../models/settings.model");
+const WalletReports = require("../../models/wallet-report.model");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -45,7 +47,7 @@ const getAllHomeData = async (req, res) => {
         createdAt: {
           [Op.between]: [startOfDay, endOfDay]
         },
-        status: "processed"
+        status: "completed"
       }
     });
 
@@ -84,7 +86,7 @@ const getAllHomeData = async (req, res) => {
   },
   attributes: [
     "id","customer_name", "email", "phone", "pickup_address", "pickup_location","initiated_by_driver_id",
-    "drop_location","drop_address", "scheduled_time", "pickup_time", "dropoff_time","Price"
+    "drop_location","drop_address", "scheduled_time", "pickup_time", "dropoff_time","Price","Total"
   ],
   include: [
     {
@@ -177,7 +179,7 @@ const acceptRide = async (req, res) => {
 
     // 2. Fetch driver wallet
     const driver = await Driver.findByPk(driver_id, {
-      attributes: ["id", "wallet_balance"],
+      attributes: ["id", "wallet_balance","credit_ride_count"],
       transaction: t,
       lock: t.LOCK.UPDATE
     });
@@ -190,20 +192,59 @@ const acceptRide = async (req, res) => {
       });
     }
 
-    // 3. Check wallet balance vs ride total
-    if (!driver.wallet_balance || parseFloat(driver.wallet_balance) < parseFloat(ride.total)) {
-      await t.rollback();
-      return res.status(403).json({
-        success: false,
-        message: "Insufficient wallet balance to accept this ride."
-      });
+    // Fetch min_wallet_percentage from Settings
+    const setting = await Settings.findOne({transaction:t})
+    let percentage;
+    if(setting && setting.min_wallet_percentage){
+      percentage = parseFloat(setting.min_wallet_percentage);
     }
+
+    const required = (percentage / 100) * parseFloat(ride.Price || 0);
+    const balance = parseFloat(driver.wallet_balance) || 0.0;
+
+    let isCredit = false;
+    let newCount = driver.credit_ride_count || 0;
+
+    if(balance < required){
+      isCredit = true;
+      newCount += 1;
+      driver.credit_ride_count = newCount;
+      await driver.save({transaction:t});
+      if(newCount > 3){
+        await t.rollback();
+        return res.status(403).json({
+          success: false,
+          message: `You have exceeded the maximum of 3 credit rides. Please recharge your wallet to continue accepting rides. Current credit rides: ${newCount}`
+        });
+      }
+    }
+
 
     // 4. Update ride using the Sequelize model
     await ride.update(
-      { driver_id, status: "accepted", accept_time: new Date() },
+      { driver_id, status: "accepted", accept_time: new Date(), is_credit:isCredit },
       { transaction: t }
     );
+
+    // Deduct the required amount from wallet balance
+    const newBalance = isCredit ? balance : balance - required;
+
+    // Update driver with new balance and count if applicable
+    await driver.update(
+      { wallet_balance: newBalance, credit_ride_count: newCount },
+      { transaction: t }
+    );
+
+    // If accepted on credit, add entry to wallet reports
+    if(isCredit){
+      await WalletReports.create({
+        driver_id,
+        amount: -required,
+        transaction_type: "debit",
+        description: `Debit due to insufficient balance for ride ${ride_id}`,
+        ride_id
+      },{ transaction: t });
+    }
 
     await t.commit();
     transactionCommitted = true;
@@ -216,7 +257,8 @@ const acceptRide = async (req, res) => {
         ...data,
         status: ride.status, // Update status to reflect the change
         driver_id: ride.driver_id, // Update driver_id
-        accept_time: ride.accept_time // Include accept_time
+        accept_time: ride.accept_time, // Include accept_time
+        is_credit:ride.is_credit
       }
     });
   } catch (error) {
@@ -356,6 +398,7 @@ const upsertRide = async (req, res) => {
       drop_location,
       drop_address,
       scheduled_time,
+      rider_hours,
       ride_type,
       accept_time,
       package_id,
@@ -395,6 +438,7 @@ const upsertRide = async (req, res) => {
       drop_location,
       drop_address,
       scheduled_time,
+      rider_hours,
       ride_type,
       accept_time,
       package_id,
@@ -536,16 +580,93 @@ const endRide = async (req, res) => {
   }
 };
 
+
+const getMyRides = async (req, res) => {
+  const driverId = req.driver?.id;
+  const { statuses, sortBy, sortOrder, page, limit } = req.query;
+
+  if (!driverId) {
+    return res.status(400).json({
+      success: false,
+      message: "Driver ID is required.",
+    });
+  }
+
+  // Parse statuses from query (expecting comma-separated or array)
+  let statusArray = statuses;
+  if (typeof statuses === "string") {
+    statusArray = statuses.split(",").map(s => s.trim());
+  }
+
+  const result = await HomeService.fetchMyRides(driverId, {
+    statuses: statusArray,
+    sortBy,
+    sortOrder,
+    page,
+    limit,
+  });
+
+  if (!result.success) {
+    return res.status(400).json({
+      success: false,
+      message: result.message,
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "Rides fetched successfully!",
+    data: result.data,
+  });
+};
+
+
+const cancelRideController = async(req,res)=>{
+  const driverId = req.driver?.id;
+  const {ride_id}=req.body;
+
+  if(!driverId){
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized: Driver ID is required",
+    });
+  }
+
+  if(!ride_id){
+    return res.status(400).json({
+      success: false,
+      message: "Ride ID is required",
+    });
+  }
+
+  const result = await HomeService.canceRide(driverId,ride_id);
+
+  if(!result.success){
+    return res.status(400).json({
+      success:false,
+      message:result.message,
+    })
+  }
+
+  return res.status(200).json({
+    success:true,
+    message:result.message,
+    data:result.data,
+  })
+}
+
 module.exports = {
   getAllHomeData,
   acceptRide,
   startRide,
   endRide,
+  cancelRideController,
   toggleDriverStatus,
   releaseDriverFromRide,
   getRideDetails,
   updateRideStatus,
   getRidesByStatus,
   upsertRide,
-  earningsHistory
+  earningsHistory,
+  getMyRides
 };

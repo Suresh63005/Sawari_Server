@@ -8,7 +8,7 @@ const carDTO = (data) => {
     car_id: data.car_id,
     color: data.color || null,
     license_plate: data.license_plate,
-    car_photos: data.car_photos || [],
+    car_photos: Array.isArray(data.car_photos) ? data.car_photos : [],
     rc_doc: data.rc_doc,
     rc_doc_back: data.rc_doc_back,
     insurance_doc: data.insurance_doc,
@@ -23,14 +23,14 @@ const carDTO = (data) => {
 const carResponseDTO = async (data) => {
   const carDetails = await Car.findByPk(data.car_id);
 
-  let carPhotos = [];
-  try {
-    carPhotos = Array.isArray(data.car_photos) 
-      ? data.car_photos 
-      : JSON.parse(data.car_photos || '[]');
-  } catch (e) {
-    carPhotos = [];
-  }
+  // let carPhotos = [];
+  // try {
+  //   carPhotos = Array.isArray(data.car_photos) 
+  //     ? data.car_photos 
+  //     : JSON.parse(data.car_photos || '[]');
+  // } catch (e) {
+  //   carPhotos = [];
+  // }
 
   return {
     id: data.id,
@@ -40,7 +40,7 @@ const carResponseDTO = async (data) => {
     car_brand: carDetails ? carDetails.brand : null,
     color: data.color,
     license_plate: data.license_plate,
-    car_photos: carPhotos,
+    car_photos: Array.isArray(data.car_photos) ? data.car_photos : [],
     rc_doc: data.rc_doc,
     rc_doc_back: data.rc_doc_back,
     insurance_doc: data.insurance_doc,
@@ -73,6 +73,16 @@ const upsertDriverCar = async (driverId, data) => {
     }
     const car = await Car.findByPk(sanitizedData.car_id);
     if (!car) throw new Error('Invalid car_id');
+    
+    // Ensure car_photos is an array
+    if(sanitizedData.car_photos && !Array.isArray(sanitizedData.car_photos)){
+      try {
+        sanitizedData.car_photos=JSON.parse(sanitizedData.car_photos);
+
+      } catch (e) {
+        sanitizedData.car_photos=[]
+      }
+    }
     const created = await DriverCar.create({ ...sanitizedData, driver_id: driverId });
     return await carResponseDTO(created);
   }
