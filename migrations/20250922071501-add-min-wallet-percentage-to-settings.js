@@ -11,6 +11,6 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await queryInterface.removeColumn("Settings", "min_wallet_percentage")  ;
+    await queryInterface.removeColumn("Settings", "min_wallet_percentage");
   }
 };
