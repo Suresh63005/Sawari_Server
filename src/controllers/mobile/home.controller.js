@@ -398,6 +398,7 @@ const upsertRide = async (req, res) => {
       drop_location,
       drop_address,
       scheduled_time,
+      rider_hours,
       ride_type,
       accept_time,
       package_id,
@@ -437,6 +438,7 @@ const upsertRide = async (req, res) => {
       drop_location,
       drop_address,
       scheduled_time,
+      rider_hours,
       ride_type,
       accept_time,
       package_id,
@@ -579,8 +581,9 @@ const endRide = async (req, res) => {
 };
 
 
-const getMyRides = async(req,res)=>{
+const getMyRides = async (req, res) => {
   const driverId = req.driver?.id;
+  const { statuses, sortBy, sortOrder, page, limit } = req.query;
 
   if (!driverId) {
     return res.status(400).json({
@@ -589,12 +592,25 @@ const getMyRides = async(req,res)=>{
     });
   }
 
-  const result = await HomeService.fetchMyRides(driverId)
-  if(!result){
-    return res.status(404).json({
-      success:false,
-      message:"No rides found for this driver"
-    })
+  // Parse statuses from query (expecting comma-separated or array)
+  let statusArray = statuses;
+  if (typeof statuses === "string") {
+    statusArray = statuses.split(",").map(s => s.trim());
+  }
+
+  const result = await HomeService.fetchMyRides(driverId, {
+    statuses: statusArray,
+    sortBy,
+    sortOrder,
+    page,
+    limit,
+  });
+
+  if (!result.success) {
+    return res.status(400).json({
+      success: false,
+      message: result.message,
+    });
   }
 
   return res.status(200).json({
@@ -602,6 +618,41 @@ const getMyRides = async(req,res)=>{
     message: "Rides fetched successfully!",
     data: result.data,
   });
+};
+
+
+const cancelRideController = async(req,res)=>{
+  const driverId = req.driver?.id;
+  const {ride_id}=req.body;
+
+  if(!driverId){
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized: Driver ID is required",
+    });
+  }
+
+  if(!ride_id){
+    return res.status(400).json({
+      success: false,
+      message: "Ride ID is required",
+    });
+  }
+
+  const result = await HomeService.canceRide(driverId,ride_id);
+
+  if(!result.success){
+    return res.status(400).json({
+      success:false,
+      message:result.message,
+    })
+  }
+
+  return res.status(200).json({
+    success:true,
+    message:result.message,
+    data:result.data,
+  })
 }
 
 module.exports = {
@@ -609,6 +660,7 @@ module.exports = {
   acceptRide,
   startRide,
   endRide,
+  cancelRideController,
   toggleDriverStatus,
   releaseDriverFromRide,
   getRideDetails,

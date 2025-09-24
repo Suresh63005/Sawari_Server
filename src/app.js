@@ -44,8 +44,8 @@ app.use(hpp());
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'http://localhost:3002',
-  'https://sawari-admin.vercel.app',
+  'https://sawari-admin.vercel.app'
+  
 ];
 app.use(cors({
   origin: (origin, callback) => {

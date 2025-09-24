@@ -7,6 +7,7 @@ const Package = require("../models/package.model");
 const SubPackage = require("../models/sub-package.model");
 const Car = require("../models/cars.model");
 const Settings = require("../models/settings.model");
+const { sequelize } = require("../models");
 
 const acceptRide = async (ride_id, driver_id) => {
     const ride = await Ride.findOne({
@@ -95,6 +96,7 @@ const upsertRide = async (rideData) => {
     ride_type,
     accept_time,
     scheduled_time,
+    rider_hours,
     package_id,
     subpackage_id,
     car_id,
@@ -142,6 +144,7 @@ const upsertRide = async (rideData) => {
       ride_type,
       accept_time,
       scheduled_time,
+      rider_hours,
       package_id,
       subpackage_id,
       car_id,
@@ -166,6 +169,7 @@ const upsertRide = async (rideData) => {
       ride_type,
       accept_time,
       scheduled_time,
+      rider_hours,
       package_id,
       subpackage_id,
       car_id,
@@ -393,18 +397,48 @@ const endRide = async (rideId, driver_id) => {
 };
 
 // service for fetch initiated_by_driver_id rides (my rides)
+const fetchMyRides = async (driverId, { statuses, sortBy, sortOrder, page, limit }) => {
+  const validStatuses = ["pending", "accepted", "on-route", "completed", "cancelled"];
 
-const fetchMyRides = async (driverId) => {
   try {
+    // Validate statuses
+    if (statuses && Array.isArray(statuses)) {
+      const invalidStatuses = statuses.filter(status => !validStatuses.includes(status));
+      if (invalidStatuses.length > 0) {
+        throw new Error(`Invalid status(es): ${invalidStatuses.join(", ")}`);
+      }
+    }
+
+    // Validate sortBy and sortOrder
+    const allowedSortFields = ["createdAt", "ride_date", "scheduled_time"];
+    const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+    const order = sortOrder === "ASC" ? "ASC" : "DESC";
+
+    // Pagination
+    const pageNum = parseInt(page, 10) || 1;
+    const pageSize = parseInt(limit, 10) || 10;
+    const offset = (pageNum - 1) * pageSize;
+
+    // Build query
+    const where = {
+      initiated_by_driver_id: driverId,
+    };
+    if (statuses && statuses.length > 0) {
+      where.status = { [Op.in]: statuses };
+    }
+
+    // Fetch rides with related data
     const rides = await Ride.findAll({
-      where: {
-        initiated_by_driver_id: driverId,
-      },
+      where,
       attributes: [
         "id",
         "customer_name",
+        "phone",
+        "email",
         "pickup_address",
         "drop_address",
+        "pickup_location",
+        "drop_location",
         "ride_date",
         "scheduled_time",
         "status",
@@ -416,13 +450,62 @@ const fetchMyRides = async (driverId) => {
         "pickup_time",
         "dropoff_time",
         "is_credit",
+        "package_id",
+        "subpackage_id",
+        "car_id",
+        "rider_hours",
       ],
-      order: [["createdAt", "DESC"]],
+      include: [
+        {
+          model: Car,
+          attributes: ["model"],
+          as: "Car",
+        },
+        {
+          model: Package,
+          attributes: ["name", "description"],
+          as: "Package",
+        },
+        {
+          model: SubPackage,
+          attributes: ["name", "description"],
+          as: "SubPackage",
+        },
+      ],
+      order: [[sortField, order]],
+      limit: pageSize,
+      offset,
     });
+
+    // Fetch status counts
+    const statusCounts = await Ride.findAll({
+      where: { initiated_by_driver_id: driverId },
+      attributes: [
+        "status",
+        [sequelize.fn("COUNT", sequelize.col("status")), "count"],
+      ],
+      group: ["status"],
+      raw: true,
+    });
+
+    // Format counts as an object
+    const counts = validStatuses.reduce((acc, status) => {
+      const found = statusCounts.find(count => count.status === status);
+      acc[status] = found ? parseInt(found.count, 10) : 0;
+      return acc;
+    }, {});
 
     return {
       success: true,
-      data: rides,
+      data: {
+        rides,
+        counts,
+        pagination: {
+          page: pageNum,
+          limit: pageSize,
+          total: await Ride.count({ where }),
+        },
+      },
     };
   } catch (error) {
     console.error("Error fetching my rides:", error);
@@ -433,11 +516,43 @@ const fetchMyRides = async (driverId) => {
   }
 };
 
+// service for cancel the ride before its accept
+const canceRide = async(driverId,rideId)=>{
+  try {
+    const ride = await Ride.findOne({
+      where:{
+        id:rideId,
+        initiated_by_driver_id:driverId,
+        status:'pending'
+      }
+    })
+    if(!ride){
+      throw new Error("Ride not found, not initiated by this driver, or not in pending status");
+    }
+
+    // Update the ride status to cancelled
+    await ride.update({status:"cancelled"})
+
+    return {
+      success:true,
+      message:"Ride cancelled successfully.",
+      data:{rideId}
+    }
+  } catch (error) {
+    console.error("Error cancelling ride:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to cancel ride",
+    };
+  }
+}
+
 module.exports = {
     releaseRide,
     startRide,
     endRide,
     acceptRide,
+    canceRide,
     DriverStatus,
     RideDetails,
     getCompletedOrCancelledAndAcceptedRides,
