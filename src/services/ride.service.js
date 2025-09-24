@@ -504,7 +504,10 @@ const getRidesByStatusAndDriver = async (status, driverId) => {
       if (status === 'accepted') {
         // Show both 'accepted' and 'on-route' rides
         where.status = { [Op.or]: ['accepted', 'on-route'] };
-      } else {
+      } else if(status==="cancelled"){
+        where.status = "cancelled";
+      }
+      else {
         where.status = status;
       }
     }
