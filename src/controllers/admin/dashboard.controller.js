@@ -5,7 +5,7 @@ const getDashboardStatsController = async (req, res) => {
     const stats = await getDashboardStats();
     res.json(stats);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+    res.status(500).json({ message: 'Failed to fetch dashboard stats',error });
   }
 };
 
@@ -14,7 +14,7 @@ const getRecentActivityController = async (req, res) => {
     const activities = await getRecentActivity();
     res.json(activities);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch recent activity' });
+    res.status(500).json({ message: 'Failed to fetch recent activity',error });
   }
 };
 
@@ -23,7 +23,7 @@ const getPendingApprovalsController = async (req, res) => {
     const approvals = await getPendingApprovals();
     res.json(approvals);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch pending approvals' });
+    res.status(500).json({ message: 'Failed to fetch pending approvals',error });
   }
 };
 

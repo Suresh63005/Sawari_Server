@@ -65,7 +65,7 @@ const upsertPackage = async (data) => {
 };
 
 // Service to get all packages with filtering, search, pagination, sorting
-const getAllPackages = async ({ search, limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC', status }) => {
+const getAllPackages = async ({ search, limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC' }) => {
   const where = {};
 
   // Search by name or description

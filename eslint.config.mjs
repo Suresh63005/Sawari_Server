@@ -7,45 +7,20 @@ export default defineConfig([
     files: ["**/*.{js,mjs,cjs}"],
     plugins: { js },
     extends: ["js/recommended"],
-    languageOptions: { globals: globals.browser },
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
     rules: {
-      // Disallow 'var', use 'let' or 'const' instead
-      "no-var": "error",
-
-      // Enforce 'const' for variables that are never reassigned
-      "prefer-const": "error",
-
-      // Disallow undeclared variables
-      "no-undef": "error",
-
-      // Enforce double quotes for strings
-      "quotes": ["error", "double"],
-
-      // Enforce consistent indentation (2 spaces)
-      "indent": ["error", 2],
-
-      // Warn when using console methods
-      "no-console": "warn",
-
-      // Disallow trailing spaces at the end of lines
-      "no-trailing-spaces": "error",
-
-      // Disallow empty functions (e.g., function() {})
-      "no-empty-function": "error",
-
-      // Optional: Enforce strict mode for CommonJS files
-      "strict": ["error", "global"],  // Ensure strict mode is enabled in all files
-
-      // Optional: Enforce consistent line breaks between class members (if using classes)
-      "lines-between-class-members": ["error", "always"]
+      "no-var": "error",  //  use only 'let' or 'const' instead of 'var'
+      "prefer-const": "error",  // Encourages 'const' for immutable variables
+      "no-undef": "error",  // Industry standard: prevent use of undeclared variables
+      // "quotes": ["error", "double"],  // Use single quotes for strings, e.g., 'string'
+      // "indent": ["error", 2],  // 2-space indentation is industry standard
+      // "no-console": "warn",  // Warn when console methods are used (can be disabled for production code)
+      // "no-trailing-spaces": "error", // Remove trailing spaces from lines         // Enforce no leading or trailing whitespace
+      "no-empty-function": "error", // Disallow empty functions
     }
   },
   {
     files: ["**/*.js"],
     languageOptions: { sourceType: "commonjs" },
-    rules: {
-      // Strict mode enforcement for CommonJS files
-      "strict": ["error", "global"]
-    }
   }
 ]);

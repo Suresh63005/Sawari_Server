@@ -10,11 +10,11 @@ const hpp = require('hpp');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
-const { sequelize } = require('./models');
 const loadRoutes = require('./routes/index');
 const reddisConnect = require("./config/connectRedis");
 const CacheManager=require("./utils/cache-manager");
-const Ticket = require('./models/ticket.model');
+const { S3Client,  PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const app = express();
 const port = process.env.PORT || 4445;
@@ -168,8 +168,6 @@ const startServer = async () => {
 
 startServer()
 
-const { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
-
 const s3 = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
@@ -203,7 +201,7 @@ app.post("/upload-token", async (req, res) => {
         // Generate the presigned URL with a 5-minute expiration time
         const url = await getSignedUrl(s3, command, { expiresIn: 300 });
         // Return the presigned URL and additional data to the client
-        return json({
+        return res.json({
             uploadUrl: url,
             bucket: process.env.S3_BUCKET_NAME,
             fileType: key

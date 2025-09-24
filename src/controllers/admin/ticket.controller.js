@@ -1,7 +1,4 @@
-// backend/controllers/admin/ticket.controller.js
-
 const { getOpenTickets, resolveTicket, createTicket, updateTicketStatus } = require('../../services/ticket.service');
-const { Op } = require("sequelize");
 
 const getOpenTicketsHandler = async (req, res) => {
   try {

@@ -74,8 +74,8 @@ const verifyPayment = async (req, res) => {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
+  let t;
   try {
-    const secret = process.env.KEY_SECRET;
     const generatedSignature = crypto
         .createHmac("sha256", process.env.KEY_SECRET)
         .update(order_id + "|" + payment_id)
@@ -84,7 +84,7 @@ const verifyPayment = async (req, res) => {
     if (generatedSignature !== signature) {
       return res.status(401).json({ success: false, message: "Invalid signature" });
     }
-    const t = await sequelize.transaction();
+    t = await sequelize.transaction();
     const driver = await getDriverById(driver_id);
     const updatedBalance = parseFloat(driver.wallet_balance || 0) + parseFloat(amount);
 

@@ -1,5 +1,5 @@
 const { getDriverById } = require("../../services/driver.service");
-const { updateDriverCar, getDriverCarByDriverId } = require("../../services/driverCar.service");
+const { updateDriverCar, getDriverCarByDriverId, updateDriverDocuments } = require("../../services/driverCar.service");
 
 const updateVehicle = async (req, res) => {
     const driver_id = req.driver?.id;

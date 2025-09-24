@@ -138,6 +138,7 @@ const updateProfileAndCarDetails = async (req, res) => {
       } catch (err) {
         console.warn("Invalid JSON in languages field. Setting to empty array.");
         updatedDriverData.languages = [];
+        console.log(err)
       }
     }
 

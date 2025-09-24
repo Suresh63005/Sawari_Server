@@ -10,7 +10,7 @@ module.exports = {
     });
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface) {
     await queryInterface.removeColumn('Driver', 'credit_ride_count');
   }
 };

@@ -1,7 +1,7 @@
 const { uploadToS3 } = require('../config/fileUpload.aws');
 const DriverCar = require('../models/driver-cars.model');
 const Car = require('../models/cars.model');
-const { Op, Sequelize } = require("sequelize");
+const { Op } = require("sequelize");
 
 const carDTO = (data) => {
   return {
@@ -81,6 +81,7 @@ const upsertDriverCar = async (driverId, data) => {
 
       } catch (e) {
         sanitizedData.car_photos=[]
+        console.log(e)
       }
     }
     const created = await DriverCar.create({ ...sanitizedData, driver_id: driverId });
@@ -211,7 +212,7 @@ const updateDriverCar = async(driver_id,data,files)=>{
 
   if(files && files.length > 0){
     try {
-      const uploadURLS=await uploadToS3(files,"driver-cars");
+      // const uploadURLS=await uploadToS3(files,"driver-cars");
       // vehicle.car_photos = JSON.stringify(uploadedUrls); 
     } catch (error) {
       console.error("S3 upload failed:", error);

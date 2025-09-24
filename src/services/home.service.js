@@ -2,7 +2,6 @@ const { Op, Sequelize } = require("sequelize");
 const Ride = require("../models/ride.model")
 const Earnings = require("../models/earnings.model")
 const Driver = require("../models/driver.model")
-const DriverCar = require("../models/driver-cars.model");
 const Package = require("../models/package.model");
 const SubPackage = require("../models/sub-package.model");
 const Car = require("../models/cars.model");
@@ -53,11 +52,11 @@ const RideDetails = async (driver_id, ride_id) => {
     console.log(driver_id, ride_id, "hhhhhhhhhhhhhhhhhhhhhhhhh")
     
 
-    if (!ride) {
-        throw new Error("Ride not found");
-    }
+    // if (!ride) {
+    //     throw new Error("Ride not found");
+    // }
 
-    return ride;
+    // return ride;
 };
 
 

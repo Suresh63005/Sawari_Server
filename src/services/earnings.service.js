@@ -1,10 +1,7 @@
-const { fn, col } = require('sequelize');
+const { Op } = require('sequelize');
 const Earnings = require('../models/earnings.model');
 const Ride = require('../models/ride.model');
 const ExcelJS = require('exceljs');
-
-
-const exclude= ['createdAt','updatedAt','deletedAt']
 
 const earningsDTO = (data) => {
   return {

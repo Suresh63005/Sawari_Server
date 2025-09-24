@@ -1,7 +1,6 @@
 const Driver = require('../models/driver.model');
 const jwt = require('jsonwebtoken');
 const { driverFirebase } = require('../config/firebase-config');
-const { sequelize } = require('../models');
 const DriverCar = require('../models/driver-cars.model');
 const { Op } = require('sequelize');
 const Ride = require('../models/ride.model');
@@ -440,7 +439,6 @@ module.exports = {
   rejectEmirates,
   driverProfileWithCar,
   updateDriverBalance,
-  driverProfileWithCar,
   checkActiveRide,
   getStatusByDriver,
   updateOneSignalPlayerId,

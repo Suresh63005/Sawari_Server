@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const carController = require('../../../controllers/admin/car.controller');
-const {upload,handleMulterError}=require('../../../utils/multer');
+const {upload}=require('../../../utils/multer');
 
 // Routes for car operations
 router.post('/upsert', upload.single('image'), carController.upsertCar);

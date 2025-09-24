@@ -5,7 +5,6 @@ const { getEarningsSum } = require("../../services/earnings.service");
 const { driverProfileWithCar, getDriverById } = require("../../services/driver.service");
 const Package = require("../../models/package.model");
 const SubPackage = require("../../models/sub-package.model");
-const Ride = require("../../models/ride.model");
 const driverCarService = require('../../services/driverCar.service'); 
 const Car = require("../../models/cars.model");
 const Driver = require("../../models/driver.model");
