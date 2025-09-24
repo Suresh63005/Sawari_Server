@@ -13,7 +13,7 @@ if echo "$previous_msgs" | grep -Fxq "$last_msg"; then
   echo "❌ Push blocked: Commit message '$last_msg' was already used in the last 15 commits."
   echo "💡 Please use a unique commit message."
   exit 1
-fi
+fi 
 
 # Run ESLint (optional)
 echo "🔍 Running ESLint..."
