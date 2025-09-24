@@ -1,7 +1,7 @@
-const sequelize = require("../config/db")
-const { DataTypes }= require('sequelize');
+const sequelize = require("../config/db");
+const { DataTypes }= require("sequelize");
 
-const Package = sequelize.define('Package',{
+const Package = sequelize.define("Package",{
     id:{
         type:DataTypes.UUID,
         primaryKey:true,
@@ -19,11 +19,11 @@ const Package = sequelize.define('Package',{
         comment: "Detailed description of the package, e.g., 'Airport transfer from Dubai Airport to Dubai City'",
     },
     status:{
-        type:DataTypes.ENUM('active', 'inactive'),
+        type:DataTypes.ENUM("active", "inactive"),
         allowNull:false,
-        defaultValue:'active',
+        defaultValue:"active",
         comment: "Status of the package, either 'active' or 'inactive'",
     }
-},{tableName:'Packages',timestamps:true,paranoid:true})
+},{tableName:"Packages",timestamps:true,paranoid:true});
 
 module.exports = Package;

@@ -1,4 +1,4 @@
-const packageService = require('../../services/package.service');
+const packageService = require("../../services/package.service");
 
 // Controller for upsert (create/update)
 const upsertPackage = async (req, res) => {
@@ -14,12 +14,12 @@ const upsertPackage = async (req, res) => {
 const getAllPackages = async (req, res) => {
   try {
     const {
-      search = '',
+      search = "",
       limit = 10,
       page = 1,
-      sortBy = 'createdAt',
-      sortOrder = 'DESC',
-      status = 'active',
+      sortBy = "createdAt",
+      sortOrder = "DESC",
+      status = "active",
     } = req.query;
 
     const result = await packageService.getAllPackages({
@@ -50,7 +50,7 @@ const getActivePackagesController = async (req, res) => {
 const getPackageById = async (req, res) => {
   try {
     const pkg = await packageService.getPackageById(req.params.id);
-    res.status(200).json({ message: 'Package retrieved successfully', data: pkg });
+    res.status(200).json({ message: "Package retrieved successfully", data: pkg });
   } catch (error) {
     res.status(404).json({ error: error.message });
   }
@@ -60,7 +60,7 @@ const getPackageById = async (req, res) => {
 const deletePackageById = async (req, res) => {
   try {
     const result = await packageService.deletePackageById(req.params.id);
-    res.status(200).json({ message: 'Package deleted successfully', data: result });
+    res.status(200).json({ message: "Package deleted successfully", data: result });
   } catch (err) {
     res.status(404).json({ error: err.message });
   }

@@ -1,13 +1,13 @@
-const { Op } = require('sequelize');
-const Ride = require('../models/ride.model');
-const Driver = require('../models/driver.model');
-const Car = require('../models/cars.model');
-const DriverCar = require('../models/driver-cars.model');
+const { Op } = require("sequelize");
+const Ride = require("../models/ride.model");
+const Driver = require("../models/driver.model");
+const Car = require("../models/cars.model");
+const DriverCar = require("../models/driver-cars.model");
 
 const calculateTrend = (current, previous) => {
-  if (previous === 0) return current > 0 ? '+100%' : '0%';
+  if (previous === 0) return current > 0 ? "+100%" : "0%";
   const change = ((current - previous) / previous) * 100;
-  return `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+  return `${change >= 0 ? "+" : ""}${change.toFixed(1)}%`;
 };
 
 const getDashboardStats = async () => {
@@ -22,31 +22,31 @@ const getDashboardStats = async () => {
   });
 
   const activeRides = await Ride.count({
-    where: { status: { [Op.in]: ['on-route', 'accepted'] }, deletedAt: null },
+    where: { status: { [Op.in]: ["on-route", "accepted"] }, deletedAt: null },
   });
 
   const completedRides = await Ride.count({
     where: {
-      status: 'completed',
+      status: "completed",
       createdAt: { [Op.gte]: startOfCurrentMonth },
       deletedAt: null,
     },
   });
 
-  const revenue = await Ride.sum('Total', {
+  const revenue = await Ride.sum("Total", {
     where: {
-      status: 'completed',
+      status: "completed",
       createdAt: { [Op.gte]: startOfCurrentMonth },
       deletedAt: null,
     },
   }) || 0;
 
   const drivers = await Driver.count({
-    where: { status: 'active', is_approved: true, deletedAt: null },
+    where: { status: "active", is_approved: true, deletedAt: null },
   });
 
   const vehicles = await DriverCar.count({
-    where: { status: 'active', is_approved: true, deletedAt: null },
+    where: { status: "active", is_approved: true, deletedAt: null },
   });
 
   // Previous month stats
@@ -59,7 +59,7 @@ const getDashboardStats = async () => {
 
   const previousActiveRides = await Ride.count({
     where: {
-      status: { [Op.in]: ['on-route', 'accepted'] },
+      status: { [Op.in]: ["on-route", "accepted"] },
       createdAt: { [Op.gte]: startOfPreviousMonth, [Op.lte]: endOfPreviousMonth },
       deletedAt: null,
     },
@@ -67,15 +67,15 @@ const getDashboardStats = async () => {
 
   const previousCompletedRides = await Ride.count({
     where: {
-      status: 'completed',
+      status: "completed",
       createdAt: { [Op.gte]: startOfPreviousMonth, [Op.lte]: endOfPreviousMonth },
       deletedAt: null,
     },
   });
 
-  const previousRevenue = await Ride.sum('Total', {
+  const previousRevenue = await Ride.sum("Total", {
     where: {
-      status: 'completed',
+      status: "completed",
       createdAt: { [Op.gte]: startOfPreviousMonth, [Op.lte]: endOfPreviousMonth },
       deletedAt: null,
     },
@@ -83,7 +83,7 @@ const getDashboardStats = async () => {
 
   const previousDrivers = await Driver.count({
     where: {
-      status: 'active',
+      status: "active",
       is_approved: true,
       createdAt: { [Op.lte]: endOfPreviousMonth },
       deletedAt: null,
@@ -92,7 +92,7 @@ const getDashboardStats = async () => {
 
   const previousVehicles = await DriverCar.count({
     where: {
-      status: 'active',
+      status: "active",
       is_approved: true,
       createdAt: { [Op.lte]: endOfPreviousMonth },
       deletedAt: null,
@@ -101,9 +101,9 @@ const getDashboardStats = async () => {
 
   const onlineDrivers = await Driver.count({
   where: {
-    status: 'active',
+    status: "active",
     is_approved: true,
-    availability_status: 'online', // 👈 your online flag
+    availability_status: "online", // 👈 your online flag
     deletedAt: null,
   },
 });
@@ -112,37 +112,37 @@ const getDashboardStats = async () => {
     totalRides: {
       value: totalRides,
       trend: calculateTrend(totalRides, previousTotalRides),
-      description: 'vs last month',
+      description: "vs last month",
     },
     activeRides: {
       value: activeRides,
       trend: calculateTrend(activeRides, previousActiveRides),
-      description: 'currently ongoing',
+      description: "currently ongoing",
     },
     completedRides: {
       value: completedRides,
       trend: calculateTrend(completedRides, previousCompletedRides),
-      description: 'vs last month',
+      description: "vs last month",
     },
     revenue: {
       value: revenue,
       trend: calculateTrend(revenue, previousRevenue),
-      description: 'vs last month',
+      description: "vs last month",
     },
     drivers: {
       value: drivers,
       trend: calculateTrend(drivers, previousDrivers),
-      description: 'approved drivers',
+      description: "approved drivers",
     },
     vehicles: {
       value: vehicles,
       trend: calculateTrend(vehicles, previousVehicles),
-      description: 'approved vehicles',
+      description: "approved vehicles",
     },
     onlineDrivers: {
     value: onlineDrivers,
-    trend: '',                     // leave empty if you don’t want green/red arrow
-    description: 'drivers currently online',
+    trend: "", // leave empty if you don’t want green/red arrow
+    description: "drivers currently online",
   },
 };
 };
@@ -151,21 +151,21 @@ const getRecentActivity = async () => {
   try {
     const activities = await Ride.findAll({
       where: { deletedAt: null },
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
       limit: 5,
-      attributes: ['id', 'pickup_address', 'drop_address', 'status', 'createdAt'],
+      attributes: ["id", "pickup_address", "drop_address", "status", "createdAt"],
       include: [
         {
           model: Driver,
           as:"AssignedDriver",
-          attributes: ['first_name', 'last_name'],
+          attributes: ["first_name", "last_name"],
           required: false,
           where: { deletedAt: null },
         },
         {
           model: Car,
           as:"Car",
-          attributes: ['model'],
+          attributes: ["model"],
           required: false,
           where: { deletedAt: null },
         },
@@ -176,30 +176,30 @@ const getRecentActivity = async () => {
       try {
         return {
           id: index + 1,
-          action: `Ride ${ride.status || 'unknown'}`,
+          action: `Ride ${ride.status || "unknown"}`,
           user: ride.Driver
-            ? `${ride.Driver.first_name || 'Unknown'} ${ride.Driver.last_name || ''} - ${ride.Cars?.car_model || 'Unknown'}`
-            : `${ride.pickup_address || 'Unknown'} → ${ride.drop_address || 'Unknown'}`,
-          time: ride.createdAt ? new Date(ride.createdAt).toLocaleString() : 'Unknown',
-          type: 'ride',
+            ? `${ride.Driver.first_name || "Unknown"} ${ride.Driver.last_name || ""} - ${ride.Cars?.car_model || "Unknown"}`
+            : `${ride.pickup_address || "Unknown"} → ${ride.drop_address || "Unknown"}`,
+          time: ride.createdAt ? new Date(ride.createdAt).toLocaleString() : "Unknown",
+          type: "ride",
         };
       } catch (error) {
-        console.error(`Error processing ride ID ${ride.id || 'unknown'}:`, {
+        console.error(`Error processing ride ID ${ride.id || "unknown"}:`, {
           message: error.message,
           stack: error.stack,
           name: error.name,
         });
         return {
           id: index + 1,
-          action: `Ride ${ride.status || 'unknown'}`,
-          user: `${ride.pickup_address || 'Unknown'} → ${ride.drop_address || 'Unknown'}`,
-          time: ride.createdAt ? new Date(ride.createdAt).toLocaleString() : 'Unknown',
-          type: 'ride',
+          action: `Ride ${ride.status || "unknown"}`,
+          user: `${ride.pickup_address || "Unknown"} → ${ride.drop_address || "Unknown"}`,
+          time: ride.createdAt ? new Date(ride.createdAt).toLocaleString() : "Unknown",
+          type: "ride",
         };
       }
     });
   } catch (error) {
-    console.error('Error fetching recent activity:', {
+    console.error("Error fetching recent activity:", {
       message: error.message,
       stack: error.stack,
       name: error.name,
@@ -211,8 +211,8 @@ const getRecentActivity = async () => {
 const getPendingApprovals = async () => {
   try {
     const pendingDrivers = await Driver.findAll({
-      where: { is_approved: false, status: 'inactive', deletedAt: null },
-      attributes: ['id', 'first_name', 'last_name'],
+      where: { is_approved: false, status: "inactive", deletedAt: null },
+      attributes: ["id", "first_name", "last_name"],
     });
 
     const pendingVehicles = await DriverCar.findAll({
@@ -221,11 +221,11 @@ const getPendingApprovals = async () => {
     status: "inactive",
     deletedAt: null
   },
-  attributes: ["id", "license_plate"],   // only DriverCar columns here
+  attributes: ["id", "license_plate"], // only DriverCar columns here
   include: [
     {
       model: Car,
-      as: "Car",                         // must match alias
+      as: "Car", // must match alias
       attributes: ["id", "brand", "model", "image_url"], // Car columns here
     },
   ],
@@ -235,23 +235,23 @@ const getPendingApprovals = async () => {
     return [
       ...pendingDrivers.map((driver) => ({
         id: driver.id,
-        type: 'Driver',
+        type: "Driver",
         name: `${driver.first_name} ${driver.last_name}`,
-        status: 'pending',
-        priority: 'high',
-        permission: 'drivers',
+        status: "pending",
+        priority: "high",
+        permission: "drivers",
       })),
       ...pendingVehicles.map((vehicle) => ({
         id: vehicle.id,
-        type: 'Vehicle',
+        type: "Vehicle",
         name: `${vehicle.model} - ${vehicle.license_plate}`,
-        status: 'pending',
-        priority: 'medium',
-        permission: 'vehicles',
+        status: "pending",
+        priority: "medium",
+        permission: "vehicles",
       })),
     ];
   } catch (error) {
-    console.error('Error fetching pending approvals:', {
+    console.error("Error fetching pending approvals:", {
       message: error.message,
       stack: error.stack,
       name: error.name,

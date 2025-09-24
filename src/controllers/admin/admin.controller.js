@@ -1,5 +1,5 @@
-const AuthService = require('../../services/auth.service');
-const { getRolePermissions } = require('./auth.controller');
+const AuthService = require("../../services/auth.service");
+const { getRolePermissions } = require("./auth.controller");
 
 // admin.controller.js
 const getAdmins = async (req, res) => {
@@ -33,8 +33,8 @@ const getAdmins = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error('Get admins error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Get admins error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -57,10 +57,10 @@ const updatePermissions = async (req, res) => {
       granted_by: req.user.id,
     });
 
-    return res.json({ message: 'Permissions updated successfully' });
+    return res.json({ message: "Permissions updated successfully" });
   } catch (error) {
-    console.error('Update permissions error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Update permissions error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -70,10 +70,10 @@ const updateStatus = async (req, res) => {
     const { status } = req.body;
 
     await AuthService.updateAdminStatus(id, status);
-    return res.json({ message: 'Status updated successfully' });
+    return res.json({ message: "Status updated successfully" });
   } catch (error) {
-    console.error('Update status error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Update status error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 

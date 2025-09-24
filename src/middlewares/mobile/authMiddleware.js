@@ -1,4 +1,4 @@
-const Driver = require('../../models/driver.model');
+const Driver = require("../../models/driver.model");
 const jwt = require("jsonwebtoken");
 
 const isAuthenticated = async (req, res, next) => {
@@ -17,12 +17,12 @@ const isAuthenticated = async (req, res, next) => {
     const driver = await Driver.findByPk(decoded.id);
     if (!driver) {
       console.log("Driver not found for ID:", decoded.id);
-      return res.status(401).json({ message: 'Invalid or blocked account - Driver not found' });
+      return res.status(401).json({ message: "Invalid or blocked account - Driver not found" });
     }
 
     // Check if driver exists and is not blocked
-    if (!driver || driver.status === 'blocked') {
-      return res.status(401).json({ message: 'Invalid or blocked account' });
+    if (!driver || driver.status === "blocked") {
+      return res.status(401).json({ message: "Invalid or blocked account" });
     }
 
     // Attach driver to request for further use in routes

@@ -1,7 +1,7 @@
-const { Op } = require('sequelize');
-const Earnings = require('../models/earnings.model');
-const Ride = require('../models/ride.model');
-const ExcelJS = require('exceljs');
+const { Op } = require("sequelize");
+const Earnings = require("../models/earnings.model");
+const Ride = require("../models/ride.model");
+const ExcelJS = require("exceljs");
 
 const earningsDTO = (data) => {
   return {
@@ -28,7 +28,7 @@ const earningsResponseDTO = (earnings) => {
     createdAt: earnings.createdAt,
     updatedAt: earnings.updatedAt,
   };
-}
+};
 
 /**
  * Create an earnings record
@@ -43,7 +43,7 @@ const createEarnings = async (data) => {
   const earningsData = earningsDTO(data);
   const earnings = await Earnings.create(earningsData);
   return earningsResponseDTO(earnings);
-}
+};
 
 /**
  * Get all earnings for a driver with optional filters and pagination
@@ -52,7 +52,7 @@ const createEarnings = async (data) => {
  */
 
 const getEarningsByDriver = async ({ driverId, status, limit = 10, page = 1 }) => {
-  const where = { driver_id: driverId }
+  const where = { driver_id: driverId };
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   if (status) {
@@ -64,15 +64,15 @@ const getEarningsByDriver = async ({ driverId, status, limit = 10, page = 1 }) =
     order: [["createdAt", "DESC"]],
     limit: parseInt(limit),
     offset,
-  })
+  });
 
   return {
     total: count,
     page: parseInt(page),
     limit: parseInt(limit),
     data: rows.map((earnings) => earningsResponseDTO(earnings))
-  }
-}
+  };
+};
 
 /**
  * Get earnings by ride ID
@@ -81,24 +81,24 @@ const getEarningsByDriver = async ({ driverId, status, limit = 10, page = 1 }) =
  */
 
 const getEarningsByRide = async (riderId) => {
-  const earnings = await Earnings.findOne({ where: { rider_id: riderId } })
+  const earnings = await Earnings.findOne({ where: { rider_id: riderId } });
   if (!earnings) {
-    throw new Error("Earnings not found for the given ride")
+    throw new Error("Earnings not found for the given ride");
   }
   return earningsResponseDTO(earnings);
-}
+};
 
 //mo
 
-const monthFilteredEarnings = async (dateRange, search = '', page = 1, limit = 5) => {
+const monthFilteredEarnings = async (dateRange, search = "", page = 1, limit = 5) => {
   const offset = (page - 1) * limit;
   const where = { ...dateRange };
 
   if (search) {
     where[Op.or] = [
-      { '$Ride.customer_name$': { [Op.like]: `%${search}%` } },
-      { '$Ride.email$': { [Op.like]: `%${search}%` } },
-      { '$Ride.phone$': { [Op.like]: `%${search}%` } },
+      { "$Ride.customer_name$": { [Op.like]: `%${search}%` } },
+      { "$Ride.email$": { [Op.like]: `%${search}%` } },
+      { "$Ride.phone$": { [Op.like]: `%${search}%` } },
       { ride_id: { [Op.like]: `%${search}%` } },
     ];
   }
@@ -108,10 +108,10 @@ const monthFilteredEarnings = async (dateRange, search = '', page = 1, limit = 5
     include: [
       {
         model: Ride,
-        as: 'Ride',
+        as: "Ride",
       },
     ],
-    order: [['createdAt', 'DESC']],
+    order: [["createdAt", "DESC"]],
     limit,
     offset,
   });
@@ -123,9 +123,9 @@ const monthFilteredEarnings = async (dateRange, search = '', page = 1, limit = 5
 };
 
 const getEarningsSum = async (where = {}) => {
-  const amount = await Earnings.sum("amount", where)
+  const amount = await Earnings.sum("amount", where);
   return amount || 0;
-}
+};
 
 // Get total pending payouts
 const getPendingPayouts = async (where = {}) => {
@@ -145,49 +145,49 @@ const getTotalCommission = async (where = {}) => {
 };
 
 const singleEarnings = async (id,signal) => {
-  if(signal?.aborted) throw new Error('Operation aborted');
+  if(signal?.aborted) throw new Error("Operation aborted");
   const result= await Earnings.findOne({
     where: { id },
     // attributes:[exclude:{exclude}],
     include: [{ model: Ride, as: "Ride" }],
   });
 
-  if(signal?.aborted) throw new Error('Operation aborted after query');
+  if(signal?.aborted) throw new Error("Operation aborted after query");
   return result;
 };
 
 const allEarnings = async (signal) => {
-  if(signal?.aborted) throw new Error('Operation aborted');
+  if(signal?.aborted) throw new Error("Operation aborted");
   const result = await Earnings.findAll({
     include: [{ model: Ride, as: "Ride" }],
-    order: [['createdAt', 'DESC']],
+    order: [["createdAt", "DESC"]],
   });
-  if(signal?.aborted) throw new Error('Operation aborted after query');
+  if(signal?.aborted) throw new Error("Operation aborted after query");
   return result;
 };
 
 
 const generateExcel = async (earnings,signal) => {
-  if(signal?.aborted) throw new Error('Operation aborted before Excel gen');
+  if(signal?.aborted) throw new Error("Operation aborted before Excel gen");
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Earnings Report');
+  const worksheet = workbook.addWorksheet("Earnings Report");
 
   worksheet.columns = [
-    { header: 'Earning ID', key: 'id', width: 36 },
-    { header: 'Driver ID', key: 'driver_id', width: 36 },
-    { header: 'Ride ID', key: 'ride_id', width: 36 },
-    { header: 'Amount', key: 'amount', width: 15 },
-    { header: 'Commission', key: 'commission', width: 15 },
-    { header: 'Percentage', key: 'percentage', width: 15 },
-    { header: 'Payment Method', key: 'payment_method', width: 20 },
-    { header: 'Status', key: 'status', width: 15 },
-    { header: 'Created At', key: 'createdAt', width: 25 }
+    { header: "Earning ID", key: "id", width: 36 },
+    { header: "Driver ID", key: "driver_id", width: 36 },
+    { header: "Ride ID", key: "ride_id", width: 36 },
+    { header: "Amount", key: "amount", width: 15 },
+    { header: "Commission", key: "commission", width: 15 },
+    { header: "Percentage", key: "percentage", width: 15 },
+    { header: "Payment Method", key: "payment_method", width: 20 },
+    { header: "Status", key: "status", width: 15 },
+    { header: "Created At", key: "createdAt", width: 25 }
   ];
 
   const rows = Array.isArray(earnings) ? earnings : [earnings];
 
   for (const e of rows) {
-    if (signal?.aborted) throw new Error('Aborted during Excel row gen');
+    if (signal?.aborted) throw new Error("Aborted during Excel row gen");
     worksheet.addRow({
       id: e.id,
       driver_id: e.driver_id,
@@ -201,7 +201,7 @@ const generateExcel = async (earnings,signal) => {
     });
   }
 
-  if (signal?.aborted) throw new Error('Aborted before writing buffer');
+  if (signal?.aborted) throw new Error("Aborted before writing buffer");
 
   return await workbook.xlsx.writeBuffer();
 };
@@ -217,4 +217,4 @@ module.exports = {
   singleEarnings,
   allEarnings,
   generateExcel
-}
+};

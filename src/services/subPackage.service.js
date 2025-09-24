@@ -24,9 +24,9 @@ const upsertSubPackage = async (data) => {
       status: data.status !== undefined ? data.status : true,
     };
 
-    console.log('Upsert data:', data); // Log for debugging
+    console.log("Upsert data:", data); // Log for debugging
 
-    if (data.id && data.id.trim() !== '') {
+    if (data.id && data.id.trim() !== "") {
       // Update flow
       const existingSubPackage = await SubPackage.findByPk(data.id, { transaction });
       if (!existingSubPackage) throw new Error("Sub-Package not found with the given ID");
@@ -164,23 +164,23 @@ const toggleSubPackageStatus = async (id) => {
 };
 const getSubPackagesByPackageId = async (package_id) => {
   try {
-    console.log('getSubPackagesByPackageId query:', { package_id });
+    console.log("getSubPackagesByPackageId query:", { package_id });
 
     // Validate package_id
     if (!package_id) {
-      throw new Error('Missing required parameter: package_id');
+      throw new Error("Missing required parameter: package_id");
     }
 
     const subPackages = await SubPackage.findAll({
       where: {
         package_id,
       },
-      attributes: ['id', 'name', 'package_id'],
+      attributes: ["id", "name", "package_id"],
     });
 
     return { data: subPackages };
   } catch (error) {
-    console.error('getSubPackagesByPackageId error:', error);
+    console.error("getSubPackagesByPackageId error:", error);
     throw error;
   }
 };

@@ -29,7 +29,7 @@ const getDriverByIdController = async (req, res) => {
 
 const exportAllDriversController = async (req, res) => {
   try {
-    const { search = "", status = "" } = req.query;  // Fixed: Use req.query instead of req.params
+    const { search = "", status = "" } = req.query; // Fixed: Use req.query instead of req.params
     const buffer = await exportAllDrivers(search, status);
     res.setHeader(
       "Content-Disposition",

@@ -45,8 +45,8 @@ const getAllPayments = async (search = "", status = "", page = 1, limit = 10) =>
         pending: await PaymentReports.count({ where: { status: "pending" } }),
         completed: await PaymentReports.count({ where: { status: "completed" } }),
         failed: await PaymentReports.count({ where: { status: "failed" } }),
-        totalAmount: await PaymentReports.sum('amount') || 0,
-        totalCommission: await PaymentReports.sum('commission') || 0,
+        totalAmount: await PaymentReports.sum("amount") || 0,
+        totalCommission: await PaymentReports.sum("commission") || 0,
       },
     };
   } catch (error) {

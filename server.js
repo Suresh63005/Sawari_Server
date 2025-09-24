@@ -1,5 +1,5 @@
-require('module-alias/register'); // this is required for dynamic imports to work
-const app = require('./src/app');
+require("module-alias/register"); // this is required for dynamic imports to work
+const app = require("./src/app");
 // const PORT = process.env.PORT || 4445;
 
 

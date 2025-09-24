@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# Get the last commit message (most recent one)
+last_msg=$(git log -1 --pretty=%s)
+
+# Get previous 15 commit messages (excluding the latest one)
+previous_msgs=$(git log -15 --skip=1 --pretty=%s)
+
+echo "📝 Checking if commit message '$last_msg' was already used..."
+
+# Check if the last message is in the previous ones
+if echo "$previous_msgs" | grep -Fxq "$last_msg"; then
+  echo "❌ Push blocked: Commit message '$last_msg' was already used in the last 15 commits."
+  echo "💡 Please use a unique commit message."
+  exit 1
+fi
+
+# Run ESLint (optional)
+echo "🔍 Running ESLint..."
+npm run lint
+
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint failed. Push aborted."
+  exit 1
+fi
+
+echo "✅ All checks passed. Proceeding with push."

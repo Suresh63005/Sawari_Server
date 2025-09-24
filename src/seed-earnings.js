@@ -1,5 +1,5 @@
 require("dotenv").config();
-const sequelize = require("./config/db");  // Your Sequelize instance
+const sequelize = require("./config/db"); // Your Sequelize instance
 const Earnings = require("./models/earnings.model");
 const { v4: uuidv4 } = require("uuid");
 

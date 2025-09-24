@@ -5,10 +5,10 @@ const { getEarningsSum } = require("../../services/earnings.service");
 const { driverProfileWithCar, getDriverById } = require("../../services/driver.service");
 const Package = require("../../models/package.model");
 const SubPackage = require("../../models/sub-package.model");
-const driverCarService = require('../../services/driverCar.service'); 
+const driverCarService = require("../../services/driverCar.service");
 const Car = require("../../models/cars.model");
 const Driver = require("../../models/driver.model");
-const {Transaction} = require('sequelize');
+const { Transaction } = require("sequelize");
 const { sequelize } = require("../../models");
 const Settings = require("../../models/settings.model");
 const WalletReports = require("../../models/wallet-report.model");
@@ -28,7 +28,7 @@ const getAllHomeData = async (req, res) => {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    // 1. Get Today's Completed Rides
+    // 1. Get Today"s Completed Rides
     const todayRides = await conditionalRides({
       where: {
         driver_id,
@@ -39,7 +39,7 @@ const getAllHomeData = async (req, res) => {
       }
     });
 
-    // 2. Get Today's Earnings
+    // 2. Get Today"s Earnings
     const todayEarnings = await getEarningsSum({
       where: {
         driver_id,
@@ -62,8 +62,8 @@ const getAllHomeData = async (req, res) => {
         }
       },
       attributes: [
-        "customer_name", "email", "phone", "pickup_address", "pickup_location","initiated_by_driver_id",
-        "drop_location","drop_address", "scheduled_time", "pickup_time", "dropoff_time"
+        "customer_name", "email", "phone", "pickup_address", "pickup_location", "initiated_by_driver_id",
+        "drop_location", "drop_address", "scheduled_time", "pickup_time", "dropoff_time"
       ],
       limit: 10,
       order: [["scheduled_time", "ASC"]]
@@ -73,46 +73,46 @@ const getAllHomeData = async (req, res) => {
     const driverCar = await driverCarService.getDriverCarByDriverId(driver_id);
     if (!driverCar) {
       return res.status(404).json({
-        success:false,
-        message:"Driver has no registered car."
-      })
+        success: false,
+        message: "Driver has no registered car."
+      });
     }
 
     const availableRides = await conditionalRides({
-  where: {
-    driver_id: null,
-    status: "pending",
-  },
-  attributes: [
-    "id","customer_name", "email", "phone", "pickup_address", "pickup_location","initiated_by_driver_id",
-    "drop_location","drop_address", "scheduled_time", "pickup_time", "dropoff_time","Price","Total"
-  ],
-  include: [
-    {
-      model: Car,
-      as: "Car",   // must match Ride.belongsTo(Car, { as: "Car" })
-      attributes: ["id", "brand", "model"],
       where: {
-        brand: driverCar.Car?.brand,
-        model: driverCar.Car?.model
-      }
-    },
-    {
-      model: Package,
-      as: "Package",
-      attributes: ["name"]
-    },
-    {
-      model: SubPackage,
-      as: "SubPackage",
-      attributes: ["name"]
-    }
-  ],
-  limit: 10,
-  order: [["scheduled_time","DESC"]]
-});
+        driver_id: null,
+        status: "pending",
+      },
+      attributes: [
+        "id", "customer_name", "email", "phone", "pickup_address", "pickup_location", "initiated_by_driver_id",
+        "drop_location", "drop_address", "scheduled_time", "pickup_time", "dropoff_time", "Price", "Total"
+      ],
+      include: [
+        {
+          model: Car,
+          as: "Car", // must match Ride.belongsTo(Car, { as: "Car" })
+          attributes: ["id", "brand", "model"],
+          where: {
+            brand: driverCar.Car?.brand,
+            model: driverCar.Car?.model
+          }
+        },
+        {
+          model: Package,
+          as: "Package",
+          attributes: ["name"]
+        },
+        {
+          model: SubPackage,
+          as: "SubPackage",
+          attributes: ["name"]
+        }
+      ],
+      limit: 10,
+      order: [["scheduled_time", "DESC"]]
+    });
 
-console.log("DriverCar with Car:", JSON.stringify(driverCar, null, 2));
+    console.log("DriverCar with Car:", JSON.stringify(driverCar, null, 2));
 
 
     return res.status(200).json({
@@ -166,7 +166,7 @@ const acceptRide = async (req, res) => {
       });
     }
 
-    console.log('Ride details:', { driver_id: ride.driver_id, status: ride.status });
+    console.log("Ride details:", { driver_id: ride.driver_id, status: ride.status });
 
     if (ride.driver_id || ride.status !== "pending") {
       await t.rollback();
@@ -178,7 +178,7 @@ const acceptRide = async (req, res) => {
 
     // 2. Fetch driver wallet
     const driver = await Driver.findByPk(driver_id, {
-      attributes: ["id", "wallet_balance","credit_ride_count"],
+      attributes: ["id", "wallet_balance", "credit_ride_count"],
       transaction: t,
       lock: t.LOCK.UPDATE
     });
@@ -192,9 +192,9 @@ const acceptRide = async (req, res) => {
     }
 
     // Fetch min_wallet_percentage from Settings
-    const setting = await Settings.findOne({transaction:t})
+    const setting = await Settings.findOne({ transaction: t });
     let percentage;
-    if(setting && setting.min_wallet_percentage){
+    if (setting && setting.min_wallet_percentage) {
       percentage = parseFloat(setting.min_wallet_percentage);
     }
 
@@ -204,12 +204,12 @@ const acceptRide = async (req, res) => {
     let isCredit = false;
     let newCount = driver.credit_ride_count || 0;
 
-    if(balance < required){
+    if (balance < required) {
       isCredit = true;
       newCount += 1;
       driver.credit_ride_count = newCount;
-      await driver.save({transaction:t});
-      if(newCount > 3){
+      await driver.save({ transaction: t });
+      if (newCount > 3) {
         await t.rollback();
         return res.status(403).json({
           success: false,
@@ -221,7 +221,7 @@ const acceptRide = async (req, res) => {
 
     // 4. Update ride using the Sequelize model
     await ride.update(
-      { driver_id, status: "accepted", accept_time: new Date(), is_credit:isCredit },
+      { driver_id, status: "accepted", accept_time: new Date(), is_credit: isCredit },
       { transaction: t }
     );
 
@@ -235,14 +235,14 @@ const acceptRide = async (req, res) => {
     );
 
     // If accepted on credit, add entry to wallet reports
-    if(isCredit){
+    if (isCredit) {
       await WalletReports.create({
         driver_id,
         amount: -required,
         transaction_type: "debit",
         description: `Debit due to insufficient balance for ride ${ride_id}`,
         ride_id
-      },{ transaction: t });
+      }, { transaction: t });
     }
 
     await t.commit();
@@ -257,7 +257,7 @@ const acceptRide = async (req, res) => {
         status: ride.status, // Update status to reflect the change
         driver_id: ride.driver_id, // Update driver_id
         accept_time: ride.accept_time, // Include accept_time
-        is_credit:ride.is_credit
+        is_credit: ride.is_credit
       }
     });
   } catch (error) {
@@ -285,8 +285,8 @@ const toggleDriverStatus = async (req, res) => {
 
   try {
     const driverGetById = await getDriverById(driver_id);
-    driverGetById.availability_status=status
-    const result=await driverGetById.save();
+    driverGetById.availability_status = status;
+    const result = await driverGetById.save();
     return res.status(200).json({
       success: true,
       message: `Driver status updated to ${status}`,
@@ -328,9 +328,9 @@ const updateRideStatus = async (req, res) => {
   const { status } = req.body;
 
   try {
-    const ride= await getRideByIdData(driver_id, ride_id);
+    const ride = await getRideByIdData(driver_id, ride_id);
     if (ride.status !== "accepted") {
-        throw new Error("Ride must be in 'accepted' status to start or cancel");
+      throw new Error("Ride must be in \"accepted\" status to start or cancel");
     }
 
     ride.status = status;
@@ -338,8 +338,8 @@ const updateRideStatus = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Ride status updated to '${status}'`,
-      data:ride
+      message: `Ride status updated to "${status}"`,
+      data: ride
     });
   } catch (error) {
     return res.status(400).json({
@@ -364,7 +364,7 @@ const getRidesByStatus = async (req, res) => {
     const rides = await HomeService.getCompletedOrCancelledAndAcceptedRides(driver_id, status);
     return res.status(200).json({
       success: true,
-      message: `Rides with status '${status}' fetched successfully`,
+      message: `Rides with status "${status}" fetched successfully`,
       data: rides,
     });
   } catch (error) {
@@ -409,18 +409,18 @@ const upsertRide = async (req, res) => {
     } = req.body;
 
     // Validate pickup_location and drop_location
-    if(!pickup_location || typeof pickup_location !== "object" || !pickup_location.lat || !pickup_location.lng){
+    if (!pickup_location || typeof pickup_location !== "object" || !pickup_location.lat || !pickup_location.lng) {
       return res.status(400).json({
-        success:false,
-        message:"Invalid pickup_location format. Must be an object with lat and lng"
-      })
+        success: false,
+        message: "Invalid pickup_location format. Must be an object with lat and lng"
+      });
     }
 
     if (
-      !drop_location || typeof drop_location !== 'object' || !drop_location.lat || !drop_location.lng) {
+      !drop_location || typeof drop_location !== "object" || !drop_location.lat || !drop_location.lng) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid drop_location format. Must be an object with lat and lng.',
+        message: "Invalid drop_location format. Must be an object with lat and lng.",
       });
     }
 
@@ -481,7 +481,7 @@ const earningsHistory = async (req, res) => {
 
     const earnings = await HomeService.getDriverEarningsHistory(driver_id, filters);
 
- 
+
 
     return res.status(200).json({
       success: true,
@@ -620,39 +620,39 @@ const getMyRides = async (req, res) => {
 };
 
 
-const cancelRideController = async(req,res)=>{
+const cancelRideController = async (req, res) => {
   const driverId = req.driver?.id;
-  const {ride_id}=req.body;
+  const { ride_id } = req.body;
 
-  if(!driverId){
+  if (!driverId) {
     return res.status(401).json({
       success: false,
       message: "Unauthorized: Driver ID is required",
     });
   }
 
-  if(!ride_id){
+  if (!ride_id) {
     return res.status(400).json({
       success: false,
       message: "Ride ID is required",
     });
   }
 
-  const result = await HomeService.canceRide(driverId,ride_id);
+  const result = await HomeService.canceRide(driverId, ride_id);
 
-  if(!result.success){
+  if (!result.success) {
     return res.status(400).json({
-      success:false,
-      message:result.message,
-    })
+      success: false,
+      message: result.message,
+    });
   }
 
   return res.status(200).json({
-    success:true,
-    message:result.message,
-    data:result.data,
-  })
-}
+    success: true,
+    message: result.message,
+    data: result.data,
+  });
+};
 
 module.exports = {
   getAllHomeData,

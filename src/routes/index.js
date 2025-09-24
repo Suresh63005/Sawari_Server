@@ -1,10 +1,10 @@
-const fs = require('fs').promises;
-const path = require('path');
-const express = require('express');
+const fs = require("fs").promises;
+const path = require("path");
+const express = require("express");
 
 module.exports = async (app) => {
   try {
-    const versionPath = path.join(__dirname, '../api');
+    const versionPath = path.join(__dirname, "../api");
     console.log(`Loading routes from: ${versionPath}`);
 
     const versions = await fs.readdir(versionPath, { withFileTypes: true });
@@ -26,7 +26,7 @@ module.exports = async (app) => {
         const files = await fs.readdir(groupDirPath, { withFileTypes: true });
 
         for (const file of files) {
-          if (file.isFile() && file.name.endsWith('.routes.js')) {
+          if (file.isFile() && file.name.endsWith(".routes.js")) {
             try {
               const routePath = path.join(groupDirPath, file.name);
               const route = require(routePath);
@@ -36,7 +36,7 @@ module.exports = async (app) => {
                 continue;
               }
 
-              const routeName = file.name.replace('.routes.js', '');
+              const routeName = file.name.replace(".routes.js", "");
               const routeUrl = `/api/${version}/${groupName}/${routeName}`;
 
               app.use(routeUrl, route);

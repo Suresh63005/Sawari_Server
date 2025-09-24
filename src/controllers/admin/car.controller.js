@@ -1,5 +1,5 @@
-const carService = require('../../services/car.service');
-const { deleteFromS3, uploadToS3 } = require('../../config/fileUpload.aws');
+const carService = require("../../services/car.service");
+const { deleteFromS3, uploadToS3 } = require("../../config/fileUpload.aws");
 
 /**
  * Controller for upsert(create/update) a car
@@ -45,7 +45,7 @@ const upsertCar = async (req, res) => {
  */
 const getAllCars = async (req, res) => {
   try {
-    const { search = '', limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC', status } = req.query;
+    const { search = "", limit = 10, page = 1, sortBy = "createdAt", sortOrder = "DESC", status } = req.query;
 
     const result = await carService.getAllCars({
       search,
@@ -57,7 +57,7 @@ const getAllCars = async (req, res) => {
     });
 
     res.status(200).json({
-      message: 'Cars retrieved successfully',
+      message: "Cars retrieved successfully",
       result,
     });
   } catch (error) {
@@ -76,7 +76,7 @@ const getCarById = async (req, res) => {
   try {
     const result = await carService.getCarById(req.params.id);
     res.status(200).json({
-      message: 'Car retrieved successfully',
+      message: "Car retrieved successfully",
       data: result,
     });
   } catch (error) {
@@ -95,7 +95,7 @@ const deleteCarById = async (req, res) => {
   try {
     const result = await carService.deleteCarById(req.params.id);
     res.status(200).json({
-      message: 'Car deleted successfully',
+      message: "Car deleted successfully",
       data: result.data,
     });
   } catch (error) {
@@ -122,14 +122,15 @@ const toggleCarStatus = async (req, res) => {
 const getCarsBySubPackageId = async (req, res) => {
   try {
     const { sub_package_id } = req.params;
-    console.log('Fetching cars for sub_package_id:', sub_package_id);
+    console.log("Fetching cars for sub_package_id:", sub_package_id);
     const cars = await carService.getCarsBySubPackageId(sub_package_id);
     res.status(200).json({ result: { data: cars } });
   } catch (error) {
-    console.error('getCarsBySubPackageId error:', error.message);
+    console.error("getCarsBySubPackageId error:", error.message);
     res.status(400).json({ error: error.message });
   }
-}
+};
+
 const getCarsForListController = async (req, res) => {
   try {
     const result = await carService.getCarsForList();

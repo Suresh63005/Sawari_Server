@@ -73,13 +73,13 @@ const upsertCar = async (data) => {
 };
 
 // Service to get all cars with optional filters, pagination, searching, and sorting
-const getAllCars = async ({ search, limit = 10, page = 1, sortBy = 'createdAt', sortOrder = 'DESC', status }) => {
+const getAllCars = async ({ search, limit = 10, page = 1, sortBy = "createdAt", sortOrder = "DESC", status }) => {
   const where = {};
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   // Search by brand or model
   if (search) {
-    console.log('search value:', search);
+    console.log("search value:", search);
     where[Op.or] = [
       { brand: { [Op.like]: `%${search}%` } },
       { model: { [Op.like]: `%${search}%` } },
@@ -90,7 +90,7 @@ const getAllCars = async ({ search, limit = 10, page = 1, sortBy = 'createdAt', 
   if (status) {
     where.status = status;
   }
-  console.log('WHERE clause:', JSON.stringify(where, null, 2));
+  console.log("WHERE clause:", JSON.stringify(where, null, 2));
 
   const { rows, count } = await Car.findAndCountAll({
     where,
@@ -109,9 +109,9 @@ const getAllCars = async ({ search, limit = 10, page = 1, sortBy = 'createdAt', 
 
 const getCarsForList = async () => {
   const cars = await Car.findAll({
-    where: { status: 'active' }, // only active cars for list
-    attributes: ['id', 'brand', 'model'], // only essential fields
-    order: [['brand', 'ASC'], ['model', 'ASC']],
+    where: { status: "active" }, // only active cars for list
+    attributes: ["id", "brand", "model"], // only essential fields
+    order: [["brand", "ASC"], ["model", "ASC"]],
   });
 
   return cars.map(car => carResponseDTO(car));
@@ -146,7 +146,7 @@ const toggleCarStatus = async (id) => {
   const car = await Car.findByPk(id);
   if (!car) throw new Error("Car not found with the given ID");
 
-  const newStatus = car.status === 'active' ? 'inactive' : 'active';
+  const newStatus = car.status === "active" ? "inactive" : "active";
   await car.update({ status: newStatus });
 
   return {
@@ -157,7 +157,7 @@ const toggleCarStatus = async (id) => {
 const getCarsBySubPackageId = async (sub_package_id) => {
   const packagePrices = await PackagePrice.findAll({
     where: { sub_package_id },
-    include: [{ model: Car,as:"Car", attributes: ['id', 'brand','model'] }],
+    include: [{ model: Car,as:"Car", attributes: ["id", "brand","model"] }],
   });
   return packagePrices
     .map(pp => pp.Car)

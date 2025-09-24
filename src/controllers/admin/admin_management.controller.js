@@ -23,7 +23,7 @@ const listAdmins = async (req, res) => {
     const currentUser = req.user;
     console.log("Listing admins for user:", currentUser.id, currentUser.role);
 
-    const { search = '', page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+    const { search = "", page = "1", limit = "10", sortBy = "createdAt", sortOrder = "DESC" } = req.query;
 
     const { data, total, page: currentPage, limit: currentLimit } = await AuthService.getAllAdmins({
       search,
@@ -203,7 +203,7 @@ const updateAdminStatus = async (req, res) => {
       return res
         .status(400)
         .json({
-          message: 'Invalid status. Must be "active", "inactive", or "blocked"',
+          message: "Invalid status. Must be \"active\", \"inactive\", or \"blocked\"",
         });
     }
 

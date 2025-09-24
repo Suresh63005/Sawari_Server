@@ -1,4 +1,4 @@
-const Redis = require('ioredis');
+const Redis = require("ioredis");
 
 // Configuration defaults
 const MAX_RETRIES = 5;
@@ -11,10 +11,10 @@ const RETRY_DELAY_MS = 5000;
  */
 const connectRedis = async () => {
   if (!process.env.REDIS_URL) {
-    console.error('❌ REDIS_URL is missing');
+    console.error("❌ REDIS_URL is missing");
     process.exit(1);
   }
-  console.log("redis url is",process.env.REDIS_URL)
+  console.log("redis url is", process.env.REDIS_URL);
 
   //Create Redis Client:
   const client = new Redis(process.env.REDIS_URL, { // Initializes a Redis client using the given URL.
@@ -28,23 +28,23 @@ const connectRedis = async () => {
     },
   });
 
-  client.on('connect', () => {
-    console.info('✅ Redis connected');
+  client.on("connect", () => {
+    console.info("✅ Redis connected");
   });
 
-  client.on('error', (err) => {
+  client.on("error", (err) => {
     console.error(`❌ Redis connection error: ${err.message}`);
   });
 
-  client.on('close', () => {
-    console.warn('⚠️ Redis disconnected');
+  client.on("close", () => {
+    console.warn("⚠️ Redis disconnected");
   });
 
   // Handle graceful shutdown
-  process.on('SIGINT', async () => {
+  process.on("SIGINT", async () => {
     try {
       await client.quit();
-      console.info('🔌 Redis connection closed due to app termination');
+      console.info("🔌 Redis connection closed due to app termination");
     } catch (err) {
       console.error(`❌ Error closing Redis connection: ${err.message}`);
     }
@@ -52,9 +52,9 @@ const connectRedis = async () => {
 
   // Wait for the client to be ready
   await new Promise((resolve, reject) => {
-    client.on('ready', () => resolve());
-    client.on('error', (err) => {
-      if (client.status === 'connecting') {
+    client.on("ready", () => resolve());
+    client.on("error", (err) => {
+      if (client.status === "connecting") {
         reject(err); // Reject only during initial connection
       }
     });

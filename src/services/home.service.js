@@ -1,7 +1,7 @@
 const { Op, Sequelize } = require("sequelize");
-const Ride = require("../models/ride.model")
-const Earnings = require("../models/earnings.model")
-const Driver = require("../models/driver.model")
+const Ride = require("../models/ride.model");
+const Earnings = require("../models/earnings.model");
+const Driver = require("../models/driver.model");
 const Package = require("../models/package.model");
 const SubPackage = require("../models/sub-package.model");
 const Car = require("../models/cars.model");
@@ -46,10 +46,10 @@ const DriverStatus = async (driver_id, status) => {
     driver.status = status;
     await driver.save();
     return driver;
-}
+};
 
 const RideDetails = async (driver_id, ride_id) => {
-    console.log(driver_id, ride_id, "hhhhhhhhhhhhhhhhhhhhhhhhh")
+    console.log(driver_id, ride_id, "hhhhhhhhhhhhhhhhhhhhhhhhh");
     
 
     // if (!ride) {
@@ -391,7 +391,7 @@ const endRide = async (rideId, driver_id) => {
         percentage,
         // payment_method:ride.payment_method,
         status: "pending"
-    })
+    });
     return {ride,earnings};
 };
 
@@ -522,21 +522,21 @@ const canceRide = async(driverId,rideId)=>{
       where:{
         id:rideId,
         initiated_by_driver_id:driverId,
-        status:'pending'
+        status:"pending"
       }
-    })
+    });
     if(!ride){
       throw new Error("Ride not found, not initiated by this driver, or not in pending status");
     }
 
     // Update the ride status to cancelled
-    await ride.update({status:"cancelled"})
+    await ride.update({status:"cancelled"});
 
     return {
       success:true,
       message:"Ride cancelled successfully.",
       data:{rideId}
-    }
+    };
   } catch (error) {
     console.error("Error cancelling ride:", error);
     return {
@@ -544,7 +544,7 @@ const canceRide = async(driverId,rideId)=>{
       message: error.message || "Failed to cancel ride",
     };
   }
-}
+};
 
 module.exports = {
     releaseRide,
@@ -558,4 +558,4 @@ module.exports = {
     upsertRide,
     getDriverEarningsHistory,
     fetchMyRides
-}
+};

@@ -1,6 +1,6 @@
 const Driver = require("../models/driver.model");
 const DriverCar = require("../models/driver-cars.model");
-const Car = require("../models/cars.model");  // Added: Assume this exists for vehicle name
+const Car = require("../models/cars.model"); //Added: Assume this exists for vehicle name
 const { Op } = require("sequelize");
 const ExcelJS = require("exceljs");
 
@@ -28,7 +28,7 @@ const getAllDrivers = async (search = "", status = "", page = 1, limit = 10) => 
         {
           model: DriverCar,
           as: "Vehicles",
-          include: [{ model: Car, as: "Car", attributes: ["model"] }],  // Added: Nested include for car model
+          include: [{ model: Car, as: "Car", attributes: ["model"] }], // Added: Nested include for car model
           attributes: ["id", "color", "license_plate", "status"],
         },
       ],
@@ -59,7 +59,7 @@ const getDriverById = async (driverId) => {
         {
           model: DriverCar,
           as: "Vehicles",
-          include: [{ model: Car, as: "Car", attributes: ["model"] }],  // Added: Nested include for car model
+          include: [{ model: Car, as: "Car", attributes: ["model"] }], // Added: Nested include for car model
           attributes: ["id", "color", "license_plate", "status", "car_photos", "rc_doc", "insurance_doc"],
         },
       ],
@@ -97,7 +97,7 @@ const exportAllDrivers = async (search = "", status = "") => {
         {
           model: DriverCar,
           as: "Vehicles",
-          include: [{ model: Car, as: "Car", attributes: ["model"] }],  // Added: Nested include for car model
+          include: [{ model: Car, as: "Car", attributes: ["model"] }], // Added: Nested include for car model
           attributes: ["license_plate", "color", "status"],
         },
       ],
@@ -113,7 +113,7 @@ const exportAllDrivers = async (search = "", status = "") => {
       { header: "Email", key: "email", width: 25 },
       { header: "Phone", key: "phone", width: 15 },
       { header: "Status", key: "status", width: 10 },
-      { header: "Vehicles", key: "vehicles", width: 50 },  // Fixed: Key name for consistency
+      { header: "Vehicles", key: "vehicles", width: 50 }, // Fixed: Key name for consistency
     ];
 
     drivers.forEach((driver) => {
@@ -124,7 +124,7 @@ const exportAllDrivers = async (search = "", status = "") => {
         email: driver.email || "-",
         phone: driver.phone || "-",
         status: driver.status || "-",
-        vehicles: driver.Vehicles  // Fixed: driver.Vehicles instead of driver.cars
+        vehicles: driver.Vehicles // Fixed: driver.Vehicles instead of driver.cars
           .map((car) => `Name: ${car.Car?.model || "-"}, License: ${car.license_plate}, Color: ${car.color || "-"}, Status: ${car.status}`)
           .join("; "),
       });
@@ -152,7 +152,7 @@ const exportDriverById = async (driverId) => {
       { header: "Email", key: "email", width: 25 },
       { header: "Phone", key: "phone", width: 15 },
       { header: "Status", key: "status", width: 10 },
-      { header: "Vehicles", key: "vehicles", width: 50 },  // Fixed: Key name for consistency
+      { header: "Vehicles", key: "vehicles", width: 50 }, // Fixed: Key name for consistency
     ];
 
     worksheet.addRow({
@@ -162,7 +162,7 @@ const exportDriverById = async (driverId) => {
       email: driver.email || "-",
       phone: driver.phone || "-",
       status: driver.status || "-",
-      vehicles: driver.Vehicles  // Fixed: driver.Vehicles instead of driver.cars
+      vehicles: driver.Vehicles // Fixed: driver.Vehicles instead of driver.cars
         .map((car) => `Name: ${car.Car?.model || "-"}, License: ${car.license_plate}, Color: ${car.color || "-"}, Status: ${car.status}`)
         .join("; "),
     });

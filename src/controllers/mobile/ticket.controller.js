@@ -4,13 +4,13 @@ const createTicketByUser = async (req, res) => {
   try {
     const raised_by = req.driver?.id;
     if (!raised_by) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: "Unauthorized" });
     }
     const { title, description, priority } = req.body;
     const files = req.files;
 
     if (!title || !description ) {
-      return res.status(400).json({ message: 'Title, description,  are required' });
+      return res.status(400).json({ message: "Title, description,  are required" });
     }
 
     const ticket = await createTicket({ title, description, priority, raised_by, files });
@@ -26,7 +26,7 @@ const getTicketsByUser = async (req, res) => {
   try {
     const raised_by = req.driver?.id;
     if (!raised_by) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: "Unauthorized" });
     }
     const tickets = await getTickets({ raised_by });
     res.status(200).json(tickets);
@@ -40,7 +40,7 @@ const ticketview = async (req, res) => {
   try {
     const raised_by = req.driver?.id;
     if (!raised_by) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: "Unauthorized" });
     }
     const id = req.params.id;
     console.log(id,"this is id" ,raised_by, "this is raised by");

@@ -1,6 +1,6 @@
 const router=require("express").Router();
-const homeController=require("../../../controllers/mobile/home.controller")
-const middleware=require("../../../middlewares/mobile/authMiddleware")
+const homeController=require("../../../controllers/mobile/home.controller");
+const middleware=require("../../../middlewares/mobile/authMiddleware");
 
 router.get("/dashboard", middleware.isAuthenticated, homeController.getAllHomeData);
 router.post("/accept-ride", middleware.isAuthenticated, homeController.acceptRide);
@@ -16,9 +16,9 @@ router.post("/upsert-ride",middleware.isAuthenticated,homeController.upsertRide)
 router.put("/release/:rideId",middleware.isAuthenticated,homeController.releaseDriverFromRide);
 router.put("/start-ride/:rideId",middleware.isAuthenticated,homeController.startRide);
 router.put("/end-ride/:rideId",middleware.isAuthenticated,homeController.endRide);
-router.put("/cancel-ride",middleware.isAuthenticated,homeController.cancelRideController)
-router.get("/my-rides",middleware.isAuthenticated,homeController.getMyRides)
+router.put("/cancel-ride",middleware.isAuthenticated,homeController.cancelRideController);
+router.get("/my-rides",middleware.isAuthenticated,homeController.getMyRides);
 
 
-router.get("/earnings-history",middleware.isAuthenticated,homeController.earningsHistory) // http://localhost:4445/api/v1/mobile/home/earnings-history?month=2025-07
-module.exports=router
+router.get("/earnings-history",middleware.isAuthenticated,homeController.earningsHistory); // http://localhost:4445/api/v1/mobile/home/earnings-history?month=2025-07
+module.exports=router;

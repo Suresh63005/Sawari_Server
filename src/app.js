@@ -1,20 +1,20 @@
-require('module-alias/register');
-const express = require('express');
-const morgan = require('morgan');
-const dotEnv = require('dotenv');
-const cookieParser = require('cookie-parser');
-const cors = require('cors');
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
-const hpp = require('hpp');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const compression = require('compression');
-const loadRoutes = require('./routes/index');
+require("module-alias/register");
+const express = require("express");
+const morgan = require("morgan");
+const dotEnv = require("dotenv");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsdoc = require("swagger-jsdoc");
+const hpp = require("hpp");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const compression = require("compression");
+const loadRoutes = require("./routes/index");
 const reddisConnect = require("./config/connectRedis");
 const CacheManager=require("./utils/cache-manager");
-const { S3Client,  PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const app = express();
 const port = process.env.PORT || 4445;
@@ -23,15 +23,15 @@ const port = process.env.PORT || 4445;
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000000,
-  message: 'Too many requests from this IP, please try again later',
+  message: "Too many requests from this IP, please try again later",
 });
 
 // Environment variables
 dotEnv.config();
 
 // Middleware
-app.set('trust proxy', 1);
-app.use(morgan('dev'));
+app.set("trust proxy", 1);
+app.use(morgan("dev"));
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(cookieParser());
@@ -42,9 +42,9 @@ app.use(hpp());
 
 // CORS configuration
 const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'https://sawari-admin.vercel.app'
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://sawari-admin.vercel.app"
   
 ];
 app.use(cors({
@@ -52,37 +52,37 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Disposition'],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Disposition"],
 }));
 
 
 // Swagger setup
 const swaggerOptions = {
   definition: {
-    openapi: '3.0.0',
+    openapi: "3.0.0",
     info: {
-      title: 'Sawari API',
-      version: '1.0.0',
+      title: "Sawari API",
+      version: "1.0.0",
     },
   },
-  apis: ['./src/api/*.js'],
+  apis: ["./src/api/*.js"],
 };
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Load routes
 (async () => {
   try {
     await loadRoutes(app);
-    console.log('✅ Routes loaded successfully');
+    console.log("✅ Routes loaded successfully");
   } catch (err) {
-    console.error('❌ Failed to initialize routes:', err.message);
+    console.error("❌ Failed to initialize routes:", err.message);
     process.exit(1);
   }
 })();
@@ -106,26 +106,26 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 //     console.error("❌ Failed to sync Ticket table:", err);
 //   });
 
-const multer = require('multer');
+const multer = require("multer");
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     // Handle file size limit error
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'File size exceeds 1 MB limit.' });
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({ error: "File size exceeds 1 MB limit." });
     }
     return res.status(400).json({ error: err.message });
   }
 
   // Other errors (from your controllers/services)
   if (err) {
-    return res.status(500).json({ error: err.message || 'Something went wrong' });
+    return res.status(500).json({ error: err.message || "Something went wrong" });
   }
 
   next();
 });
 
 const startServer = async () => {
-  if (process.env.NODE_ENV === 'test') {
+  if (process.env.NODE_ENV === "test") {
     console.log("🧪 Test mode: Skipping Redis and server startup");
     return;
   }
@@ -135,7 +135,7 @@ const startServer = async () => {
     redisClient = await reddisConnect();
     app.locals.redisClient = redisClient;
 
-    app.locals.cacheManager =new CacheManager(redisClient)
+    app.locals.cacheManager =new CacheManager(redisClient);
 
     const server = app.listen(port, () => {
       console.info(`🚀 Server running on port ${port}`);
@@ -143,22 +143,22 @@ const startServer = async () => {
     });
 
     const shutdown = async () => {
-      console.info('🛑 Shutting down server...');
+      console.info("🛑 Shutting down server...");
       try {
         // await dbConnect.disconnect?.();
         await redisClient.quit();
         server.close(() => {
-          console.info('✅ Server shut down successfully');
+          console.info("✅ Server shut down successfully");
           process.exit(0);
         });
       } catch (err) {
-        console.error('❌ Error during shutdown:', err.message);
+        console.error("❌ Error during shutdown:", err.message);
         process.exit(1);
       }
     };
 
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
   } catch (err) {
     console.error(`❌ Failed to start server: ${err.message}`);
     if (redisClient) await redisClient.quit();
@@ -166,7 +166,7 @@ const startServer = async () => {
   }
 };
 
-startServer()
+startServer();
 
 const s3 = new S3Client({
     region: process.env.AWS_REGION,
@@ -174,7 +174,7 @@ const s3 = new S3Client({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     }
-})
+});
 
 // AWS S3 Presigned URL for Image Uploads
 app.post("/upload-token", async (req, res) => {
@@ -205,18 +205,18 @@ app.post("/upload-token", async (req, res) => {
             uploadUrl: url,
             bucket: process.env.S3_BUCKET_NAME,
             fileType: key
-        })
+        });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ message: 'Error generating upload URL' });
+        return res.status(500).json({ message: "Error generating upload URL" });
     }
-})
+});
 
 // for delete
 app.delete("/delete-image", async (req, res) => {
     const filePath = req.body.filePath;
-    console.log(filePath, "kkkkkkkkkkkkkkkkkkkkkkkkkkkk")
-    if (!filePath) return res.status(400).json({ message: 'filePath is required' });
+    console.log(filePath, "kkkkkkkkkkkkkkkkkkkkkkkkkkkk");
+    if (!filePath) return res.status(400).json({ message: "filePath is required" });
 
     const deleteCommand = new DeleteObjectCommand({
         Bucket: process.env.S3_BUCKET_NAME,
@@ -225,11 +225,11 @@ app.delete("/delete-image", async (req, res) => {
 
     try {
         const result = await s3.send(deleteCommand);
-        res.json({ message: 'File deleted successfully', result });
+        res.json({ message: "File deleted successfully", result });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Failed to delete image' });
+        res.status(500).json({ message: "Failed to delete image" });
     }
-})
+});
 
 module.exports = app;

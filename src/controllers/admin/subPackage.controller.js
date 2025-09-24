@@ -61,15 +61,15 @@ const toggleSubPackageStatus = async (req, res) => {
 };
 const getSubPackagesByPackageId = async (req, res) => {
   try {
-    console.log('getSubPackagesByPackageId query:', req.query);
+    console.log("getSubPackagesByPackageId query:", req.query);
     const { package_id } = req.query;
     if (!package_id) {
-      return res.status(400).json({ error: 'Missing required query parameter: package_id' });
+      return res.status(400).json({ error: "Missing required query parameter: package_id" });
     }
     const result = await subPackageService.getSubPackagesByPackageId(package_id);
     res.status(200).json(result);
   } catch (error) {
-    console.error('getSubPackagesByPackageId error:', error.message);
+    console.error("getSubPackagesByPackageId error:", error.message);
     res.status(400).json({ error: error.message });
   }
 };

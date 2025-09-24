@@ -1,7 +1,7 @@
 // backend/services/ticketService.js
 
-const { uploadToS3 } = require('../config/fileUpload.aws');
-const Ticket = require('../models/ticket.model');
+const { uploadToS3 } = require("../config/fileUpload.aws");
+const Ticket = require("../models/ticket.model");
 const { Op } = require("sequelize");
 
 const getOpenTickets = async (filters = {}) => {
@@ -9,7 +9,7 @@ const getOpenTickets = async (filters = {}) => {
     const { status, search, page = 1, limit = 5 } = filters;
     const whereClause = {};
 
-    if (status && status !== 'All') {
+    if (status && status !== "All") {
       whereClause.status = status;
     }
 
@@ -20,7 +20,7 @@ const getOpenTickets = async (filters = {}) => {
     const offset = (page - 1) * limit;
     const { count, rows } = await Ticket.findAndCountAll({
       where: whereClause,
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
       offset,
       limit: Number(limit),
     });
@@ -30,7 +30,7 @@ const getOpenTickets = async (filters = {}) => {
       total: count,
     };
   } catch (error) {
-    throw new Error('Error fetching tickets: ' + error.message);
+    throw new Error("Error fetching tickets: " + error.message);
   }
 };
 
@@ -38,17 +38,17 @@ const resolveTicket = async (id) => {
   try {
     const ticket = await Ticket.findByPk(id);
     if (!ticket) {
-      throw new Error('Ticket not found');
+      throw new Error("Ticket not found");
     }
-    if (ticket.status !== 'open') {
-      throw new Error('Ticket is not open');
+    if (ticket.status !== "open") {
+      throw new Error("Ticket is not open");
     }
-    ticket.status = 'resolved';
+    ticket.status = "resolved";
     ticket.resolved_at = new Date();
     await ticket.save();
     return ticket;
   } catch (error) {
-    throw new Error('Error resolving ticket: ' + error.message);
+    throw new Error("Error resolving ticket: " + error.message);
   }
 };
 
@@ -58,12 +58,12 @@ const createTicket = async (ticketData) => {
     const { title, description, priority, raised_by, files } = ticketData;
 
     if (!title || !priority || !raised_by) {
-      throw new Error('Title, priority, and raised_by are required');
+      throw new Error("Title, priority, and raised_by are required");
     }
 
     // Generate ticket_number
     const ticketCount = await Ticket.count({ transaction });
-    const ticketNumber = String(ticketCount + 1).padStart(6, '0');
+    const ticketNumber = String(ticketCount + 1).padStart(6, "0");
 
     // Upload images to S3 if present
     let uploadedUrls = [];
@@ -93,8 +93,8 @@ const createTicket = async (ticketData) => {
     return ticket;
   } catch (error) {
     await transaction.rollback();
-    console.error('Create ticket error details:', error);
-    throw new Error('Error creating ticket: ' + error.message);
+    console.error("Create ticket error details:", error);
+    throw new Error("Error creating ticket: " + error.message);
   }
 };
 
@@ -102,21 +102,21 @@ const updateTicketStatus = async (id, status) => {
   try {
     const ticket = await Ticket.findByPk(id);
     if (!ticket) {
-      throw new Error('Ticket not found');
+      throw new Error("Ticket not found");
     }
-    if (!['open', 'in_progress', 'resolved', 'closed'].includes(status)) {
-      throw new Error('Invalid status');
+    if (!["open", "in_progress", "resolved", "closed"].includes(status)) {
+      throw new Error("Invalid status");
     }
     ticket.status = status;
-    if (status === 'resolved') {
+    if (status === "resolved") {
       ticket.resolved_at = new Date();
-    } else if (status === 'closed' && ticket.resolved_at === null) {
-      throw new Error('Ticket must be resolved before closing');
+    } else if (status === "closed" && ticket.resolved_at === null) {
+      throw new Error("Ticket must be resolved before closing");
     }
     await ticket.save();
     return ticket;
   } catch (error) {
-    throw new Error('Error updating ticket status: ' + error.message);
+    throw new Error("Error updating ticket status: " + error.message);
   }
 };
 
@@ -141,8 +141,8 @@ const getTickets = async (filters = {}) => {
       let images = [];
       if (ticket.images) {
         try {
-          // First remove extra escaping if it's double-stringified
-          const cleaned = ticket.images.startsWith('"') ? JSON.parse(ticket.images) : ticket.images;
+          // First remove extra escaping if it"s double-stringified
+          const cleaned = ticket.images.startsWith("\"") ? JSON.parse(ticket.images) : ticket.images;
           images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
         } catch (e) {
           console.error("❌ Error parsing images for ticket", ticket.id, e.message);
@@ -173,8 +173,8 @@ const getTicketsById = async (data) => {
     let images = [];
     if (ticket.images) {
       try {
-        // Remove extra escaping if it's double-stringified
-        const cleaned = ticket.images.startsWith('"')
+        // Remove extra escaping if it"s double-stringified
+        const cleaned = ticket.images.startsWith("\"")
           ? JSON.parse(ticket.images)
           : ticket.images;
 

@@ -34,9 +34,9 @@ const WalletReports = sequelize.define(
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM('pending', 'completed', 'reversed'),
+        type: DataTypes.ENUM("pending", "completed", "reversed"),
         allowNull: false,
-        defaultValue: 'pending',
+        defaultValue: "pending",
       },
   },
   {

@@ -1,6 +1,6 @@
-const { Op } = require('sequelize');
-const Notifications = require('../models/notifications.model');
-const { deleteFromS3 } = require('../config/fileUpload.aws');
+const { Op } = require("sequelize");
+const Notifications = require("../models/notifications.model");
+const { deleteFromS3 } = require("../config/fileUpload.aws");
 
 const notificationDTO = (data) => {
   return {
@@ -34,7 +34,7 @@ const sendNotificationService = async (notificationData) => {
   try {
     const payload = notificationDTO(notificationData);
     if (!payload.is_global && !payload.user_id) {
-      throw new Error('user_id is required for non-global notifications');
+      throw new Error("user_id is required for non-global notifications");
     }
     const newNotification = await Notifications.create(payload);
     return {
@@ -54,10 +54,10 @@ const sendNotificationService = async (notificationData) => {
 
 const fetchAllNotifcationsService = async (queryParams) => {
   const {
-    search = '',
+    search = "",
     is_read,
-    sort_by = 'createdAt',
-    order = 'DESC',
+    sort_by = "createdAt",
+    order = "DESC",
     limit = 10,
     page = 1,
   } = queryParams;
@@ -69,8 +69,8 @@ const fetchAllNotifcationsService = async (queryParams) => {
       { message: { [Op.like]: `%${search}%` } },
     ];
   }
-  if (typeof is_read !== 'undefined') {
-    whereClause.is_read = is_read === 'true';
+  if (typeof is_read !== "undefined") {
+    whereClause.is_read = is_read === "true";
   }
   try {
     const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -92,14 +92,14 @@ const fetchAllNotifcationsService = async (queryParams) => {
         };
 
     } catch (error) {
-        console.error('Error fetching notifications:', error);
+        console.error("Error fetching notifications:", error);
         return {
         success: false,
-        message: 'Failed to fetch notifications',
+        message: "Failed to fetch notifications",
         error: error.message,
         };
     }
-}
+};
 
 const fetchSingleNotificationService = async (id) => {
   try {
@@ -107,7 +107,7 @@ const fetchSingleNotificationService = async (id) => {
     if (!notification) {
       return {
         success: false,
-        message: 'Notification not found',
+        message: "Notification not found",
       };
     }
 
@@ -116,10 +116,10 @@ const fetchSingleNotificationService = async (id) => {
       data: noficationResponseDTO(notification),
     };
   } catch (error) {
-    console.error('Error fetching notification:', error);
+    console.error("Error fetching notification:", error);
     return {
       success: false,
-      message: 'Failed to fetch notification',
+      message: "Failed to fetch notification",
       error: error.message,
     };
   }
@@ -131,7 +131,7 @@ const deleteNotificationService = async (id) => {
     if (!notification) {
       return {
         success: false,
-        message: 'Notification not found',
+        message: "Notification not found",
       };
     }
 
@@ -144,37 +144,37 @@ const deleteNotificationService = async (id) => {
 
     return {
       success: true,
-      message: 'Notification deleted successfully',
+      message: "Notification deleted successfully",
     };
   } catch (error) {
-    console.error('Error deleting notification:', error);
+    console.error("Error deleting notification:", error);
     return {
       success: false,
-      message: 'Failed to delete notification',
+      message: "Failed to delete notification",
       error: error.message,
     };
   }
 };
 
-const getNotificationsByUser  = async (driverId) => { 
+const getNotificationsByUser = async (driverId) => { 
     try {
         const notifications = await Notifications.findAll({
             where: { user_id: driverId },
-            order: [['createdAt', 'DESC']],
+            order: [["createdAt", "DESC"]],
         });
         return {
             success: true,
             data: notifications.map(noficationResponseDTO),
         };
     } catch (error) {
-        console.error('Error fetching notifications for driver:', error);
+        console.error("Error fetching notifications for driver:", error);
         return {  
             success: false,
-            message: 'Failed to fetch notifications',
+            message: "Failed to fetch notifications",
             error: error.message,
         };
     }
-}
+};
 
 
 
@@ -184,4 +184,4 @@ module.exports = {
     fetchSingleNotificationService,
     deleteNotificationService,
     getNotificationsByUser
-}
+};
