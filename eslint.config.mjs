@@ -100,11 +100,15 @@ export default defineConfig([
 
       // Your existing standard JavaScript rules.
       "no-var": "error", // ❌ Disallow 'var', only let & const
+      "prefer-const": "error",
+      "no-unused-vars": ["error", { args: "none", ignoreRestSiblings: true }],
       quotes: ["error", "double", { avoidEscape: true }], // ❌ Enforce double quotes
       "no-multi-spaces": "error", // ❌ Disallow double spaces
       semi: ["error", "always"], // ✅ Require semicolons
-      "no-unused-vars": ["error", { args: "none", ignoreRestSiblings: true }], // Unused vars error
       // "no-console": "warn", // 🔔 Avoid leaving console.log
+      "no-empty-function": "error", // Disallow empty functions
+      "no-implicit-globals": "error", // Disallow implicit global variable declarations
+      "no-duplicate-imports": "error", // Disallow duplicate imports
     },
   },
   {
