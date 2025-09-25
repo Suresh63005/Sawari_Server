@@ -13,6 +13,7 @@ const { sequelize } = require("../../models");
 const Settings = require("../../models/settings.model");
 const WalletReports = require("../../models/wallet-report.model");
 const { v4: uuid } = require("uuid");
+const DriverCar = require("../../models/driver-cars.model");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -139,133 +140,175 @@ const getAllHomeData = async (req, res) => {
 
 // 2. Accept a Ride
 const acceptRide = async (req, res) => {
-  const driver_id = req.driver?.id;
+  const driverId = req.driver?.id;
   const { ride_id } = req.body;
 
-  if (!driver_id || !ride_id) {
+  if (!driverId || !ride_id) {
     return res.status(400).json({
       success: false,
-      message: "Driver ID and Ride ID are required."
+      message: "Driver ID and Ride ID are required.",
     });
   }
 
   const t = await sequelize.transaction({
-    isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE
+    isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
   });
 
-  let transactionCommitted = false;
-
   try {
-    // 1. Fetch ride with lock using getRideById
+    // Fetch ride with lock
     const { ride, data } = await getRideById(ride_id, t, t.LOCK.UPDATE);
-
     if (!ride) {
       await t.rollback();
       return res.status(404).json({
         success: false,
-        message: "Ride not found."
+        message: "Ride not found.",
       });
     }
 
     console.log("Ride details:", { driver_id: ride.driver_id, status: ride.status });
 
+    // Check if ride is already accepted or not pending
     if (ride.driver_id || ride.status !== "pending") {
       await t.rollback();
       return res.status(409).json({
         success: false,
-        message: "Ride already accepted by another driver or not available."
+        message: "Ride already accepted by another driver or not available.",
       });
     }
 
-    // 2. Fetch driver wallet
-    const driver = await Driver.findByPk(driver_id, {
+    // Validate driver's car model matches ride's car model (via car_id)
+    const driverCar = await DriverCar.findOne({
+      where: { driver_id: driverId },
+      include: [{ model: Car, as: "Car", attributes: ["model"] }],
+      transaction: t,
+      lock: t.LOCK.UPDATE,
+    });
+
+    if (!driverCar) {
+      await t.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Driver has no associated car.",
+      });
+    }
+
+    const rideCar = await Car.findByPk(ride.car_id, {
+      attributes: ["model"],
+      transaction: t,
+    });
+
+    if (!rideCar) {
+      await t.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Ride's car not found.",
+      });
+    }
+
+    if (driverCar.Car.model !== rideCar.model) {
+      await t.rollback();
+      return res.status(403).json({
+        success: false,
+        message: `Driver's car model (${driverCar.Car.model}) does not match the ride's required model (${rideCar.model}).`,
+      });
+    }
+
+    // Fetch driver wallet
+    const driver = await Driver.findByPk(driverId, {
       attributes: ["id", "wallet_balance", "credit_ride_count"],
       transaction: t,
-      lock: t.LOCK.UPDATE
+      lock: t.LOCK.UPDATE,
     });
 
     if (!driver) {
       await t.rollback();
       return res.status(404).json({
         success: false,
-        message: "Driver not found."
+        message: "Driver not found.",
       });
     }
 
     // Fetch min_wallet_percentage from Settings
-    const setting = await Settings.findOne({ transaction: t });
-    let percentage;
+    const setting = await Settings.findOne({
+      attributes: ["min_wallet_percentage"],
+      transaction: t,
+      lock: t.LOCK.UPDATE,
+    });
+
+    let required = 0;
     if (setting && setting.min_wallet_percentage) {
-      percentage = parseFloat(setting.min_wallet_percentage);
+      const percentage = parseFloat(setting.min_wallet_percentage);
+      required = (percentage / 100) * parseFloat(ride.Price || 0);
     }
 
-    const required = (percentage / 100) * parseFloat(ride.Price || 0);
     const balance = parseFloat(driver.wallet_balance) || 0.0;
 
     let isCredit = false;
     let newCount = driver.credit_ride_count || 0;
 
+    // Check wallet balance and credit ride limit
     if (balance < required) {
-      isCredit = true;
-      newCount += 1;
-      driver.credit_ride_count = newCount;
-      await driver.save({ transaction: t });
-      if (newCount > 3) {
+      if (newCount >= 3) {
         await t.rollback();
         return res.status(403).json({
           success: false,
-          message: `You have exceeded the maximum of 3 credit rides. Please recharge your wallet to continue accepting rides. Current credit rides: ${newCount}`
+          message: `You have exceeded the maximum of 3 credit rides. Please recharge your wallet (current balance: $${balance.toFixed(2)}, required: $${required.toFixed(2)}).`,
         });
       }
+      isCredit = true;
+      newCount += 1;
+      console.log(`Ride ${ride_id} accepted on credit. Amount debited: $${required.toFixed(2)}, Credit ride count: ${newCount}`);
     }
 
-
-    // 4. Update ride using the Sequelize model
+    // Update ride
     await ride.update(
-      { driver_id, status: "accepted", accept_time: new Date(), is_credit: isCredit },
+      { driver_id: driverId, status: "accepted", accept_time: new Date(), is_credit: isCredit },
       { transaction: t }
     );
 
-    // Deduct the required amount from wallet balance
+    // Deduct wallet balance if not on credit
     const newBalance = isCredit ? balance : balance - required;
 
-    // Update driver with new balance and count if applicable
+    // Update driver
     await driver.update(
       { wallet_balance: newBalance, credit_ride_count: newCount },
       { transaction: t }
     );
 
-    // If accepted on credit, add entry to wallet reports
+    // Create wallet report for credit rides
     if (isCredit) {
-      await WalletReports.create({
-        id: uuid(),
-        driver_id,
-        amount: -required,
-        transaction_type: "debit",
-        description: `Debit due to insufficient balance for ride ${ride_id}`,
-        ride_id
-      }, { transaction: t });
+      await WalletReports.create(
+        {
+          id: uuid(),
+          driver_id: driverId,
+          amount: -required,
+          balance_after: newBalance,
+          transaction_date: new Date(),
+          transaction_type: "debit",
+          description: `Debit due to insufficient balance for ride ${ride_id}`,
+          ride_id,
+        },
+        { transaction: t }
+      );
     }
 
+    // Commit transaction
     await t.commit();
-    transactionCommitted = true;
 
-    // 5. Return formatted response using the data from getRideById
+    // Return formatted response
     return res.status(200).json({
       success: true,
       message: "Ride accepted successfully!",
       data: {
         ...data,
-        status: ride.status, // Update status to reflect the change
-        driver_id: ride.driver_id, // Update driver_id
-        accept_time: ride.accept_time, // Include accept_time
-        is_credit: ride.is_credit
-      }
+        status: ride.status,
+        driver_id: ride.driver_id,
+        accept_time: ride.accept_time,
+        is_credit: ride.is_credit,
+      },
     });
   } catch (error) {
-    if (!transactionCommitted) {
-      await t.rollback();
-    }
+    await t.rollback();
     console.error("Error accepting ride:", error);
     return res.status(400).json({
       success: false,
