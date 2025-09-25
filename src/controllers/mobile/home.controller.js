@@ -12,6 +12,7 @@ const { Transaction } = require("sequelize");
 const { sequelize } = require("../../models");
 const Settings = require("../../models/settings.model");
 const WalletReports = require("../../models/wallet-report.model");
+const { v4: uuid } = require("uuid");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -237,6 +238,7 @@ const acceptRide = async (req, res) => {
     // If accepted on credit, add entry to wallet reports
     if (isCredit) {
       await WalletReports.create({
+        id: uuid(),
         driver_id,
         amount: -required,
         transaction_type: "debit",

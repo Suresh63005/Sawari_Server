@@ -7,6 +7,7 @@ const SubPackage = require("../models/sub-package.model");
 const Car = require("../models/cars.model");
 const Settings = require("../models/settings.model");
 const { sequelize } = require("../models");
+// const DriverCar = require("../models/driver-cars.model");
 
 const acceptRide = async (ride_id, driver_id) => {
     const ride = await Ride.findOne({
@@ -177,6 +178,35 @@ const upsertRide = async (rideData) => {
       Total,
       status:"pending"
     });
+
+    // Find drivers with matching car model
+    // const matchingDrivers = await Driver.findAll({
+    //   include:[
+    //     {
+    //       model:DriverCar,
+    //       // as:,
+    //       attributes:["car_id"],
+    //       include:[
+    //         {
+    //           model:Car,
+    //           attributes:["model"],
+    //           where:{model:car_model}
+    //         }
+    //       ]
+    //     }
+    //   ],
+    //   where:{
+    //     one_signal_id:{[Op.ne]:null},
+    //     status:"active"
+    //   }
+    // });
+
+    // Send push notifications to matching drivers
+    // for(const driver of matchingDrivers){
+    //   if(driver.one_signal_id){
+    //     // const heading={en:"New Ride Available"};
+    //   }
+    // }
 
     return newRide;
   }
