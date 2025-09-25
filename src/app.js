@@ -17,7 +17,7 @@ const { S3Client, PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/cl
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const app = express();
-const port = process.env.PORT || 4445;
+const port = process.env.PORT || 4445; 
 
 // Rate limiter
 const limiter = rateLimit({
