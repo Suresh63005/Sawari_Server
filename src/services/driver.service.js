@@ -2,9 +2,10 @@ const Driver = require("../models/driver.model");
 const jwt = require("jsonwebtoken");
 const { driverFirebase } = require("../config/firebase-config");
 const DriverCar = require("../models/driver-cars.model");
-const { Op } = require("sequelize");
+const { Op } = require("sequelize");  
 const Ride = require("../models/ride.model");
 const Car = require("../models/cars.model");
+const Earnings = require("../models/earnings.model");
 
 const generateToken = (driverId) => {
   return jwt.sign({ id: driverId }, process.env.JWT_SECRET);
@@ -182,8 +183,118 @@ const updateDriverProfile = async (driverId, data) => {
 };
 
 const getDriverById = async (driverId) => {
-  const driver = await Driver.findByPk(driverId, { attributes: ["id", "first_name", "last_name", "email", "phone", "profile_pic", "dob", "experience", "full_address", "emirates_id", "emirates_doc_front", "emirates_doc_back", "languages", "license_front", "license_back", "license_verification_status", "emirates_verification_status", "is_approved", "reason", "availability_status", "wallet_balance", "status", "document_check_count"] });
-  if (!driver) throw new Error("Driver not found");
+  const driverInstance = await Driver.findByPk(driverId, {
+    attributes: [
+      "id",
+      "first_name",
+      "last_name",
+      "email",
+      "phone",
+      "profile_pic",
+      "dob",
+      "experience",
+      "full_address",
+      "emirates_id",
+      "emirates_doc_front",
+      "emirates_doc_back",
+      "languages",
+      "license_front",
+      "license_back",
+      "license_verification_status",
+      "emirates_verification_status",
+      "is_approved",
+      "reason",
+      "availability_status",
+      "wallet_balance",
+      "status",
+      "document_check_count",
+      "createdAt", // Include createdAt for Joined At
+      // Add any other fields you want from the response (e.g., if needed):
+      // "credit_ride_count",
+      // "earning_updates",
+      // "ride_count", // Original ride_count if still needed
+      // "ride_request",
+      // "system_alerts",
+      // "verified_by",
+      // "last_login",
+    ],
+  });
+
+  if (!driverInstance) throw new Error("Driver not found");
+
+  // Fetch total completed rides
+  const completedRidesCount = await Ride.count({
+    where: {
+      driver_id: driverId,
+      status: "completed",
+    },
+  });
+
+  // Fetch total assigned rides
+  const totalRidesCount = await Ride.count({
+    where: {
+      driver_id: driverId,
+      status: { [Op.in]: ["pending", "accepted", "on-route", "completed", "cancelled"] },
+    },
+  });
+
+  // Calculate completion rate
+  const completionRate = totalRidesCount > 0 ? ((completedRidesCount / totalRidesCount) * 100).toFixed(2) : "0.00";
+
+  // Fetch the most recent completed ride
+  const lastRide = await Ride.findOne({
+    where: {
+      driver_id: driverId,
+      status: "completed",
+    },
+    order: [["dropoff_time", "DESC"]],
+    attributes: ["dropoff_time"],
+  });
+
+  // Fetch total earnings for the driver
+  const totalEarnings = await Earnings.sum("amount", {
+    where: {
+      driver_id: driverId,
+      status: "processed", // Only consider processed earnings
+    },
+  }) || 0;
+
+  // Construct a plain object with attributes + computed fields
+  const driver = {
+    id: driverInstance.id,
+    first_name: driverInstance.first_name,
+    last_name: driverInstance.last_name,
+    email: driverInstance.email,
+    phone: driverInstance.phone,
+    profile_pic: driverInstance.profile_pic,
+    dob: driverInstance.dob,
+    experience: driverInstance.experience,
+    full_address: driverInstance.full_address,
+    emirates_id: driverInstance.emirates_id,
+    emirates_doc_front: driverInstance.emirates_doc_front,
+    emirates_doc_back: driverInstance.emirates_doc_back,
+    languages: driverInstance.languages,
+    parsed_languages: JSON.parse(driverInstance.languages),
+    license_front: driverInstance.license_front,
+    license_back: driverInstance.license_back,
+    license_verification_status: driverInstance.license_verification_status,
+    emirates_verification_status: driverInstance.emirates_verification_status,
+    is_approved: driverInstance.is_approved,
+    reason: driverInstance.reason,
+    availability_status: driverInstance.availability_status,
+    wallet_balance: driverInstance.wallet_balance,
+    status: driverInstance.status,
+    document_check_count: driverInstance.document_check_count,
+    createdAt: driverInstance.createdAt,
+    // Add computed fields
+    completedRidesCount,
+    completionRate,
+    lastRideTime: lastRide ? lastRide.dropoff_time : null,
+    totalEarnings,
+    // Optionally include original ride_count if still needed
+    // ride_count: driverInstance.ride_count,
+  };
+
   return driver;
 };
 
@@ -283,12 +394,87 @@ const getAllDrivers = async (page = 1, limit = 10, search = "", status = "") => 
 
   const { rows: drivers, count } = await Driver.findAndCountAll({
     where,
-    attributes: { exclude: ["password"] },
+    attributes: [
+      "id",
+      "first_name",
+      "last_name",
+      "email",
+      "phone",
+      "profile_pic",
+      "dob",
+      "experience",
+      "full_address",
+      "emirates_id",
+      "emirates_doc_front",
+      "emirates_doc_back",
+      "languages",
+      "license_front",
+      "license_back",
+      "license_verification_status",
+      "emirates_verification_status",
+      "is_approved",
+      "reason",
+      "availability_status",
+      "wallet_balance",
+      "status",
+      "document_check_count",
+      "createdAt", // Include createdAt for Joined At
+    ],
     offset,
     limit,
   });
 
-  return { drivers, total: count };
+  // Fetch additional data for each driver
+  const driversWithStats = await Promise.all(
+    drivers.map(async (driver) => {
+      // Fetch total completed rides
+      const completedRidesCount = await Ride.count({
+        where: {
+          driver_id: driver.id,
+          status: "completed",
+        },
+      });
+
+      // Fetch total assigned rides
+      const totalRidesCount = await Ride.count({
+        where: {
+          driver_id: driver.id,
+          status: { [Op.in]: ["pending", "accepted", "on-route", "completed", "cancelled"] },
+        },
+      });
+
+      // Calculate completion rate
+      const completionRate = totalRidesCount > 0 ? ((completedRidesCount / totalRidesCount) * 100).toFixed(2) : "0.00";
+
+      // Fetch the most recent completed ride
+      const lastRide = await Ride.findOne({
+        where: {
+          driver_id: driver.id,
+          status: "completed",
+        },
+        order: [["dropoff_time", "DESC"]],
+        attributes: ["dropoff_time"],
+      });
+
+      // Fetch total earnings for the driver
+      const totalEarnings = await Earnings.sum("amount", {
+        where: {
+          driver_id: driver.id,
+          status: "processed", // Only consider processed earnings
+        },
+      });
+
+      // Add computed fields to the driver object
+      driver.dataValues.completedRidesCount = completedRidesCount;
+      driver.dataValues.completionRate = completionRate;
+      driver.dataValues.lastRideTime = lastRide ? lastRide.dropoff_time : null;
+      driver.dataValues.totalEarnings = totalEarnings || 0;
+
+      return driver;
+    })
+  );
+
+  return { drivers: driversWithStats, total: count };
 };
 
 

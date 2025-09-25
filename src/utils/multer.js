@@ -1,5 +1,7 @@
+
 const multer = require("multer");
 
+// Initialize memory storage
 const storage = multer.memoryStorage(); // Store files in RAM
 
 const upload = multer({
