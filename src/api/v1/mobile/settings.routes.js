@@ -3,4 +3,5 @@ const settingController = require("../../../controllers/mobile/settings.controll
 const middleware=require("../../../middlewares/mobile/authMiddleware");
 
 router.get("/get-all-settings",middleware.isAuthenticated,settingController.getAllSettings);
+
 module.exports=router;

@@ -1,6 +1,4 @@
-const express = require("express");
-
-const router = express.Router();
+const router = require("express").Router();
 const middleware=require("../../../middlewares/mobile/authMiddleware");
 const { getNotifications } = require("../../../controllers/mobile/notification.controller");
 

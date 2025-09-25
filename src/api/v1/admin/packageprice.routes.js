@@ -1,5 +1,4 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const packagePriceController = require("../../../controllers/admin/packageprice.controller");
 
 // Create or Update Package Price

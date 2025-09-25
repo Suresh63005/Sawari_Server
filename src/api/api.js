@@ -1,13 +1,21 @@
-const API_VERSION = "V1";
+const API_VERSION = "v1";
 
 const endPoints = {
     // for admin
     auth: {
+        login: `/api/${API_VERSION}/admin/auth/login`,
+        register: `/${API_VERSION}/auth/register`,
+        logout: `/${API_VERSION}/auth/logout`,
+        permissions: `/${API_VERSION}/auth/permissions/:id`,
+        getMe: `/${API_VERSION}/auth/me`,
+        getAdmins: `/${API_VERSION}/auth/admins`,
+        updatePermissions: `/${API_VERSION}/auth/admins/:id/permissions`,
+        updateStatus: `/${API_VERSION}/auth/admins/:id/status`,
         listAdmins: `/${API_VERSION}/auth/admin-management`,
         createAdmin: `/${API_VERSION}/auth/admin-management`,
         updateAdmin: `/${API_VERSION}/auth/admin-management/:id`,
         updateAdminStatus: `/${API_VERSION}/auth/admin-management/:id/status`,
-        updatePermissions: `/${API_VERSION}/auth/admin-management/:id/permissions`,
+        adminManagementupdatePermissions: `/${API_VERSION}/auth/admin-management/:id/permissions`,
     },
     car: {
         upsertCar: `/${API_VERSION}/car/upsert`,
@@ -23,21 +31,161 @@ const endPoints = {
         getRecentActivity: `/${API_VERSION}/dashboard/recent-activity`,
         getPendingApprovals: `/${API_VERSION}/dashboard/pending-approvals`,
     },
-    driver:{
-        getAllDrivers:`/${API_VERSION}/driver/`,
-        getDriverById:`/${API_VERSION}/driver/:id`,
-        approveDriver:`/${API_VERSION}/driver/:id/approve`,
-        rejectDriver:`/${API_VERSION}/driver/:id/reject`,
-        blockDriver:`/${API_VERSION}/driver/:id/block`,
-        unblockDriver:`/${API_VERSION}/driver/:id/unblock`,
-        verifyLicense:`/${API_VERSION}/driver/:id/verify-license`,
-        rejectLicense:`/${API_VERSION}/driver/:id/reject-license"`,
-        verifyEmirates:`/${API_VERSION}/driver/:id/verify-emirates`,
-        rejectEmirates:`/${API_VERSION}/driver/:id/reject-emirates`,
+    driver: {
+        getAllDrivers: `/${API_VERSION}/driver/`,
+        getDriverById: `/${API_VERSION}/driver/:id`,
+        approveDriver: `/${API_VERSION}/driver/:id/approve`,
+        rejectDriver: `/${API_VERSION}/driver/:id/reject`,
+        blockDriver: `/${API_VERSION}/driver/:id/block`,
+        unblockDriver: `/${API_VERSION}/driver/:id/unblock`,
+        verifyLicense: `/${API_VERSION}/driver/:id/verify-license`,
+        rejectLicense: `/${API_VERSION}/driver/:id/reject-license"`,
+        verifyEmirates: `/${API_VERSION}/driver/:id/verify-emirates`,
+        rejectEmirates: `/${API_VERSION}/driver/:id/reject-emirates`,
     },
-    driverreports:{
-        
-    }
+    driverreports: {
+        all: `/${API_VERSION}/driverreports/all`,
+        exportAll: `/${API_VERSION}/driverreports/export-all`,
+        exportDriver: `/${API_VERSION}/driverreports/export/:driverId`,
+        getDriverById: `/${API_VERSION}/driverreports/:driverId`,
+    },
+    earning: {
+        earningsHistory: `/${API_VERSION}/earning/get-all-earnings-history`,
+        singleDownload: `/${API_VERSION}/earning/single-download/:id`,
+        downloadAll: `/${API_VERSION}/earning/download-all`,
+    },
+    notifications: {
+        sent: `/${API_VERSION}/notifications/sent`,
+        all: `/${API_VERSION}/notifications/all`,
+        view: `/${API_VERSION}/notifications/view/:id`,
+        delete: `/${API_VERSION}/notifications/delete/:id`,
+    },
+    package: {
+        upsertPackage: `/${API_VERSION}/package/upsert`,
+        getAllPackages: `/${API_VERSION}/package/`,
+        getActivePackages: `/${API_VERSION}/package/active`,
+        getPackageById: `/${API_VERSION}/package/:id`,
+        deletePackageById: `/${API_VERSION}/package/:id`,
+        togglePackageStatus: `/${API_VERSION}/package/:id/status`,
+    },
+    packageprice: {
+        upsertPackagePrice: `/${API_VERSION}/packageprice/upsert`,
+        getAllPackagePrices: `/${API_VERSION}/packageprice/`,
+        getPackagePriceById: `/${API_VERSION}/packageprice/:id`,
+        deletePackagePriceById: `/${API_VERSION}/packageprice/:id`,
+        togglePackagePriceStatus: `/${API_VERSION}/packageprice/:id/status`,
+        getSubPackagesByPackageId: `/${API_VERSION}/packageprice/sub-packages/:package_id`,
+    },
+    paymentreports: {
+        getAllPayments: `/${API_VERSION}/paymentreports/all`,
+        exportAllPayments: `/${API_VERSION}/paymentreports/export-all`,
+        exportPaymentById: `/${API_VERSION}/paymentreports/export/:paymentId`,
+        getPaymentById: `/${API_VERSION}/paymentreports/:paymentId`,
+    },
+    ride: {
+        getAllRides: `/${API_VERSION}/ride/all`,
+        getRideById: `/${API_VERSION}/ride/:id`,
+        createRide: `/${API_VERSION}/ride/`,
+        updateRide: `/${API_VERSION}/ride/:id`,
+        getAvailableCarsAndPrices: `/${API_VERSION}/ride/available-cars/:package-id/:sub_package-id`,
+    },
+    ridesreports: {
+        getAllRides: `/${API_VERSION}/ridesreports/all`,
+        exportAllRides: `/${API_VERSION}/ridesreports/export-all`,
+        exportRideById: `/${API_VERSION}/ridesreports/export/:rideId`,
+        getRideById: `/${API_VERSION}/ridesreports/:rideId`,
+    },
+    settings: {
+        getSettings: `/${API_VERSION}/settings/`,
+        upsertSettings: `/${API_VERSION}/settings/`,
+    },
+    "sub-package": {
+        upsertSubPackage: `/${API_VERSION}/sub-package/upsert`,
+        getAllSubPackages: `/${API_VERSION}/sub-package/`,
+        getActiveSubPackages: `/${API_VERSION}/sub-package/active`,
+        getSubPackageById: `/${API_VERSION}/sub-package/:id`,
+        deleteSubPackageById: `/${API_VERSION}/sub-package/:id`,
+        toggleSubPackageStatus: `/${API_VERSION}/sub-package/:id/status`,
+        getSubPackagesByPackageId: `/${API_VERSION}/sub-package/by-package`,
+    },
+    ticket: {
+        getOpenTicketsHandler: `/${API_VERSION}/ticket/`,
+        resolveTicketHandler: `/${API_VERSION}/ticket/:id/resolve`,
+        createTicketHandler: `/${API_VERSION}/ticket/create`,
+        updateTicketStatusHandler: `/${API_VERSION}/ticket/:id/status`,
+    },
+    vehicles: {
+        getAllVehicles: `/${API_VERSION}/vehicles/`,
+        approveVehicle: `/${API_VERSION}/vehicles/:id/approve`,
+        rejectVehicle: `/${API_VERSION}/vehicles/:id/reject`,
+        verifyRc: `/${API_VERSION}/vehicles/:id/verify-rc`,
+        rejectRc: `/${API_VERSION}/vehicles/:id/reject-rc`,
+        verifyInsurance: `/${API_VERSION}/vehicles/:id/verify-insurance`,
+        rejectInsurance: `/${API_VERSION}/vehicles/:id/reject-insurance`,
+    },
+
+    // for mobile
+    "mob-driver": {
+        verifyMobile: `/${API_VERSION}/driver/verify`,
+        blockDriverByIdentifier: `/${API_VERSION}/driver/status`,
+        updateProfileAndCarDetails: `/${API_VERSION}/driver/update-profile`,
+        verifdriverAccountDetailsyRc: `/${API_VERSION}/driver/account-details`,
+        deleteAccount: `/${API_VERSION}/driver/delete-account`,
+        checkStatus: `/${API_VERSION}/driver/check-status`,
+        getStatuses: `/${API_VERSION}/driver/get-notify-statuses`,
+        updateStatuses: `/${API_VERSION}/driver/update-notify-statuses`,
+        updateOneSignalId: `/${API_VERSION}/driver/update-onesignal-id`,
+        deleteOneSignalId: `/${API_VERSION}/driver/:id/delete-onesignal-id`,
+    },
+    home: {
+        getAllHomeData: `/${API_VERSION}/home/dashboard`,
+        acceptRide: `/${API_VERSION}/home/accept-ride`,
+        toggleDriverStatus: `/${API_VERSION}/home/toggle-status`,
+        getRideDetails: `/${API_VERSION}/home/ride/:ride_id`,
+        updateRideStatus: `/${API_VERSION}/home/ride/:ride_id`,
+        getRidesByStatus: `/${API_VERSION}/home/rides`,
+        upsertRide: `/${API_VERSION}/home/upsert-ride`,
+        releaseDriverFromRide: `/${API_VERSION}/home/release/:rideId`,
+        startRide: `/${API_VERSION}/home/start-ride/:rideId`,
+        endRide: `/${API_VERSION}/home/end-ride/:rideId`,
+        cancelRide: `/${API_VERSION}/home/cancel-ride`,
+        getMyRides: `/${API_VERSION}/home/my-rides`,
+        earningsHistory: `/${API_VERSION}/home/earnings-history`,
+    },
+    "mob-notifications": {
+        getNotifications: `/${API_VERSION}/notifications/`,
+    },
+    "mob-package": {
+        getAllPackages: `/${API_VERSION}/package/get-all-packages`,
+        getAllCarsBySubPackageId: `/${API_VERSION}/package/get-all-cars/:sub_package_id`,
+        getSubPackagesByPackageId: `/${API_VERSION}/package/get-sub-packages/:package_id`,
+        getPrice: `/${API_VERSION}/package/get-price/:package_id/:sub_package_id/:car_id`,
+        getAllCars: `/${API_VERSION}/package/get-all-cars`,
+    },
+    "mob-ride": {
+        upsertRide: `/${API_VERSION}/ride/upsert`,
+        getAllRides: `/${API_VERSION}/ride/get-all`,
+        getRideById: `/${API_VERSION}/ride/get-sub-packages/:rideId`,
+        getRidesByStatus: `/${API_VERSION}/ride/get-by-status/:status`,
+    },
+    "mob-settings": {
+        getAllSettings: `/${API_VERSION}/settings/get-all-settings`,
+    },
+    "mob-ticket": {
+        getAllSettings: `/${API_VERSION}/ticket/create`,
+        getTicketsByUser: `/${API_VERSION}/ticket/`,
+        ticketview: `/${API_VERSION}/ticket/:id`,
+    },
+    "mob-vehicle": {
+        updateVehicle: `/${API_VERSION}/vehicle/update-vehicle`,
+        uploadDocuments: `/${API_VERSION}/vehicle/documents`,
+    },
+    wallet: {
+        addMoneyToWallet: `/${API_VERSION}/wallet/add-money`,
+        verifyPayment: `/${API_VERSION}/wallet/verify-payment`,
+        walletHistory: `/${API_VERSION}/wallet/wallet-history`,
+        myWalletBalance: `/${API_VERSION}/wallet/wallet-balance`,
+    },
 };
 
 module.exports = {

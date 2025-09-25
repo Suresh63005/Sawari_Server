@@ -1,5 +1,4 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const { getSettingsController, upsertSettingsController } = require("../../../controllers/admin/settings.controller");
 
 router.get("/", getSettingsController);

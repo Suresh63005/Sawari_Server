@@ -1,5 +1,4 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const { getDashboardStats, getRecentActivity, getPendingApprovals } = require("../../../controllers/admin/dashboard.controller");
 const authMiddleware = require("../../../middlewares/admin/authMiddleware");
 

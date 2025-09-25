@@ -1,5 +1,4 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const subPackageController = require("../../../controllers/admin/subPackage.controller");
 
 router.post("/upsert", subPackageController.upsertSubPackage);

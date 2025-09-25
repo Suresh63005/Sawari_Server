@@ -1,7 +1,4 @@
-// backend/routes/ticketRoutes.js
-
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const { getOpenTicketsHandler, resolveTicketHandler, createTicketHandler, updateTicketStatusHandler } = require("../../../controllers/admin/ticket.controller");
 
 // GET all open tickets with filters

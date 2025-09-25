@@ -1,11 +1,5 @@
-const express = require("express");
-const router = express.Router();
-const {
-  getAllDriversController,
-  getDriverByIdController,
-  exportAllDriversController,
-  exportDriverByIdController,
-} = require("../../../controllers/admin/driverreports.controller");
+const router = require("express").Router();
+const { getAllDriversController, getDriverByIdController, exportAllDriversController, exportDriverByIdController,} = require("../../../controllers/admin/driverreports.controller");
 
 // Static routes first
 router.get("/all", getAllDriversController);

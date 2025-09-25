@@ -1,5 +1,4 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const rideController = require("../../../controllers/mobile/ride.controller");
 const authMiddleware = require("../../../middlewares/mobile/authMiddleware");
 
