@@ -10,13 +10,13 @@ const getAllSettings = async (req, res) => {
         if (!settings) {
             return res.status(404).json({ success: false, message: "Settings not found" });
         }
-        return res.status(200).json({ success: true, message: "settings fetched sucessfully!", data: settings })
+        return res.status(200).json({ success: true, message: "settings fetched sucessfully!", data: settings });
     } catch (error) {
         console.error("Error fetching settings:", error);
         return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
-}
+};
 
 module.exports = {
     getAllSettings
-}
+};

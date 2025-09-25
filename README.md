@@ -335,3 +335,12 @@ SSL/TLS: HTTPS uses public/private keys for secure connections
 Key	Usage	Shareable?
 private_key.pem	Signing data	❌ Never share
 public_key.pem	Verifying data	✅ Safe to share
+
+
+
+for eslint 
+->npm install eslint --save-dev
+->npx eslint --init
+->npx eslint . (for checking any error)
+-> npm run lint
+-> npm run prepare (for husky)

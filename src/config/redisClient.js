@@ -1,5 +1,5 @@
 
-const connectRedis = require('./connectRedis');
+const connectRedis = require("./connectRedis");
 
 let redisClientInstance = null; // Declares a singleton instance to prevent multiple Redis connections.
 

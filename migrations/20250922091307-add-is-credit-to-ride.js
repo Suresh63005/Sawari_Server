@@ -1,17 +1,17 @@
-'use strict';
+"use strict";
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('Ride', 'is_credit', {
+    await queryInterface.addColumn("Ride", "is_credit", {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false,
       comment: "Indicates if the ride was accepted on credit due to insufficient wallet balance",
-      after: 'payment_status' // 👈 optional (works only in MySQL)
+      after: "payment_status" // 👈 optional (works only in MySQL)
     });
   },
 
-  async down(queryInterface, Sequelize) {
-    await queryInterface.removeColumn('Ride', 'is_credit');
+  async down(queryInterface) {
+    await queryInterface.removeColumn("Ride", "is_credit");
   }
 };

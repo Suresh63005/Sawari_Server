@@ -2,7 +2,7 @@ const Ride = require("../models/ride.model");
 const Driver = require("../models/driver.model");
 const Car = require("../models/cars.model");
 const Package = require("../models/package.model");
-const SubPackage = require("../models/sub-package.model");  // Assuming SubPackage model exists
+const SubPackage = require("../models/sub-package.model"); //Assuming SubPackage model exists
 const { Op } = require("sequelize");
 const ExcelJS = require("exceljs");
 
@@ -62,7 +62,7 @@ const getAllRides = async (search = "", status = "", page = 1, limit = 10) => {
         onRoute: await Ride.count({ where: { status: "on-route" } }),
         completed: await Ride.count({ where: { status: "completed" } }),
         cancelled: await Ride.count({ where: { status: "cancelled" } }),
-        totalRevenue: await Ride.sum('Total', { where: { status: "completed" } }) || 0,
+        totalRevenue: await Ride.sum("Total", { where: { status: "completed" } }) || 0,
       },
     };
   } catch (error) {

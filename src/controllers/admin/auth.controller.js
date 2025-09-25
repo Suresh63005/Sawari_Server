@@ -1,6 +1,6 @@
-const AuthService = require('../../services/auth.service');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const AuthService = require("../../services/auth.service");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // auth.controller.js
 const getRolePermissions = (role) => {
@@ -62,43 +62,43 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: !email ? 'Email is required' : 'Password is required' });
+      return res.status(400).json({ message: !email ? "Email is required" : "Password is required" });
     }
 
     const admin = await AuthService.getAdminByEmail(email);
     if (!admin) {
-      return res.status(401).json({ message: 'Invalid email' });
+      return res.status(401).json({ message: "Invalid email" });
     }
 
     // ✅ Check account status
-    if (!admin.status || admin.status !== 'active') {
-      return res.status(403).json({ message: 'This account is inactive. Please contact support.' });
+    if (!admin.status || admin.status !== "active") {
+      return res.status(403).json({ message: "This account is inactive. Please contact support." });
     }
-    if (admin.status === 'blocked') {
-      return res.status(403).json({ message: 'This account is blocked. Please contact support.' });
+    if (admin.status === "blocked") {
+      return res.status(403).json({ message: "This account is blocked. Please contact support." });
     }
 
     const isPasswordValid = await bcrypt.compare(password, admin.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid password' });
+      return res.status(401).json({ message: "Invalid password" });
     }
 
     const permissions = await AuthService.getAdminPermissions(admin.id);
     if (!permissions) {
-      return res.status(401).json({ message: 'No permissions found' });
+      return res.status(401).json({ message: "No permissions found" });
     }
 
     const token = jwt.sign(
       { id: admin.id, email: admin.email, role: admin.role },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '60d' }
+      process.env.JWT_SECRET || "your-secret-key",
+      { expiresIn: "60d" }
     );
 
-    res.cookie('token', token, {
+    res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 24 * 60 * 60 * 1000,
-      sameSite: 'strict',
+      sameSite: "strict",
     });
 
     return res.json({
@@ -121,8 +121,8 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Login error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -132,12 +132,12 @@ const register = async (req, res) => {
     const { first_name, last_name, email, phone, role, granted_by, password } = req.body;
 
     if (!first_name || !last_name || !email || !phone || !role || !password) {
-      return res.status(400).json({ message: 'All required fields must be provided' });
+      return res.status(400).json({ message: "All required fields must be provided" });
     }
 
     const existingAdmin = await AuthService.getAdminByEmail(email);
     if (existingAdmin) {
-      return res.status(400).json({ message: 'Email already exists' });
+      return res.status(400).json({ message: "Email already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -148,7 +148,7 @@ const register = async (req, res) => {
       phone,
       role,
       password: hashedPassword,
-      status: 'active',
+      status: "active",
     });
 
     const permissions = getRolePermissions(role);
@@ -175,18 +175,18 @@ const register = async (req, res) => {
       status: admin.status,
     });
   } catch (error) {
-    console.error('Registration error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Registration error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 const logout = async (req, res) => {
   try {
-    res.clearCookie('token');
-    return res.json({ message: 'Logged out successfully' });
+    res.clearCookie("token");
+    return res.json({ message: "Logged out successfully" });
   } catch (error) {
-    console.error('Logout error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Logout error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -195,7 +195,7 @@ const getPermissions = async (req, res) => {
     const { id } = req.params;
     const permissions = await AuthService.getAdminPermissions(id);
     if (!permissions) {
-      return res.status(404).json({ message: 'Permissions not found' });
+      return res.status(404).json({ message: "Permissions not found" });
     }
 
     return res.json({
@@ -213,8 +213,8 @@ const getPermissions = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get permissions error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Get permissions error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -222,12 +222,12 @@ const getMe = async (req, res) => {
   try {
     const admin = await AuthService.getAdminById(req.user.id);
     if (!admin) {
-      return res.status(404).json({ message: 'Admin not found' });
+      return res.status(404).json({ message: "Admin not found" });
     }
 
     const permissions = await AuthService.getAdminPermissions(admin.id); // Debug log
     if (!permissions) {
-      return res.status(404).json({ message: 'Permissions not found' });
+      return res.status(404).json({ message: "Permissions not found" });
     }
 
     return res.json({
@@ -249,8 +249,8 @@ const getMe = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get me error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Get me error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 

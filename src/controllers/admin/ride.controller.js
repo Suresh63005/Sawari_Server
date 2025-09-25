@@ -1,14 +1,14 @@
-const rideService = require('../../services/ride.service');
-const Settings = require('../../models/settings.model');
+const rideService = require("../../services/ride.service");
+const Settings = require("../../models/settings.model");
 
 // Create Ride
 const createRide = async (req, res) => {
   try {
-    console.log('createRide request body:', req.body);
+    console.log("createRide request body:", req.body);
     const result = await rideService.createRide(req.body);
     res.status(200).json(result);
   } catch (error) {
-    console.error('createRide error:', error.message);
+    console.error("createRide error:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
@@ -16,11 +16,11 @@ const createRide = async (req, res) => {
 // Update Ride
 const updateRide = async (req, res) => {
   try {
-    console.log('updateRide request:', { id: req.params.id, body: req.body });
+    console.log("updateRide request:", { id: req.params.id, body: req.body });
     const result = await rideService.updateRide(req.params.id, req.body);
     res.status(200).json(result);
   } catch (error) {
-    console.error('updateRide error:', error.message);
+    console.error("updateRide error:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
@@ -28,11 +28,11 @@ const updateRide = async (req, res) => {
 // Get All Rides
 const getAllRides = async (req, res) => {
   try {
-    console.log('getAllRides query:', req.query);
+    console.log("getAllRides query:", req.query);
     const result = await rideService.getAllRides(req.query);
     res.status(200).json(result);
   } catch (error) {
-    console.error('getAllRides error:', error.message);
+    console.error("getAllRides error:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
@@ -40,11 +40,11 @@ const getAllRides = async (req, res) => {
 // Get Ride by ID
 const getRideById = async (req, res) => {
   try {
-    console.log('getRideById request:', { id: req.params.id });
+    console.log("getRideById request:", { id: req.params.id });
     const result = await rideService.getRideById(req.params.id);
     res.status(200).json(result);
   } catch (error) {
-    console.error('getRideById error:', error.message);
+    console.error("getRideById error:", error.message);
     res.status(404).json({ error: error.message });
   }
 };
@@ -52,10 +52,10 @@ const getRideById = async (req, res) => {
 // Get Available Cars and Prices
 const getAvailableCarsAndPrices = async (req, res) => {
   try {
-    console.log('yyyyyyyyyyyyyyyyyyyyy', req.params);
+    console.log("yyyyyyyyyyyyyyyyyyyyy", req.params);
     const { package_id, sub_package_id } = req.params;
     if (!package_id || !sub_package_id) {
-      return res.status(400).json({ error: 'Missing required query parameters: package_id, sub_package_id' });
+      return res.status(400).json({ error: "Missing required query parameters: package_id, sub_package_id" });
     }
     const result = await rideService.getAvailableCarsAndPrices(package_id, sub_package_id);
     // Fetch tax rate from Settings
@@ -68,7 +68,7 @@ const getAvailableCarsAndPrices = async (req, res) => {
     }));
     res.status(200).json({ data: responseData });
   } catch (error) {
-    console.error('getAvailableCarsAndPrices error:', error.message);
+    console.error("getAvailableCarsAndPrices error:", error.message);
     res.status(400).json({ error: error.message });
   }
 };

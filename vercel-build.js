@@ -1,2 +1,2 @@
-require('module-alias/register');
-require('./server');
+require("module-alias/register");
+require("./server");

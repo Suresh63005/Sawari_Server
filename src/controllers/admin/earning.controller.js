@@ -4,7 +4,7 @@ const { AbortController } = require("node-abort-controller");
 
 const earningsHistory = async (req, res) => {
   const sortMonth = req.query.month;
-  const search = req.query.search || '';
+  const search = req.query.search || "";
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 5;
 
@@ -72,7 +72,7 @@ const Download = async (req, res) => {
   try {
     const { id } = req.params;
     const sortMonth = req.query.month;
-    const search = req.query.search || '';
+    const search = req.query.search || "";
     let earnings;
     let filename;
 
@@ -92,27 +92,28 @@ const Download = async (req, res) => {
         };
       }
       earnings = await allEarnings(dateRange, search, controller.signal);
-      filename = sortMonth ? `earnings_${sortMonth}.xlsx` : `all_earnings.xlsx`;
+      // filename = sortMonth ? `earnings_${sortMonth}.xlsx` : `all_earnings.xlsx`;
+      filename = sortMonth ? `earnings_${sortMonth}.xlsx` : "all_earnings.xlsx";
     }
 
     if (!earnings || (Array.isArray(earnings) && earnings.length === 0)) {
-      return res.status(404).json({ message: 'No earnings data available to download' });
+      return res.status(404).json({ message: "No earnings data available to download" });
     }
 
     const buffer = await generateExcel(earnings, controller.signal);
     clearTimeout(timeout);
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(buffer);
     res.end();
   } catch (error) {
     clearTimeout(timeout);
     if (controller.signal.aborted) {
-      return res.status(408).json({ message: 'Request timed out or aborted' });
+      return res.status(408).json({ message: "Request timed out or aborted" });
     }
-    console.error('Error downloading earnings report:', error);
-    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    console.error("Error downloading earnings report:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
 

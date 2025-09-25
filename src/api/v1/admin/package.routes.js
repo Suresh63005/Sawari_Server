@@ -1,14 +1,14 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const packageController = require('../../../controllers/admin/package.controller');
+const packageController = require("../../../controllers/admin/package.controller");
 
-router.post('/upsert',packageController.upsertPackage);
+router.post("/upsert",packageController.upsertPackage);
 
 // GET /api/packages?search=monthly&limit=5&page=2&sortBy=name&sortOrder=asc&status=active
-router.get('/',packageController.getAllPackages);
-router.get('/active', packageController.getActivePackagesController);
-router.get("/:id",packageController.getPackageById)
+router.get("/",packageController.getAllPackages);
+router.get("/active", packageController.getActivePackagesController);
+router.get("/:id",packageController.getPackageById);
 router.delete("/:id",packageController.deletePackageById);
-router.patch('/:id/status', packageController.togglePackageStatus);
+router.patch("/:id/status", packageController.togglePackageStatus);
 
 module.exports = router;

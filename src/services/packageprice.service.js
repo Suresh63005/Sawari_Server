@@ -102,9 +102,9 @@ const getAllPackagePrices = async ({
 
   if (search) {
     where[Op.or] = [
-      { "$Package.name$": { [Op.like]: `%${search}%` } },        // package name
-      { "$SubPackage.name$": { [Op.like]: `%${search}%` } },     // sub package name
-      { "$Car.model$": { [Op.like]: `%${search}%` } },            // car model
+      { "$Package.name$": { [Op.like]: `%${search}%` } }, //package name
+      { "$SubPackage.name$": { [Op.like]: `%${search}%` } },//sub package name
+      { "$Car.model$": { [Op.like]: `%${search}%` } },//car model
       { description: { [Op.like]: `%${search}%` } },
     ];
   }
@@ -115,9 +115,9 @@ const getAllPackagePrices = async ({
     limit: parseInt(limit),
     offset,
     include: [
-      { model: Package, as: 'Package', attributes: ["id", "name"] },
-      { model: SubPackage, as: 'SubPackage', attributes: ["id", "name"] },
-      { model: Car, as: 'Car', attributes: ["id", "model"] },
+      { model: Package, as: "Package", attributes: ["id", "name"] },
+      { model: SubPackage, as: "SubPackage", attributes: ["id", "name"] },
+      { model: Car, as: "Car", attributes: ["id", "model"] },
     ],
   });
 

@@ -1,11 +1,11 @@
-const { Op } = require('sequelize');
-const Ride = require('../models/ride.model');
-const PackagePrice = require('../models/packageprice.model');
-const Package = require('../models/package.model');
-const SubPackage = require('../models/sub-package.model');
-const Car = require('../models/cars.model');
-const Earnings = require('../models/earnings.model');
-const Settings = require('../models/settings.model');
+const { Op } = require("sequelize");
+const Ride = require("../models/ride.model");
+const PackagePrice = require("../models/packageprice.model");
+const Package = require("../models/package.model");
+const SubPackage = require("../models/sub-package.model");
+const Car = require("../models/cars.model");
+const Earnings = require("../models/earnings.model");
+const Settings = require("../models/settings.model");
 // Response DTO
 const rideResponseDTO = (ride) => ({
   id: ride.id,
@@ -40,33 +40,33 @@ const rideResponseDTO = (ride) => ({
 // Check if sub-package is 1-hour (based on name or ID logic)
 const isOneHourSubPackage = (subPackage) => {
   // Assuming sub-package name contains "1 Hour" or similar; adjust logic based on your data
-  return subPackage.name.toLowerCase().includes('1 hour');
+  return subPackage.name.toLowerCase().includes("1 hour");
 };
 
 // Create a new ride
 const createRide = async (data) => {
   const transaction = await Ride.sequelize.transaction();
   try {
-    console.log('createRide data:', data);
+    console.log("createRide data:", data);
 
     // Validate required fields
     if (!data.package_id || !data.subpackage_id || !data.car_id) {
-      throw new Error('Missing required fields: package_id, subpackage_id, or car_id');
+      throw new Error("Missing required fields: package_id, subpackage_id, or car_id");
     }
     if (!data.customer_name || !data.phone || !data.pickup_location || !data.drop_location) {
-      throw new Error('Missing required fields: customer_name, phone, pickup_location, or drop_location');
+      throw new Error("Missing required fields: customer_name, phone, pickup_location, or drop_location");
     }
 
     // Validate date formats
     const scheduledTime = data.scheduled_time ? new Date(data.scheduled_time) : null;
     if (scheduledTime && isNaN(scheduledTime.getTime())) {
-      throw new Error('Invalid scheduled_time: Must be a valid ISO datetime string');
+      throw new Error("Invalid scheduled_time: Must be a valid ISO datetime string");
     }
 
     // Validate package exists
     const packageExists = await Package.findByPk(data.package_id, { transaction });
     if (!packageExists) {
-      throw new Error('Invalid package_id: Package does not exist');
+      throw new Error("Invalid package_id: Package does not exist");
     }
 
     // Validate sub-package exists and belongs to the package
@@ -78,13 +78,13 @@ const createRide = async (data) => {
       transaction,
     });
     if (!subPackage) {
-      throw new Error('Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package');
+      throw new Error("Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package");
     }
 
     // Validate car exists
     const car = await Car.findByPk(data.car_id, { transaction });
     if (!car) {
-      throw new Error('Invalid car_id: Car does not exist');
+      throw new Error("Invalid car_id: Car does not exist");
     }
 
     // Validate package, sub-package, and car combination and fetch price
@@ -97,7 +97,7 @@ const createRide = async (data) => {
       transaction,
     });
     if (!packagePrice) {
-      throw new Error('Invalid package, sub-package, or car combination');
+      throw new Error("Invalid package, sub-package, or car combination");
     }
 
     // Fetch tax rate from Settings
@@ -136,8 +136,8 @@ const createRide = async (data) => {
         tax: tax.toFixed(2), // Store tax amount
         Total: total.toFixed(2), // Store total with tax
         rider_hours: riderHours,
-        status: data.status || 'pending',
-        payment_status: data.payment_status || 'pending',
+        status: data.status || "pending",
+        payment_status: data.payment_status || "pending",
         accept_time: data.accept_time || new Date().toISOString(),
       },
       { transaction }
@@ -147,7 +147,7 @@ const createRide = async (data) => {
     return { data: rideResponseDTO(ride) };
   } catch (error) {
     await transaction.rollback();
-    console.error('createRide error:', error);
+    console.error("createRide error:", error);
     throw error;
   }
 };
@@ -156,16 +156,16 @@ const createRide = async (data) => {
 const updateRide = async (id, data) => {
   const transaction = await Ride.sequelize.transaction();
   try {
-    console.log('updateRide data:', { id, data });
+    console.log("updateRide data:", { id, data });
     const ride = await Ride.findByPk(id, { transaction });
-    if (!ride) throw new Error('Ride not found with the given ID');
+    if (!ride) throw new Error("Ride not found with the given ID");
 
     // Validate date formats if provided
     let scheduledTime = ride.scheduled_time;
     if (data.scheduled_time) {
       scheduledTime = new Date(data.scheduled_time);
       if (isNaN(scheduledTime.getTime())) {
-        throw new Error('Invalid scheduled_time: Must be a valid ISO datetime string');
+        throw new Error("Invalid scheduled_time: Must be a valid ISO datetime string");
       }
       scheduledTime = scheduledTime.toISOString();
     }
@@ -180,7 +180,7 @@ const updateRide = async (id, data) => {
       // Validate package exists
       const packageExists = await Package.findByPk(data.package_id, { transaction });
       if (!packageExists) {
-        throw new Error('Invalid package_id: Package does not exist');
+        throw new Error("Invalid package_id: Package does not exist");
       }
 
       // Validate sub-package exists and belongs to the package
@@ -192,13 +192,13 @@ const updateRide = async (id, data) => {
         transaction,
       });
       if (!subPackage) {
-        throw new Error('Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package');
+        throw new Error("Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package");
       }
 
       // Validate car exists
       const car = await Car.findByPk(data.car_id, { transaction });
       if (!car) {
-        throw new Error('Invalid car_id: Car does not exist');
+        throw new Error("Invalid car_id: Car does not exist");
       }
 
       // Validate package, sub-package, and car combination and fetch price
@@ -211,7 +211,7 @@ const updateRide = async (id, data) => {
         transaction,
       });
       if (!packagePrice) {
-        throw new Error('Invalid package, sub-package, or car combination');
+        throw new Error("Invalid package, sub-package, or car combination");
       }
 
       // Fetch tax rate from Settings
@@ -261,7 +261,7 @@ const updateRide = async (id, data) => {
     return { data: rideResponseDTO(ride) };
   } catch (error) {
     await transaction.rollback();
-    console.error('updateRide error:', error);
+    console.error("updateRide error:", error);
     throw error;
   }
 };
@@ -269,12 +269,12 @@ const updateRide = async (id, data) => {
 // Get available cars and prices for a package and sub-package
 const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
   try {
-    console.log('getAvailableCarsAndPrices query:', { package_id, sub_package_id });
+    console.log("getAvailableCarsAndPrices query:", { package_id, sub_package_id });
 
     // Validate package exists
     const packageExists = await Package.findByPk(package_id);
     if (!packageExists) {
-      throw new Error('Invalid package_id: Package does not exist');
+      throw new Error("Invalid package_id: Package does not exist");
     }
 
     // Validate sub-package exists and belongs to the package
@@ -286,7 +286,7 @@ const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
       },
     });
     if (!subPackage) {
-      throw new Error('Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package');
+      throw new Error("Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package");
     }
 
     // Fetch package prices with associated cars
@@ -299,14 +299,14 @@ const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
       include: [
         {
           model: Car,
-          as: 'Car',
-          attributes: ['id', 'brand', 'model', 'image_url'],
+          as: "Car",
+          attributes: ["id", "brand", "model", "image_url"],
         },
       ],
     });
 
     if (!packagePrices.length) {
-      throw new Error('No cars available for this package and sub-package combination');
+      throw new Error("No cars available for this package and sub-package combination");
     }
 
     const result = packagePrices.map(pp => ({
@@ -317,36 +317,36 @@ const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
 
     return { data: result };
   } catch (error) {
-    console.error('getAvailableCarsAndPrices error:', error);
+    console.error("getAvailableCarsAndPrices error:", error);
     throw error;
   }
 };
 
 // Get all rides with filters
-const getAllRides = async ({ search = '', status = '', limit = '10', page = '1', sortBy = 'createdAt', sortOrder = 'DESC' }) => {
+const getAllRides = async ({ search = "", status = "", limit = "10", page = "1", sortBy = "createdAt", sortOrder = "DESC" }) => {
   try {
-    console.log('getAllRides query:', { search, status, limit, page, sortBy, sortOrder });
+    console.log("getAllRides query:", { search, status, limit, page, sortBy, sortOrder });
 
     // Validate query parameters
     const parsedLimit = parseInt(limit, 10);
     const parsedPage = parseInt(page, 10);
     if (isNaN(parsedLimit) || parsedLimit <= 0) {
-      throw new Error('Invalid limit parameter');
+      throw new Error("Invalid limit parameter");
     }
     if (isNaN(parsedPage) || parsedPage <= 0) {
-      throw new Error('Invalid page parameter');
+      throw new Error("Invalid page parameter");
     }
-    const validStatuses = ['all', 'pending', 'accepted', 'on-route', 'completed', 'cancelled'];
+    const validStatuses = ["all", "pending", "accepted", "on-route", "completed", "cancelled"];
     if (status && !validStatuses.includes(status)) {
-      throw new Error(`Invalid status parameter. Must be one of: ${validStatuses.join(', ')}`);
+      throw new Error(`Invalid status parameter. Must be one of: ${validStatuses.join(", ")}`);
     }
-    const validSortFields = ['createdAt', 'ride_date', 'Price', 'Total', 'status'];
+    const validSortFields = ["createdAt", "ride_date", "Price", "Total", "status"];
     if (!validSortFields.includes(sortBy)) {
-      throw new Error(`Invalid sortBy parameter. Must be one of: ${validSortFields.join(', ')}`);
+      throw new Error(`Invalid sortBy parameter. Must be one of: ${validSortFields.join(", ")}`);
     }
-    const validSortOrders = ['ASC', 'DESC'];
+    const validSortOrders = ["ASC", "DESC"];
     if (!validSortOrders.includes(sortOrder.toUpperCase())) {
-      throw new Error(`Invalid sortOrder parameter. Must be one of: ${validSortOrders.join(', ')}`);
+      throw new Error(`Invalid sortOrder parameter. Must be one of: ${validSortOrders.join(", ")}`);
     }
 
     const where = {};
@@ -359,7 +359,7 @@ const getAllRides = async ({ search = '', status = '', limit = '10', page = '1',
         { email: { [Op.like]: `%${search}%` } },
       ];
     }
-    if (status && status !== 'all') {
+    if (status && status !== "all") {
       where.status = status;
     }
 
@@ -371,20 +371,20 @@ const getAllRides = async ({ search = '', status = '', limit = '10', page = '1',
       limit: parsedLimit,
       offset,
       include: [
-        { model: Package, as: "Package", attributes: ['id', 'name'] },
-        { model: SubPackage, as: "SubPackage", attributes: ['id', 'name'] },
-        { model: Car, as: "Car", attributes: ['id', 'model'] },
+        { model: Package, as: "Package", attributes: ["id", "name"] },
+        { model: SubPackage, as: "SubPackage", attributes: ["id", "name"] },
+        { model: Car, as: "Car", attributes: ["id", "model"] },
       ],
     });
 
     // Calculate summary
     const counts = await Ride.findAll({
       attributes: [
-        'status',
-        [Ride.sequelize.fn('COUNT', Ride.sequelize.col('id')), 'count'],
-        [Ride.sequelize.fn('SUM', Ride.sequelize.col('Total')), 'totalRevenue'],
+        "status",
+        [Ride.sequelize.fn("COUNT", Ride.sequelize.col("id")), "count"],
+        [Ride.sequelize.fn("SUM", Ride.sequelize.col("Total")), "totalRevenue"],
       ],
-      group: ['status'],
+      group: ["status"],
       raw: true,
     });
 
@@ -399,11 +399,11 @@ const getAllRides = async ({ search = '', status = '', limit = '10', page = '1',
     };
 
     counts.forEach(c => {
-      if (c.status === 'pending') summary.pending = Number(c.count);
-      if (c.status === 'accepted') summary.accepted = Number(c.count);
-      if (c.status === 'on-route') summary.onRoute = Number(c.count);
-      if (c.status === 'completed') summary.completed = Number(c.count);
-      if (c.status === 'cancelled') summary.cancelled = Number(c.count);
+      if (c.status === "pending") summary.pending = Number(c.count);
+      if (c.status === "accepted") summary.accepted = Number(c.count);
+      if (c.status === "on-route") summary.onRoute = Number(c.count);
+      if (c.status === "completed") summary.completed = Number(c.count);
+      if (c.status === "cancelled") summary.cancelled = Number(c.count);
       summary.totalRevenue += parseFloat(c.totalRevenue || 0);
     });
 
@@ -419,7 +419,7 @@ const getAllRides = async ({ search = '', status = '', limit = '10', page = '1',
       },
     };
   } catch (error) {
-    console.error('getAllRides error:', error);
+    console.error("getAllRides error:", error);
     throw error;
   }
 };
@@ -427,17 +427,17 @@ const getAllRides = async ({ search = '', status = '', limit = '10', page = '1',
 // Get ride by ID
 const getRideById = async (id, transaction = null, lock = null) => {
   try {
-    console.log('getRideById id:', id);
+    console.log("getRideById id:", id);
     const ride = await Ride.findByPk(id, {
       include: [
-        { model: Package, as: "Package", attributes: ['id', 'name'] },
-        { model: SubPackage, as: "SubPackage", attributes: ['id', 'name'] },
-        { model: Car, as: "Car", attributes: ['id', 'model'] },
+        { model: Package, as: "Package", attributes: ["id", "name"] },
+        { model: SubPackage, as: "SubPackage", attributes: ["id", "name"] },
+        { model: Car, as: "Car", attributes: ["id", "model"] },
       ],
       transaction,
       lock
     });
-    if (!ride) throw new Error('Ride not found with the given ID');
+    if (!ride) throw new Error("Ride not found with the given ID");
     return {
       ride, // Return the raw Sequelize model for updates
       data: {
@@ -448,7 +448,7 @@ const getRideById = async (id, transaction = null, lock = null) => {
       }
     };
   } catch (error) {
-    console.error('getRideById error:', error);
+    console.error("getRideById error:", error);
     throw error;
   }
 };
@@ -459,8 +459,8 @@ const conditionalRides = async (options = {}) => {
 
 
 const acceptedRides=async(where={})=>{
-  return await Ride.findAll({where})
-}
+  return await Ride.findAll({where});
+};
 
 const getRideByIdData=async(driver_id,ride_id)=>{
   const ride = await Ride.findOne({
@@ -494,16 +494,16 @@ const getRideByIdData=async(driver_id,ride_id)=>{
         throw new Error("Ride not found");
     }
     return ride;
-}
+};
 
 
 const getRidesByStatusAndDriver = async (status, driverId) => {
   try {
     const where = { driver_id: driverId };
-    if (status && status !== 'all') {
-      if (status === 'accepted') {
-        // Show both 'accepted' and 'on-route' rides
-        where.status = { [Op.or]: ['accepted', 'on-route'] };
+    if (status && status !== "all") {
+      if (status === "accepted") {
+        // Show both "accepted" and "on-route" rides
+        where.status = { [Op.or]: ["accepted", "on-route"] };
       } else if(status==="cancelled"){
         where.status = "cancelled";
       }
@@ -514,11 +514,11 @@ const getRidesByStatusAndDriver = async (status, driverId) => {
 
     const rides = await Ride.findAll({
       where,
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
       include: [
-        { model: Package, as: "Package", attributes: ['id', 'name'] },
-        { model: SubPackage, as: "SubPackage", attributes: ['id', 'name'] },
-        { model: Car, as: "Car", attributes: ['id', 'model'] },
+        { model: Package, as: "Package", attributes: ["id", "name"] },
+        { model: SubPackage, as: "SubPackage", attributes: ["id", "name"] },
+        { model: Car, as: "Car", attributes: ["id", "model"] },
       ],
     });
 
@@ -529,7 +529,7 @@ const getRidesByStatusAndDriver = async (status, driverId) => {
       car_name: ride.Car ? ride.Car.model : null,
     }));
   } catch (error) {
-    console.error('getRidesByStatusAndDriver error:', error);
+    console.error("getRidesByStatusAndDriver error:", error);
     throw error;
   }
 };

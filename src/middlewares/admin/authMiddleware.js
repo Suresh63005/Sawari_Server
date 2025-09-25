@@ -1,22 +1,22 @@
-const jwt = require('jsonwebtoken');
-const Admin = require('../../models/admin.model');
-const Permissions = require('../../models/permissions.model');
+const jwt = require("jsonwebtoken");
+const Admin = require("../../models/admin.model");
+const Permissions = require("../../models/permissions.model");
 
 const authMiddleware = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split('Bearer ')[1];
+    const token = req.headers.authorization?.split("Bearer ")[1];
     if (!token) {
-      console.log('No token provided');
-      return res.status(401).json({ message: 'Authentication required' });
+      console.log("No token provided");
+      return res.status(401).json({ message: "Authentication required" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    console.log('Token decoded:', decoded);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+    console.log("Token decoded:", decoded);
 
     const admin = await Admin.findByPk(decoded.id);
-    if (!admin || admin.status === 'blocked') {
-      console.log('Invalid or blocked admin:', admin);
-      return res.status(401).json({ message: 'invalid or this account is blocked' });
+    if (!admin || admin.status === "blocked") {
+      console.log("Invalid or blocked admin:", admin);
+      return res.status(401).json({ message: "invalid or this account is blocked" });
     }
 
     const permissions = await Permissions.findOne({ where: { user_id: admin.id } });
@@ -42,16 +42,16 @@ const authMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
-    return res.status(401).json({ message: 'Invalid token' });
+    console.error("Auth middleware error:", error);
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
 
 const permissionMiddleware = (requiredPermission) => {
   return async (req, res, next) => {
     if (!req.user?.permissions) {
-      console.log('No permissions found for user'); // Debug log
-      return res.status(403).json({ message: 'No permissions found' });
+      console.log("No permissions found for user"); // Debug log
+      return res.status(403).json({ message: "No permissions found" });
     }
 
     if (!req.user.permissions[requiredPermission]) {

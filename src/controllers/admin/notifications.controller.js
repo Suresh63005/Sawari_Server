@@ -1,7 +1,7 @@
-const { default: axios } = require('axios');
-const notificationService = require('../../services/notifications.service');
-const { uploadToS3 } = require('../../config/fileUpload.aws');
-require('dotenv').config();
+const { default: axios } = require("axios");
+const notificationService = require("../../services/notifications.service");
+const { uploadToS3 } = require("../../config/fileUpload.aws");
+require("dotenv").config();
 
 /**
  *  Send notifications to all users via one-signal
@@ -25,16 +25,16 @@ require('dotenv').config();
 //         }
 
 //         // Send push notification using one-signal
-//         const response = await axios.post('https://onesignal.com/api/v1/notifications',{
+//         const response = await axios.post("https://onesignal.com/api/v1/notifications",{
 //             api_id:process.env.ONE_SIGNAL_APP_ID,
-//             included_segments: ['All'],
+//             included_segments: ["All"],
 //             headings: { en: title },
 //             contents: { en: message },
 //             big_picture: imageUrl || undefined,
 //         },{
 //             headers:{
 //                 Authorization:`Basic ${process.env.ONE_SIGNAL_API_KEY}`,
-//                 'Content-Type':'application/json; charset=utf-8'
+//                 "Content-Type":"application/json; charset=utf-8"
 //             }
 //         })
 
@@ -47,10 +47,10 @@ require('dotenv').config();
 //             data:result.data
 //         })
 //     } catch (error) {
-//         console.error('Error sending notification:', error);
+//         console.error("Error sending notification:", error);
 //         return res.status(500).json({
 //         success: false,
-//         message: 'Failed to send notification',
+//         message: "Failed to send notification",
 //         error: error.message,
 //         });
 //     }
@@ -94,10 +94,10 @@ const sendNotificationController = async (req, res) => {
     // Send OneSignal push notification to all drivers
     try {
       const response = await axios.post(
-        'https://onesignal.com/api/v1/notifications',
+        "https://onesignal.com/api/v1/notifications",
         {
           app_id: process.env.ONE_SIGNAL_APP_ID,
-          included_segments: ['All'], // Targets all drivers
+          included_segments: ["All"], // Targets all drivers
           headings: { en: title },
           contents: { en: message },
           big_picture: imageUrl || undefined,
@@ -105,13 +105,13 @@ const sendNotificationController = async (req, res) => {
         {
           headers: {
             Authorization: `Basic ${process.env.ONE_SIGNAL_API_KEY}`,
-            'Content-Type': 'application/json; charset=utf-8',
+            "Content-Type": "application/json; charset=utf-8",
           },
         }
       );
       oneSignalResponse = response.data;
     } catch (err) {
-      console.error('OneSignal Push Error:', err.response?.data || err.message);
+      console.error("OneSignal Push Error:", err.response?.data || err.message);
       pushError = err.response?.data || err.message;
     }
 
@@ -123,10 +123,10 @@ const sendNotificationController = async (req, res) => {
       data: result.data,
     });
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error("Error sending notification:", error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to send notification',
+      message: "Failed to send notification",
       error: error.message,
     });
   }
@@ -144,32 +144,33 @@ const getSingleNotificationController = async (req, res) => {
   res.status(result.success ? 200 : 404).json(result);
 };
 const deleteNotificationController = async (req, res) => {
-    try {
-        const {id}=req.params;
-        if(!id){
-            return res.status(400).json({
-                success: false,
-                message: "Notification ID is required"
-            });
-        }
-        const result = await notificationService.deleteNotificationService(id);
-        return res.status(200).json({
-            success: result.success,
-            message: result.message,
-        })
-    } catch (error) {
-        console.error('Error deleting notification:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to delete notification',
-            error: error.message,
-        });
-
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Notification ID is required"
+      });
     }
-}
+    const result = await notificationService.deleteNotificationService(id);
+    return res.status(200).json({
+      success: result.success,
+      message: result.message,
+    });
+  } catch (error) {
+    console.error("Error deleting notification:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete notification",
+      error: error.message,
+    });
+
+  }
+};
+
 module.exports = {
-    sendNotificationController,
-    getAllNotificationsController,
-    getSingleNotificationController,
-    deleteNotificationController
-}
+  sendNotificationController,
+  getAllNotificationsController,
+  getSingleNotificationController,
+  deleteNotificationController
+};

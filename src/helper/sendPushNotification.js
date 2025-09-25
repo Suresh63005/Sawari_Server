@@ -16,9 +16,9 @@ const sendPushNotification = async(playerId, heading, message)=>{
             },
         }
     );
-    return response.data
+    return response.data;
     } catch (error) {
         console.error("OneSignal Push Error:", error.response?.data || error.message);
     }
-}
-module.exports={sendPushNotification}
+};
+module.exports={sendPushNotification};

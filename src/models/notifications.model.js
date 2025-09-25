@@ -1,7 +1,7 @@
 const sequelize = require("../config/db");
 const { DataTypes } = require("sequelize");
 
-const Notifications = sequelize.define('Notifications',{
+const Notifications = sequelize.define("Notifications",{
     id:{
         type:DataTypes.UUID,
         primaryKey: true,
@@ -28,6 +28,6 @@ const Notifications = sequelize.define('Notifications',{
         type:DataTypes.UUID,
         allowNull:true
     }
-},{tableName:"Notifications",paranoid:true,timestamps:true})
+},{tableName:"Notifications",paranoid:true,timestamps:true});
 
 module.exports = Notifications;

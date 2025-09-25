@@ -1,7 +1,7 @@
-const Admin = require('../models/admin.model');
-const Permissions = require('../models/permissions.model');
-const { Op } = require('sequelize');
-const  {getAdminHierarchy}  = require('../utils/adminHierarchy')
+const Admin = require("../models/admin.model");
+const Permissions = require("../models/permissions.model");
+const { Op } = require("sequelize");
+const {getAdminHierarchy} = require("../utils/adminHierarchy");
 const getAdminByEmail = async (email) => {
   return await Admin.findOne({
     where: { email },
@@ -20,7 +20,7 @@ const createAdmin = async (data) => {
     phone: data.phone,
     role: data.role,
     password: data.password,
-    status: data.status || 'active',
+    status: data.status || "active",
     one_signal_id: `onesignal-${Date.now()}`,
   });
   // Ensure permissions are created even if not provided
@@ -75,30 +75,30 @@ const updateAdmin = async (id, updates) => {
 const updateAdminStatus = async (id, status) => {
   const admin = await Admin.findByPk(id);
   if (admin) {
-    if (!['active', 'inactive', 'blocked'].includes(status)) {
-      throw new Error('Invalid status. Must be "active", "inactive", or "blocked"');
+    if (!["active", "inactive", "blocked"].includes(status)) {
+      throw new Error("Invalid status. Must be \"active\", \"inactive\", or \"blocked\"");
     }
     admin.status = status;
     await admin.save();
     return admin;
   }
-  throw new Error('Admin not found');
+  throw new Error("Admin not found");
 };
 
 
 const getAllAdmins = async ({
-  search = '',
+  search = "",
   limit = 10,
   page = 1,
-  sortBy = 'createdAt',
-  sortOrder = 'DESC',
+  sortBy = "createdAt",
+  sortOrder = "DESC",
   currentUser, // Add currentUser to apply role-based filtering
 }) => {
   // Validate query parameters
   const parsedPage = parseInt(page) > 0 ? parseInt(page) : 1;
   const parsedLimit = parseInt(limit) > 0 ? parseInt(limit) : 10;
-  const validSortBy = ['createdAt', 'first_name', 'last_name', 'email', 'role'].includes(sortBy) ? sortBy : 'createdAt';
-  const validSortOrder = sortOrder && ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+  const validSortBy = ["createdAt", "first_name", "last_name", "email", "role"].includes(sortBy) ? sortBy : "createdAt";
+  const validSortOrder = sortOrder && ["ASC", "DESC"].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : "DESC";
   const offset = (parsedPage - 1) * parsedLimit;
 
   // Build where clause with role-based filtering
@@ -114,7 +114,7 @@ const getAllAdmins = async ({
   }
 
   // Apply role-based filtering and exclude current user
-  if (currentUser.role !== 'super_admin') {
+  if (currentUser.role !== "super_admin") {
     const allowedRoles = getAdminHierarchy(currentUser.role);
     where = {
       ...where,
@@ -130,7 +130,7 @@ const getAllAdmins = async ({
 
   const { rows, count } = await Admin.findAndCountAll({
   where,
-  include: [{ model: Permissions, as: 'AdminPermissions' }],
+  include: [{ model: Permissions, as: "AdminPermissions" }],
   order: [[validSortBy, validSortOrder]],
   limit: parsedLimit,
   offset,
@@ -149,7 +149,7 @@ const getAllAdmins = async ({
 
 
 // auth.service.js
-const { sequelize } = require('../models'); // adjust to your export
+const { sequelize } = require("../models"); // adjust to your export
 const updatePermissions = async (id, permissions) => {
   const updatedValues = {
     dashboard_access: permissions.dashboard_access ? 1 : 0,

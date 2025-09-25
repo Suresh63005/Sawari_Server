@@ -1,5 +1,5 @@
-const rideService = require('../../services/ride.service');
-const earningService = require('../../services/earnings.service');
+const rideService = require("../../services/ride.service");
+const earningService = require("../../services/earnings.service");
 
 /**
  * Controller to create or update a ride entry.
@@ -12,10 +12,10 @@ const earningService = require('../../services/earnings.service');
  *    - Ensures the requesting driver owns the ride.
  *    - Prevents update if ride is already accepted or has a driver assigned.
  * - Calls the service to insert or update the ride.
- * - If ride status is 'completed', it logs the earning.
+ * - If ride status is "completed", it logs the earning.
  * 
  * Restrictions:
- * - Ride cannot be updated if status is 'accepted' or `driver_id` already exists.
+ * - Ride cannot be updated if status is "accepted" or `driver_id` already exists.
  *
  * Notes:
  * - This controller can also be used to mark a ride as completed, cancelled, or update any ride-related data,
@@ -53,16 +53,16 @@ const upsertRide = async (req, res) => {
             }
         }
 
-        const ride = await rideService.upsertRide({ ...data, initiated_by_driver_id: driverId, driver_id:data.driver_id || null });
-        
+        const ride = await rideService.upsertRide({ ...data, initiated_by_driver_id: driverId, driver_id: data.driver_id || null });
+
         // If ride is marked as completed, record the earning
-        if(ride.status === "completed"){
+        if (ride.status === "completed") {
             await earningService.createEarnings({
-                ride_id:ride.id,
-                driver_id:ride.driver_id,
-                amount:ride.total_amount,
-                date:new Date()
-            })
+                ride_id: ride.id,
+                driver_id: ride.driver_id,
+                amount: ride.total_amount,
+                date: new Date()
+            });
         }
 
         return res.status(200).json({
@@ -155,25 +155,25 @@ const getRideById = async (req, res) => {
  * - Supports pagination and sorting via query params.
  */
 const getRidesInitiatedByDriver = async (req, res) => {
-  try {
-    const driverId = req.driver?.id;
-    if (!driverId) {
-      return res.status(401).json({ message: "Unauthorized access. Driver not authenticated." });
+    try {
+        const driverId = req.driver?.id;
+        if (!driverId) {
+            return res.status(401).json({ message: "Unauthorized access. Driver not authenticated." });
+        }
+
+        // Optional query params for pagination & sorting
+        const { limit, page, sortBy, sortOrder } = req.query;
+
+        const rides = await rideService.getRidesByInitiator(driverId, { limit, page, sortBy, sortOrder });
+
+        return res.status(200).json({
+            message: "Rides initiated by you fetched successfully",
+            rides,
+        });
+    } catch (error) {
+        console.error("Get Rides Initiated By Driver Error:", error);
+        return res.status(500).json({ message: error.message });
     }
-
-    // Optional query params for pagination & sorting
-    const { limit, page, sortBy, sortOrder } = req.query;
-
-    const rides = await rideService.getRidesByInitiator(driverId, { limit, page, sortBy, sortOrder });
-
-    return res.status(200).json({
-      message: "Rides initiated by you fetched successfully",
-      rides,
-    });
-  } catch (error) {
-    console.error("Get Rides Initiated By Driver Error:", error);
-    return res.status(500).json({ message: error.message });
-  }
 };
 
 const getRidesByStatus = async (req, res) => {
@@ -192,7 +192,7 @@ const getRidesByStatus = async (req, res) => {
         const rides = await rideService.getRidesByStatusAndDriver(status, driverId);
 
         return res.status(200).json({
-            message: `Rides with status '${status}' fetched successfully`,
+            message: `Rides with status "${status}" fetched successfully`,
             rides,
             count: rides.length
         });
@@ -209,5 +209,4 @@ module.exports = {
     getRideById,
     getRidesInitiatedByDriver,
     getRidesByStatus
-}
-
+};
