@@ -245,6 +245,7 @@ const acceptRide = async (req, res) => {
 
     let isCredit = false;
     let newCount = driver.credit_ride_count || 0;
+    let newBalance = balance;
 
     // Check wallet balance and credit ride limit
     if (balance < required) {
@@ -257,7 +258,15 @@ const acceptRide = async (req, res) => {
       }
       isCredit = true;
       newCount += 1;
-      console.log(`Ride ${ride_id} accepted on credit. Amount debited: $${required.toFixed(2)}, Credit ride count: ${newCount}`);
+      // Deduct available balance for credit ride
+      const amountToDebit = required - balance;
+      newBalance = 0; // Deduct all available balance
+      console.log(
+        `Ride ${ride_id} accepted on credit. Wallet deducted: $${balance.toFixed(2)}, Remaining debit: $${amountToDebit.toFixed(2)}, Credit ride count: ${newCount}`
+      );
+    } else {
+      // Deduct full required amount for non-credit ride
+      newBalance = balance - required;
     }
 
     // Update ride
@@ -265,9 +274,6 @@ const acceptRide = async (req, res) => {
       { driver_id: driverId, status: "accepted", accept_time: new Date(), is_credit: isCredit },
       { transaction: t }
     );
-
-    // Deduct wallet balance if not on credit
-    const newBalance = isCredit ? balance : balance - required;
 
     // Update driver
     await driver.update(
@@ -277,15 +283,16 @@ const acceptRide = async (req, res) => {
 
     // Create wallet report for credit rides
     if (isCredit) {
+      const amountToDebit = required - balance;
       await WalletReports.create(
         {
           id: uuid(),
           driver_id: driverId,
-          amount: -required,
+          amount: -amountToDebit,
           balance_after: newBalance,
           transaction_date: new Date(),
           transaction_type: "debit",
-          description: `Debit due to insufficient balance for ride ${ride_id}`,
+          description: `Debit due to insufficient balance for ride ${ride_id} (wallet deducted: $${balance.toFixed(2)}, remaining debit: $${amountToDebit.toFixed(2)})`,
           ride_id,
         },
         { transaction: t }
@@ -304,11 +311,13 @@ const acceptRide = async (req, res) => {
         status: ride.status,
         driver_id: ride.driver_id,
         accept_time: ride.accept_time,
-        is_credit: ride.is_credit,
+        is_credit: isCredit,
       },
     });
   } catch (error) {
-    await t.rollback();
+    if (!t.finished) {
+      await t.rollback();
+    }
     console.error("Error accepting ride:", error);
     return res.status(400).json({
       success: false,
@@ -329,13 +338,17 @@ const toggleDriverStatus = async (req, res) => {
   }
 
   try {
-    const driverGetById = await getDriverById(driver_id);
-    driverGetById.availability_status = status;
-    const result = await driverGetById.save();
+     await Driver.update(
+      { availability_status: status },
+      { where: { id: driver_id } }
+    );
+
+    // Fetch updated driver info using getDriverById
+    const updatedDriver = await getDriverById(driver_id);
     return res.status(200).json({
       success: true,
       message: `Driver status updated to ${status}`,
-      data: result,
+      data: updatedDriver,
     });
   } catch (error) {
     console.error("Error updating driver status:", error);
@@ -637,7 +650,7 @@ const getMyRides = async (req, res) => {
   }
 
   // Parse statuses from query (expecting comma-separated or array)
-  let statusArray = statuses;
+  let statusArray = statuses; 
   if (typeof statuses === "string") {
     statusArray = statuses.split(",").map(s => s.trim());
   }
