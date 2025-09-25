@@ -206,6 +206,7 @@ const getDriverById = async (driverId) => {
       "reason",
       "availability_status",
       "wallet_balance",
+      "credit_ride_count",
       "status",
       "document_check_count",
       "createdAt", // Include createdAt for Joined At
@@ -221,6 +222,8 @@ const getDriverById = async (driverId) => {
   });
 
   if (!driverInstance) throw new Error("Driver not found");
+
+    console.log(`getDriverById: driverId=${driverId}, raw_credit_ride_count=${driverInstance.credit_ride_count}, driverInstance_fields=${JSON.stringify(Object.keys(driverInstance.toJSON()))}`);
 
   // Fetch total completed rides
   const completedRidesCount = await Ride.count({
