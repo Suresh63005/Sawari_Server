@@ -650,7 +650,7 @@ const getMyRides = async (req, res) => {
   }
 
   // Parse statuses from query (expecting comma-separated or array)
-  let statusArray = statuses;
+  let statusArray = statuses; 
   if (typeof statuses === "string") {
     statusArray = statuses.split(",").map(s => s.trim());
   }
