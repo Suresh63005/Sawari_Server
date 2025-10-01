@@ -217,7 +217,7 @@ const s3 = new S3Client({
 app.post("/upload-token", async (req, res) => {
   const folder = req.body.folder || "uploads";
 
-  // Expect `files` as JSON string in form-data
+  // Expect `files` as JSON string in form-data 
   let files;
   try {
     files = JSON.parse(req.body.files);
