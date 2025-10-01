@@ -23,14 +23,14 @@ const carDTO = (data) => {
 const carResponseDTO = async (data) => {
   const carDetails = await Car.findByPk(data.car_id);
 
-  // let carPhotos = [];
-  // try {
-  //   carPhotos = Array.isArray(data.car_photos) 
-  //     ? data.car_photos 
-  //     : JSON.parse(data.car_photos || "[]");
-  // } catch (e) {
-  //   carPhotos = [];
-  // }
+  let carPhotos = [];
+  try {
+    carPhotos = Array.isArray(data.car_photos) 
+      ? data.car_photos 
+      : JSON.parse(data.car_photos || "[]");
+  } catch (e) {
+    carPhotos = [];
+  }
 
   return {
     id: data.id,
@@ -40,7 +40,7 @@ const carResponseDTO = async (data) => {
     car_brand: carDetails ? carDetails.brand : null,
     color: data.color,
     license_plate: data.license_plate,
-    car_photos: Array.isArray(data.car_photos) ? data.car_photos : [],
+    car_photos: carPhotos,
     rc_doc: data.rc_doc,
     rc_doc_back: data.rc_doc_back,
     insurance_doc: data.insurance_doc,
@@ -160,7 +160,6 @@ const getAllVehicles = async ({ page = 1, limit = 5, search = "", status = "all"
     offset
   });
 
-  console.log(rows, "yyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
 
   return {
     data: await Promise.all(rows.map(async vehicle => await carResponseDTO(vehicle))),
