@@ -30,6 +30,7 @@ const carResponseDTO = async (data) => {
       : JSON.parse(data.car_photos || "[]");
   } catch (e) {
     carPhotos = [];
+    console.error("Error parsing car_photos:", e);
   }
 
   return {

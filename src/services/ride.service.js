@@ -248,7 +248,7 @@ const updateRide = async (id, data) => {
         scheduled_time: scheduledTime,
         notes: data.notes || ride.notes,
         Price: baseFare,
-        tax: Number(tax).toFixed(2),    // ✅ always number before toFixed
+        tax: Number(tax).toFixed(2),// ✅ always number before toFixed
         Total: Number(total).toFixed(2),// ✅ always number before toFixed
         rider_hours: riderHours,
         status: data.status || ride.status,
