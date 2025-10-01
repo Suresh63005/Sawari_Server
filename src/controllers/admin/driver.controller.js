@@ -1,3 +1,4 @@
+const { sendPushNotification } = require("../../helper/sendPushNotification");
 const driverService = require("../../services/driver.service");
 
 exports.getAllDrivers = async (req, res) => {
@@ -30,6 +31,18 @@ exports.approveDriver = async (req, res) => {
   try {
     const { id } = req.params;
     await driverService.approveDriver(id, req.user.id);
+    const driver = await driverService.getDriverById(id);
+    if(driver?.one_signal_id){
+      const fullName = `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
+      await sendPushNotification(
+        driver.one_signal_id,
+        {en:"Profile Approved"},
+        {en:`Hi ${fullName}, your profile has been approved! You can now start accepting rides.`}
+      );
+      console.log(`📢 Push notification sent to driver (${fullName}) for profile approval`);
+    }else{
+      console.warn(`⚠️ Driver with ID ${id} has no OneSignal ID, skipping push notification`);
+    }
     res.status(200).json({ message: "Driver approved" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -41,6 +54,22 @@ exports.rejectDriver = async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
     await driverService.rejectDriver(id, reason, req.user.id);
+    const driver = await driverService.getDriverById(id);
+    if(driver?.one_signal_id){
+      const fullName = `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
+      const message = driver.document_check_count >= 3 
+        ? `Hi ${fullName}, your profile has been blocked due to repeated rejections.
+        Reason: ${reason || "Not Provided"}` 
+        : `Hi ${fullName}, your profile has been rejected. Reason: ${reason || "Not Provided."}`;
+      await sendPushNotification(
+        driver.one_signal_id,
+        {en: "Profile Rejected"},
+        {en: message}
+      );
+      console.log(`📢 Push notification sent to driver (${fullName}) for profile rejection`);
+    }else{
+      console.warn(`⚠️ Driver with ID ${id} has no OneSignal ID, skipping push notification`);
+    }
     res.status(200).json({ message: "Driver rejected" });
   } catch (error) {
     res.status(500).json({ message: error.message });
