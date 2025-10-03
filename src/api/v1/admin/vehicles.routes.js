@@ -8,7 +8,7 @@ router.post(endPoints.vehicles.approveVehicle, authMiddleware, vehicleController
 router.get(endPoints.vehicles.getVehiclesByDriver, authMiddleware, vehicleController.getVehiclesByDriver);
 router.post(endPoints.vehicles.rejectVehicle, authMiddleware, vehicleController.rejectVehicle);
 router.post(endPoints.vehicles.verifyRc, authMiddleware, vehicleController.verifyRc);
-router.post(endPoints.vehicles.rejectRc, authMiddleware, vehicleController.rejectRc);
+router.post(endPoints.vehicles.rejectRc, authMiddleware, vehicleController.rejectRc); 
 router.post(endPoints.vehicles.verifyInsurance, authMiddleware, vehicleController.verifyInsurance);
 router.post(endPoints.vehicles.rejectInsurance, authMiddleware, vehicleController.rejectInsurance);
 
