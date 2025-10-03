@@ -1,6 +1,8 @@
-const router=require("express").Router();
+const router = require("express").Router();
 const settingController = require("../../../controllers/mobile/settings.controller");
-const middleware=require("../../../middlewares/mobile/authMiddleware");
+const middleware = require("../../../middlewares/mobile/authMiddleware");
+const { endPoints } = require("../../api");
 
-router.get("/get-all-settings",middleware.isAuthenticated,settingController.getAllSettings);
-module.exports=router;
+router.get(endPoints["mob-settings"].getAllSettings, middleware.isAuthenticated, settingController.getAllSettings);
+
+module.exports = router;

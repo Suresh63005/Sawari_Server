@@ -1,18 +1,10 @@
-const express = require("express");
-const router = express.Router();
-const {
-  getAllRidesController,
-  getRideByIdController,
-  exportAllRidesController,
-  exportRideByIdController,
-} = require("../../../controllers/admin/ridesreports.controller");
+const router = require("express").Router();
+const { getAllRidesController, getRideByIdController, exportAllRidesController, exportRideByIdController, } = require("../../../controllers/admin/ridesreports.controller");
+const { endPoints } = require("../../api");
 
-// Static routes first
-router.get("/all", getAllRidesController);
-router.get("/export-all", exportAllRidesController);
-
-// Dynamic routes last
-router.get("/export/:rideId", exportRideByIdController);
-router.get("/:rideId", getRideByIdController);
+router.get(endPoints.ridesreports.getAllRides, getAllRidesController);
+router.get(endPoints.ridesreports.exportAllRides, exportAllRidesController);
+router.get(endPoints.ridesreports.exportRideById, exportRideByIdController);
+router.get(endPoints.ridesreports.getRideById, getRideByIdController);
 
 module.exports = router;

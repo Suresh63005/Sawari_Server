@@ -1,23 +1,12 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const packagePriceController = require("../../../controllers/admin/packageprice.controller");
+const { endPoints } = require("../../api");
 
-// Create or Update Package Price
-router.post("/upsert", packagePriceController.upsertPackagePrice);
-
-// Get All Package Prices
-router.get("/", packagePriceController.getAllPackagePrices);
-
-// Get Package Price by ID
-router.get("/:id", packagePriceController.getPackagePriceById);
-
-// Delete Package Price by ID
-router.delete("/:id", packagePriceController.deletePackagePriceById);
-
-// Toggle Package Price Status
-router.patch("/:id/status", packagePriceController.togglePackagePriceStatus);
-
-// Get Sub-Packages by Package ID
-router.get("/sub-packages/:package_id", packagePriceController.getSubPackagesByPackageId);
+router.post(endPoints.packageprice.upsertPackagePrice, packagePriceController.upsertPackagePrice);
+router.get(endPoints.packageprice.getAllPackagePrices, packagePriceController.getAllPackagePrices);
+router.get(endPoints.packageprice.getPackagePriceById, packagePriceController.getPackagePriceById);
+router.delete(endPoints.packageprice.deletePackagePriceById, packagePriceController.deletePackagePriceById);
+router.patch(endPoints.packageprice.togglePackagePriceStatus, packagePriceController.togglePackagePriceStatus);
+router.get(endPoints.packageprice.getSubPackagesByPackageId, packagePriceController.getSubPackagesByPackageId);
 
 module.exports = router;

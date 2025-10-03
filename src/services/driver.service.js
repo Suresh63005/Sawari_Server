@@ -23,13 +23,10 @@ const normalizePhone = (phone) => {
 const verifyDriverMobile = async (phone, token, email, social_login) => {
   if (!token) throw new Error("Token is required");
 
-
-
   let normalizedPhone = null;
   let driver = null;
 
   if (social_login === "google") {
-
     if (!email) throw new Error("Email is required");
     console.log("wwwwwwwwwwwwwwwwwwww:", email);
     const decoded = await driverFirebase.auth()?.verifyIdToken(token);
@@ -42,11 +39,7 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
       throw new Error("Email mismatch with token");
     }
 
-
-
     driver = await Driver.findOne({ where: { email: firebaseEmail } });
-
-
 
     if (driver) {
       // check driver status
