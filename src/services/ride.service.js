@@ -133,8 +133,8 @@ const createRide = async (data) => {
         scheduled_time: scheduledTime ? scheduledTime.toISOString() : null,
         notes: data.notes,
         Price: baseFare,
-        tax: tax.toFixed(2), // Store tax amount
-        Total: total.toFixed(2), // Store total with tax
+        tax: Number(tax.toFixed(2)), // Store tax amount
+        Total: Number(total.toFixed(2)), // Store total with tax
         rider_hours: riderHours,
         status: data.status || "pending",
         payment_status: data.payment_status || "pending",
@@ -170,9 +170,10 @@ const updateRide = async (id, data) => {
       scheduledTime = scheduledTime.toISOString();
     }
 
-    let baseFare = ride.Price;
-    let tax = ride.tax;
-    let total = ride.Total;
+    // ✅ force numeric types right away
+    let baseFare = Number(ride.Price);
+    let tax = Number(ride.tax);
+    let total = Number(ride.Total);
     let riderHours = ride.rider_hours;
 
     // Validate package, sub-package, and car combination if provided
@@ -247,8 +248,8 @@ const updateRide = async (id, data) => {
         scheduled_time: scheduledTime,
         notes: data.notes || ride.notes,
         Price: baseFare,
-        tax: tax.toFixed(2), // Update tax amount
-        Total: total.toFixed(2), // Update total with tax
+        tax: Number(tax).toFixed(2),// ✅ always number before toFixed
+        Total: Number(total).toFixed(2),// ✅ always number before toFixed
         rider_hours: riderHours,
         status: data.status || ride.status,
         payment_status: data.payment_status || ride.payment_status,
@@ -265,6 +266,7 @@ const updateRide = async (id, data) => {
     throw error;
   }
 };
+
 
 // Get available cars and prices for a package and sub-package
 const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {

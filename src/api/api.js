@@ -120,6 +120,7 @@ const endPoints = {
         rejectRc: "/:id/reject-rc",
         verifyInsurance: "/:id/verify-insurance",
         rejectInsurance: "/:id/reject-insurance",
+        getVehiclesByDriver: "/:driverId",
     },
 
     // for mobile

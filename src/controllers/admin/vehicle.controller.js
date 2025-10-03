@@ -21,6 +21,21 @@ exports.getAllVehicles = async (req, res) => {
   }
 };
 
+exports.getVehiclesByDriver = async (req, res) => {
+  try {
+    const { driverId } = req.params;
+    if (!driverId) {
+      return res.status(400).json({ message: "Driver ID is required" });
+    }
+    console.log("Fetching vehicles for driverId:", driverId);
+    const vehicles = await vehicleService.getVehiclesByDriver(driverId);
+    res.status(200).json({ data: vehicles });
+  } catch (error) {
+    console.error("Error fetching vehicles by driver:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.approveVehicle = async (req, res) => {
   try {
     const { id } = req.params;

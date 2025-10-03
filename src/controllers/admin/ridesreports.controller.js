@@ -33,7 +33,7 @@ const exportAllRidesController = async (req, res) => {
     const buffer = await exportAllRides(search, status);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=all_ride_reports_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`
+      `attachment; filename=All_Ride_Reports_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`
     );
     res.setHeader(
       "Content-Type",
@@ -52,7 +52,7 @@ const exportRideByIdController = async (req, res) => {
     const buffer = await exportRideById(rideId);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=ride_report_${rideId}.xlsx`
+      `attachment; filename=Ride_Report_${rideId}.xlsx`
     );
     res.setHeader(
       "Content-Type",
@@ -64,6 +64,7 @@ const exportRideByIdController = async (req, res) => {
     console.log(error, "error in exportRideByIdController");
   }
 };
+
 
 module.exports = {
   getAllRidesController,
