@@ -23,13 +23,10 @@ const normalizePhone = (phone) => {
 const verifyDriverMobile = async (phone, token, email, social_login) => {
   if (!token) throw new Error("Token is required");
 
-
-
   let normalizedPhone = null;
   let driver = null;
 
   if (social_login === "google") {
-
     if (!email) throw new Error("Email is required");
     console.log("wwwwwwwwwwwwwwwwwwww:", email);
     const decoded = await driverFirebase.auth()?.verifyIdToken(token);
@@ -42,11 +39,7 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
       throw new Error("Email mismatch with token");
     }
 
-
-
     driver = await Driver.findOne({ where: { email: firebaseEmail } });
-
-
 
     if (driver) {
       // check driver status
@@ -203,6 +196,7 @@ const getDriverById = async (driverId) => {
       "license_verification_status",
       "emirates_verification_status",
       "is_approved",
+      "one_signal_id",
       "reason",
       "availability_status",
       "wallet_balance",
@@ -283,6 +277,7 @@ const getDriverById = async (driverId) => {
     license_verification_status: driverInstance.license_verification_status,
     emirates_verification_status: driverInstance.emirates_verification_status,
     is_approved: driverInstance.is_approved,
+    one_signal_id: driverInstance.one_signal_id,
     reason: driverInstance.reason,
     availability_status: driverInstance.availability_status,
     wallet_balance: driverInstance.wallet_balance,

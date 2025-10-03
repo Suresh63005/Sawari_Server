@@ -1,12 +1,12 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const packageController = require("../../../controllers/mobile/package.controller");
 const authMiddleware = require("../../../middlewares/mobile/authMiddleware");
+const { endPoints } = require("../../api");
 
-router.get("/get-all-packages",authMiddleware.isAuthenticated,packageController.getAllPackages);
-router.get("/get-all-cars/:sub_package_id",authMiddleware.isAuthenticated,packageController.getAllCarsBySubPackageId);
-router.get("/get-sub-packages/:package_id",authMiddleware.isAuthenticated,packageController.getSubPackagesByPackageId);
-router.get("/get-price/:package_id/:sub_package_id/:car_id",authMiddleware.isAuthenticated,packageController.getPrice);
-router.get("/get-all-cars",authMiddleware.isAuthenticated,packageController.getAllCars);
+router.get(endPoints["mob-package"].getAllPackages, authMiddleware.isAuthenticated, packageController.getAllPackages);
+router.get(endPoints["mob-package"].getAllCarsBySubPackageId, authMiddleware.isAuthenticated, packageController.getAllCarsBySubPackageId);
+router.get(endPoints["mob-package"].getSubPackagesByPackageId, authMiddleware.isAuthenticated, packageController.getSubPackagesByPackageId);
+router.get(endPoints["mob-package"].getPrice, authMiddleware.isAuthenticated, packageController.getPrice);
+router.get(endPoints["mob-package"].getAllCars, authMiddleware.isAuthenticated, packageController.getAllCars);
 
 module.exports = router;

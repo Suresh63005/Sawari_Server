@@ -149,6 +149,7 @@ const getDriverCarByDriverId = async (driver_id, car_id = null) => {
 
     const vehicle = await DriverCar.findOne({
       where: whereClause,
+      attributes: {exclude:["createdAt","updatedAt","deletedAt","verified_by","wallet_balance","completedRidesCount","completionRate","lastRideTime"]},
       include: [
         {
           model: Car,

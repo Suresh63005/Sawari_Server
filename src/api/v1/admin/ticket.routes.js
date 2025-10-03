@@ -1,19 +1,10 @@
-// backend/routes/ticketRoutes.js
-
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const { getOpenTicketsHandler, resolveTicketHandler, createTicketHandler, updateTicketStatusHandler } = require("../../../controllers/admin/ticket.controller");
+const { endPoints } = require("../../api");
 
-// GET all open tickets with filters
-router.get("/", getOpenTicketsHandler);
-
-// POST to resolve a ticket
-router.post("/:id/resolve", resolveTicketHandler);
-
-// POST to create a new ticket
-router.post("/create", createTicketHandler);
-
-// PUT to update ticket status
-router.put("/:id/status", updateTicketStatusHandler);
+router.get(endPoints.ticket.getOpenTicketsHandler, getOpenTicketsHandler);
+router.post(endPoints.ticket.resolveTicketHandler, resolveTicketHandler);
+router.post(endPoints.ticket.createTicketHandler, createTicketHandler);
+router.put(endPoints.ticket.updateTicketStatusHandler, updateTicketStatusHandler);
 
 module.exports = router;

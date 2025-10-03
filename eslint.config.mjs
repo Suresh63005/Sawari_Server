@@ -1,55 +1,3 @@
-// import js from "@eslint/js";
-// import globals from "globals";
-// import { defineConfig } from "eslint/config";
-
-// export default defineConfig([
-//   {
-//     files: ["**/*.{js,mjs,cjs}"],
-//     plugins: { js },
-//     extends: ["js/recommended"],
-//     languageOptions: {
-
-//       globals: {
-//         ...globals.node
-
-//       }
-//     },
-
-//     rules: {
-//       "boundaries/element-types": [
-//         "error",
-//         {
-//           default: "disallow",
-//           rules: [
-//             { from: ["controller"], allow: ["service", "utils", "helper"] },
-//             { from: ["routes"], allow: ["controller", "validators"] },
-//             { from: ["service"], allow: ["models", "utils"] },
-//           ],
-//         },
-//       ],
-//       // "no-var": "error",  //  use only 'let' or 'const' instead of 'var'
-//       // "prefer-const": "error",  // Encourages 'const' for immutable variables
-//       // "no-undef": "error",  // Industry standard: prevent use of undeclared variables
-//       // // "quotes": ["error", "double"],  // Use single quotes for strings, e.g., 'string'
-//       // // "indent": ["error", 2],  // 2-space indentation is industry standard
-//       // // "no-console": "warn",  // Warn when console methods are used (can be disabled for production code)
-//       // // "no-trailing-spaces": "error", // Remove trailing spaces from lines         // Enforce no leading or trailing whitespace
-//       // "no-empty-function": "error", // Disallow empty functions
-
-//       "no-var": "error", // ❌ Disallow 'var', only let & const
-//       quotes: ["error", "double", { avoidEscape: true }], // ❌ Enforce double quotes
-//       "no-multi-spaces": "error", // ❌ Disallow double spaces
-//       semi: ["error", "always"], // ✅ Require semicolons
-//       "no-unused-vars": ["error", { args: "none", ignoreRestSiblings: true }], // Unused vars error
-//       "no-console": "warn", // 🔔 Avoid leaving console.log
-//     }
-//   },
-//   {
-//     files: ["**/*.js"],
-//     languageOptions: { sourceType: "commonjs" },
-//   }
-// ]);
-
 
 // Import necessary modules from ESLint and other packages.
 import js from "@eslint/js";
@@ -79,6 +27,15 @@ export default defineConfig([
       globals: {
         // Use Node.js global variables.
         ...globals.node,
+        // Add Jest globals (this prevents 'no-undef' errors for Jest functions)
+        expect: "readonly",
+        it: "readonly",
+        jest: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+        describe: "readonly",
       },
     },
 
