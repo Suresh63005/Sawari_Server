@@ -194,40 +194,95 @@ const s3 = new S3Client({
 });
 
 // AWS S3 Presigned URL for Image Uploads
-app.post("/upload-image", async (req, res) => {
-    const timeStamp = Math.floor(Date.now() / 1000);
-    const folder = req.body.folder || "uploads";
-    const fileName = req.body.fileName;
-    const fileType = req.body.fileType;
+// app.post("/upload-token", async (req, res) => {
+//     const timeStamp = Math.floor(Date.now() / 1000);
+//     const folder = req.body.folder || "uploads";
+//     const fileName = req.body.fileName;
+//     const fileType = req.body.fileType;
 
-    console.log(timeStamp, folder, fileName, fileType, "before uploading.........");
-    // recived filetype and filename 
-    if (!fileType || !fileName) {
-        return res.status(400).json({ message: "fileName and fileType are required" });
-    }
+//     console.log(timeStamp, folder, fileName, fileType, "before uploading.........");
+//     // recived filetype and filename 
+//     if (!fileType || !fileName) {
+//         return res.status(400).json({ message: "fileName and fileType are required" });
+//     }
 
-    // define key path for s3 bucket
-    const key = `${folder}/${fileName}`;
-    const command = new PutObjectCommand({
+//     // define key path for s3 bucket
+//     const key = `${folder}/${fileName}`;
+//     const command = new PutObjectCommand({
+//         Bucket: process.env.S3_BUCKET_NAME,
+//         Key: key,
+//         ContentType: fileType
+//     });
+
+//     try {
+//         // Generate the presigned URL with a 5-minute expiration time
+//         const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
+//         const fileUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+//         // Return the presigned URL and additional data to the client
+//         return res.json({
+//             uploadUrl,
+//             key,
+//             fileUrl
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: "Error generating upload URL" });
+//     }
+// });
+
+app.post("/upload-token", async (req, res) => {
+  const folder = req.body.folder || "uploads";
+
+  // Expect `files` as JSON string in form-data 
+  let files;
+  try {
+    files = req.body.files;
+  } catch (err) {
+    console.error("Invalid JSON in files field:", err.message);
+    return res.status(400).json({ message: "Invalid JSON in files field" });
+  }
+
+  if (!files) {
+    return res.status(400).json({ message: "files field is required" });
+  }
+
+  // Convert single object to array
+  if (!Array.isArray(files)) {
+    files = [files];
+  }
+
+  try {
+    const results = [];
+
+    for (const file of files) {
+      const { fileName, fileType } = file;
+
+      if (!fileName || !fileType) {
+        return res.status(400).json({ message: "Each file must have fileName and fileType" });
+      }
+
+      const key = `${folder}/${fileName}`;
+      const command = new PutObjectCommand({
         Bucket: process.env.S3_BUCKET_NAME,
         Key: key,
-        ContentType: fileType
-    });
+        ContentType: fileType,
+      });
 
-    try {
-        // Generate the presigned URL with a 5-minute expiration time
-        const url = await getSignedUrl(s3, command, { expiresIn: 300 });
-        // Return the presigned URL and additional data to the client
-        return res.json({
-            uploadUrl: url,
-            bucket: process.env.S3_BUCKET_NAME,
-            fileType: key
-        });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Error generating upload URL" });
+      const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
+      const fileUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+      results.push({ uploadUrl, key, fileUrl });
     }
+
+    return res.json({ files: results });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error generating upload URLs" });
+  }
 });
+
+
 
 // for delete
 app.delete("/delete-image", async (req, res) => {
