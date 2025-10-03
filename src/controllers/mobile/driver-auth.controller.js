@@ -3,6 +3,7 @@ const driverService = require("../../services/driver.service");
 const driverCarService = require("../../services/driverCar.service");
 // const checkActiveRide = require('../../services/ride.service');
 const walletService = require("../../services/wallet.service");
+const moment = require("moment");
 
 const verifyMobile = async (req, res) => {
   try {
@@ -502,6 +503,7 @@ const updateProfileAndCarDetails = async (req, res) => {
     const updatedDriverData = { ...req.body };
     console.log("Request Body (updatedDriverData):", updatedDriverData);
 
+    // Fetch driver from DB to check for existing fields
     const driver = await driverService.getDriverById(driverId);
     console.log("Fetched Driver Data from DB:", driver);
     if (!driver) {
@@ -517,6 +519,7 @@ const updateProfileAndCarDetails = async (req, res) => {
     ];
     let hasVerificationFiles = false;
 
+    // Loop through each field and handle S3 deletion if necessary
     for (const field of profileFields) {
       if (req.body[field]) {
         console.log(`Processing ${field} URL:`, req.body[field]);
@@ -527,6 +530,7 @@ const updateProfileAndCarDetails = async (req, res) => {
         }
         updatedDriverData[field] = req.body[field];
 
+        // Handle the verification status for docs
         if (["emirates_doc_front", "emirates_doc_back"].includes(field)) {
           updatedDriverData.emirates_verification_status = "pending";
           hasVerificationFiles = true;
@@ -541,18 +545,25 @@ const updateProfileAndCarDetails = async (req, res) => {
     }
     console.log("All profile fields processed:", updatedDriverData);
 
-    if (updatedDriverData.languages) {
+    // Handle the languages field
+    if (updatedDriverData.languages && typeof updatedDriverData.languages === "string") {
       try {
-        const parsedLanguages = JSON.parse(updatedDriverData.languages);
-        updatedDriverData.languages = Array.isArray(parsedLanguages) ? parsedLanguages : [];
-        console.log("Parsed languages:", updatedDriverData.languages);
-      } catch (err) {
-        console.warn("Invalid JSON in languages field. Setting to empty array.");
-        updatedDriverData.languages = [];
-        console.log(err);
+        updatedDriverData.languages = JSON.parse(updatedDriverData.languages); // Convert to array if passed as string
+      } catch (error) {
+        console.error("Invalid JSON in languages field", error);
+        updatedDriverData.languages = []; // default to an empty array if parsing fails
       }
+    } else if (!updatedDriverData.languages) {
+      updatedDriverData.languages = []; // default to empty array if no languages provided
     }
 
+    // Ensure the dob is properly formatted, it should be a valid date
+    if (updatedDriverData.dob) {
+      updatedDriverData.dob = moment(updatedDriverData.dob,"'DD-MM-YYYY").toDate();
+    }
+
+
+    // Set approval and status based on file verification
     if (hasVerificationFiles) {
       updatedDriverData.is_approved = false;
       updatedDriverData.status = "inactive";
@@ -563,6 +574,7 @@ const updateProfileAndCarDetails = async (req, res) => {
       console.log("Preserving existing is_approved and status values in Driver");
     }
 
+    // Update driver profile data if any changes
     const hasDriverData = Object.keys(updatedDriverData).length > 0;
     if (hasDriverData) {
       await driverService.updateDriverProfile(driverId, updatedDriverData);
@@ -573,11 +585,12 @@ const updateProfileAndCarDetails = async (req, res) => {
 
     const updatedDriver = await driverService.getDriverById(driverId);
 
+    // Handle car data
     const carData = {
       car_id: req.body.car_id,
       license_plate: req.body.license_plate,
       color: req.body.color,
-      car_photos: req.body.car_photos ? JSON.parse(req.body.car_photos) : [], // Expect array of URLs
+      car_photos: Array.isArray(req.body.car_photos) ? req.body.car_photos : [],
     };
     console.log("Initial car data:", carData);
 
@@ -664,32 +677,16 @@ const updateProfileAndCarDetails = async (req, res) => {
     const vehicle = await driverCarService.upsertDriverCar(driverId, carData);
     console.log("DriverCar upsert result:", vehicle);
     return res.status(200).json({
-      message: "Driver and vehicle profile submitted successfully.",
+      message: "Profile and Car details updated successfully",
       driver: updatedDriver,
       vehicle,
     });
   } catch (error) {
-    console.error("🚨 Submit driver & car profile error:", error);
-    if (error.name === "SequelizeUniqueConstraintError") {
-      if (error.fields?.email) {
-        return res.status(400).json({ error: "Email is already in use." });
-      }
-      if (error.fields?.phone) {
-        return res.status(400).json({ error: "Phone number is already in use." });
-      }
-      if (error.fields?.emirates_id) {
-        return res.status(400).json({ error: "Emirates ID is already in use." });
-      }
-      if (error.fields?.license_plate) {
-        return res.status(400).json({ error: "License plate is already in use." });
-      }
-      if (error.fields?.one_signal_id) {
-        return res.status(400).json({ error: "OneSignal ID is already in use." });
-      }
-    }
-    return res.status(500).json({ error: `Failed to update profile or car details: ${error.message}` });
+    console.error("Error during profile and car update:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 module.exports = {
   verifyMobile,
