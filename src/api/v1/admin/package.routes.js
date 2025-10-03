@@ -1,11 +1,12 @@
 const router = require("express").Router();
 const packageController = require("../../../controllers/admin/package.controller");
+const { endPoints } = require("../../api");
 
-router.post("/upsert", packageController.upsertPackage);
-router.get("/", packageController.getAllPackages);
-router.get("/active", packageController.getActivePackagesController);
-router.get("/:id", packageController.getPackageById);
-router.delete("/:id", packageController.deletePackageById);
-router.patch("/:id/status", packageController.togglePackageStatus);
+router.post(endPoints.package.upsertPackage, packageController.upsertPackage);
+router.get(endPoints.package.getAllPackages, packageController.getAllPackages);
+router.get(endPoints.package.getActivePackages, packageController.getActivePackagesController);
+router.get(endPoints.package.getPackageById, packageController.getPackageById);
+router.delete(endPoints.package.deletePackageById, packageController.deletePackageById);
+router.patch(endPoints.package.togglePackageStatus, packageController.togglePackageStatus);
 
 module.exports = router;

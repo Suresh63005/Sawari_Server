@@ -19,6 +19,11 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const app = express();
 const port = process.env.PORT || 4445; 
 
+const { API_VERSION } = require("../src/api/api"); // Assuming API_VERSION is defined here
+
+console.log("🚀 Starting app.js at", new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+console.log("🌍 API Version:", API_VERSION);
+
 // Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -33,6 +38,7 @@ dotEnv.config();
 app.set("trust proxy", 1);
 app.use(morgan("dev"));
 app.use(express.json()); // Parse JSON bodies
+console.log("✅ JSON middleware registered");
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(cookieParser());
 app.use(helmet());
@@ -105,7 +111,14 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 //   .catch((err) => {
 //     console.error("❌ Failed to sync Ticket table:", err);
 //   });
-
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.url}`);
+  next();
+});
+app.use((err, req, res, next) => {
+  console.error("❌ Global Error:", err.message);
+  res.status(500).json({ error: "Internal Server Error" });
+});
 const multer = require("multer");
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
@@ -181,7 +194,7 @@ const s3 = new S3Client({
 });
 
 // AWS S3 Presigned URL for Image Uploads
-app.post("/upload-token", async (req, res) => {
+app.post("/upload-image", async (req, res) => {
     const timeStamp = Math.floor(Date.now() / 1000);
     const folder = req.body.folder || "uploads";
     const fileName = req.body.fileName;

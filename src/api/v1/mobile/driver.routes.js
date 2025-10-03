@@ -2,11 +2,12 @@ const express = require("express");
 const router = express.Router();
 const driverAuthController = require("../../../controllers/mobile/driver-auth.controller");
 const authMiddleware = require("../../../middlewares/mobile/authMiddleware");
-const {upload} = require("../../../utils/multer");
+const { upload } = require("../../../utils/multer");
+const { endPoints } = require("../../api");
 
-router.post("/verify",driverAuthController.verifyMobile);
-router.post("/status",driverAuthController.blockDriverByIdentifier);
-router.post("/update-profile",
+router.post(endPoints["mob-driver"].verifyMobile, driverAuthController.verifyMobile);
+router.post(endPoints["mob-driver"].blockDriverByIdentifier, driverAuthController.blockDriverByIdentifier);
+router.post(endPoints["mob-driver"].updateProfileAndCarDetails,
     authMiddleware.isAuthenticated,
     upload.fields([
         { name: "profile_pic", maxCount: 1 },
@@ -21,12 +22,12 @@ router.post("/update-profile",
     ]),
     driverAuthController.updateProfileAndCarDetails
 );
-router.get("/account-details",authMiddleware.isAuthenticated,driverAuthController.driverAccountDetails);
-router.put("/delete-account",authMiddleware.isAuthenticated,driverAuthController.deleteAccount);
-router.get("/check-status",authMiddleware.isAuthenticated,driverAuthController.checkStatus);
-router.get("/get-notify-statuses",authMiddleware.isAuthenticated,driverAuthController.getStatuses);
-router.put("/update-notify-statuses",authMiddleware.isAuthenticated,driverAuthController.updateStatuses);
-router.put("/update-onesignal-id",authMiddleware.isAuthenticated,driverAuthController.updateOneSignalId);
-router.put("/delete-onesignal-id",authMiddleware.isAuthenticated,driverAuthController.deleteOneSignalId);
+router.get(endPoints["mob-driver"].verifdriverAccountDetailsyRc, authMiddleware.isAuthenticated, driverAuthController.driverAccountDetails);
+router.put(endPoints["mob-driver"].deleteAccount, authMiddleware.isAuthenticated, driverAuthController.deleteAccount);
+router.get(endPoints["mob-driver"].checkStatus, authMiddleware.isAuthenticated, driverAuthController.checkStatus);
+router.get(endPoints["mob-driver"].getStatuses, authMiddleware.isAuthenticated, driverAuthController.getStatuses);
+router.put(endPoints["mob-driver"].updateStatuses, authMiddleware.isAuthenticated, driverAuthController.updateStatuses);
+router.put(endPoints["mob-driver"].updateOneSignalId, authMiddleware.isAuthenticated, driverAuthController.updateOneSignalId);
+router.put(endPoints["mob-driver"].deleteOneSignalId, authMiddleware.isAuthenticated, driverAuthController.deleteOneSignalId);
 
 module.exports = router;
