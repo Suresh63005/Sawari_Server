@@ -1,30 +1,30 @@
-const { Sequelize } = require('sequelize');
-const fs = require('fs');
-const path = require('path');
+const { Sequelize } = require("sequelize");
+const fs = require("fs");
+const path = require("path");
 
 let sequelize;
 
 module.exports.connect = async () => {
   sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: ':memory:',
+    dialect: "sqlite",
+    storage: ":memory:",
     logging: false,
   });
 
   const models = {};
 
   // Load all model files
-  fs.readdirSync(path.join(__dirname, '../src/models'))
-    .filter((file) => file !== 'index.js' && file.endsWith('.js'))
+  fs.readdirSync(path.join(__dirname, "../src/models"))
+    .filter((file) => file !== "index.js" && file.endsWith(".js"))
     .forEach((file) => {
-      const model = require(path.join(__dirname, '../src/models', file));
+      const model = require(path.join(__dirname, "../src/models", file));
       if (model && model.name) {
         models[model.name] = model;
       }
     });
 
   // Import associations.js to apply associations (no function call needed)
-  require('../src/models/associations');
+  require("../src/models/associations");
 
   await sequelize.sync({ force: true });
 };

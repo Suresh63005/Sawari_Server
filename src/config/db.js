@@ -50,34 +50,34 @@
 
 
 // src/config/db.js
-require('dotenv').config();
-const { Sequelize } = require('sequelize');
-const config = require('../config/config');
+require("dotenv").config();
+const { Sequelize } = require("sequelize");
+const config = require("../config/config");
 
 // Pick environment (default = development)
-const env = process.env.NODE_ENV || 'development';
-const dbConfig = config[env] || { dialect: 'sqlite', storage: ':memory:', logging: false };
+const env = process.env.NODE_ENV || "development";
+const dbConfig = config[env] || { dialect: "sqlite", storage: ":memory:", logging: false };
 
 // Initialize Sequelize options
 const sequelizeOptions = {
   dialect: dbConfig.dialect,
-  logging: env === 'development' ? console.log : false,
+  logging: env === "development" ? console.log : false,
 };
 
 // Configure dialect-specific options
-if (dbConfig.dialect === 'sqlite') {
-  sequelizeOptions.storage = dbConfig.storage || ':memory:';
+if (dbConfig.dialect === "sqlite") {
+  sequelizeOptions.storage = dbConfig.storage || ":memory:";
 } else {
   sequelizeOptions.host = dbConfig.host;
   sequelizeOptions.port = dbConfig.port;
-  sequelizeOptions.timezone = process.env.TIMEZONE || '+05:30';
+  sequelizeOptions.timezone = process.env.TIMEZONE || "+05:30";
 }
 
 // Initialize Sequelize
 const sequelize = new Sequelize(
-  dbConfig.dialect === 'sqlite' ? 'sqlite::memory:' : dbConfig.database,
-  dbConfig.dialect === 'sqlite' ? null : dbConfig.username,
-  dbConfig.dialect === 'sqlite' ? null : dbConfig.password,
+  dbConfig.dialect === "sqlite" ? "sqlite::memory:" : dbConfig.database,
+  dbConfig.dialect === "sqlite" ? null : dbConfig.username,
+  dbConfig.dialect === "sqlite" ? null : dbConfig.password,
   sequelizeOptions
 );
 
@@ -85,10 +85,10 @@ const sequelize = new Sequelize(
 sequelize
   .authenticate()
   .then(() => {
-    console.log(`✅ ${dbConfig.dialect === 'sqlite' ? 'SQLite' : 'MySQL'} connection established.`);
+    console.log(`✅ ${dbConfig.dialect === "sqlite" ? "SQLite" : "MySQL"} connection established.`);
   })
   .catch((err) => {
-    console.error(`❌ ${dbConfig.dialect === 'sqlite' ? 'SQLite' : 'MySQL'} connection error:`, err);
+    console.error(`❌ ${dbConfig.dialect === "sqlite" ? "SQLite" : "MySQL"} connection error:`, err);
     process.exit(1);
   });
 
