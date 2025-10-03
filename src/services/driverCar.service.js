@@ -2,7 +2,7 @@ const { uploadToS3 } = require("../config/fileUpload.aws");
 const DriverCar = require("../models/driver-cars.model");
 const Car = require("../models/cars.model");
 const { Op } = require("sequelize");
-
+const Admin = require("../models/admin.model");
 const carDTO = (data) => {
   return {
     car_id: data.car_id,
@@ -33,6 +33,14 @@ const carResponseDTO = async (data) => {
     console.error("Error parsing car_photos:", e);
   }
 
+  let verifiedByInfo = null;
+  if (data.verified_by) {
+    const admin = await Admin.findByPk(data.verified_by);
+    if (admin) {
+      verifiedByInfo = { id: admin.id, name: admin.first_name + " " + admin.last_name, role: admin.role };
+    }
+  }
+
   return {
     id: data.id,
     driver_id: data.driver_id,
@@ -48,13 +56,55 @@ const carResponseDTO = async (data) => {
     rc_doc_status: data.rc_doc_status,
     insurance_doc_status: data.insurance_doc_status,
     is_approved: data.is_approved,
-    verified_by: data.verified_by,
+    verified_by: verifiedByInfo, // <-- now includes name & role
     status: data.status,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };
 };
 
+
+const getVehiclesByDriver = async (driverId) => {
+  if (!driverId) {
+    throw new Error("Driver ID is required");
+  }
+  try {
+    const vehicles = await DriverCar.findAll({
+      where: { driver_id: driverId },
+      include: [
+        {
+          model: Car,
+          as: "Car", // Match the association alias
+          attributes: ["brand", "model"],
+          required: false, // Handle missing Car records
+        },
+      ],
+    });
+
+    return vehicles.map((v) => ({
+      id: v.id,
+      driver_id: v.driver_id,
+      car_id: v.car_id,
+      car_brand: v.Car?.brand || null,
+      car_model: v.Car?.model || null,
+      license_plate: v.license_plate,
+      car_photos: Array.isArray(v.car_photos) ? v.car_photos : [],
+      rc_doc: v.rc_doc,
+      rc_doc_back: v.rc_doc_back,
+      insurance_doc: v.insurance_doc,
+      rc_doc_status: v.rc_doc_status || "pending",
+      insurance_doc_status: v.insurance_doc_status || "pending",
+      is_approved: v.is_approved ?? false,
+      status: v.status || "active",
+      verified_by: v.verified_by || null,
+      createdAt: v.createdAt,
+      updatedAt: v.updatedAt,
+    }));
+  } catch (error) {
+    console.error("Error in getVehiclesByDriver for driverId:", driverId, error);
+    throw new Error("Failed to fetch vehicles for driver: " + error.message);
+  }
+};
 
 const upsertDriverCar = async (driverId, data) => {
   const sanitizedData = carDTO(data);
@@ -265,5 +315,6 @@ module.exports = {
   verifyInsurance,
   rejectInsurance,
   updateDriverCar,
-  updateDriverDocuments
+  updateDriverDocuments,
+  getVehiclesByDriver
 };

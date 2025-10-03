@@ -107,6 +107,17 @@ const getRideById = async (rideId) => {
   }
 };
 
+const formatDateTimeExcel = (dateStr) => {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = String(date.getFullYear()).slice(-2);
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
 const exportAllRides = async (search = "", status = "") => {
   const where = {};
 
@@ -180,8 +191,8 @@ const exportAllRides = async (search = "", status = "") => {
         phone: ride.phone || "-",
         pickup_address: ride.pickup_address || "-",
         drop_address: ride.drop_address || "-",
-        ride_date: ride.ride_date ? new Date(ride.ride_date).toLocaleString() : "-",
-        scheduled_time: ride.scheduled_time ? new Date(ride.scheduled_time).toLocaleString() : "-",
+        rideDate: formatDateTimeExcel(ride.ride_date)||"-",
+        scheduled_time: formatDateTimeExcel(ride.scheduled_time)||"-",
         driver_name: ride.AssignedDriver ? `${ride.AssignedDriver.first_name} ${ride.AssignedDriver.last_name}` : "-",
         vehicle_model: ride.Car ? ride.Car.model : "-",
         package_name: ride.Package ? ride.Package.name : "-",
@@ -232,8 +243,8 @@ const exportRideById = async (rideId) => {
       phone: ride.phone || "-",
       pickup_address: ride.pickup_address || "-",
       drop_address: ride.drop_address || "-",
-      ride_date: ride.ride_date ? new Date(ride.ride_date).toLocaleString() : "-",
-      scheduled_time: ride.scheduled_time ? new Date(ride.scheduled_time).toLocaleString() : "-",
+      ride_date: formatDateTimeExcel(ride.ride_date)||"-",
+      scheduled_time: formatDateTimeExcel(ride.scheduled_time)||"-",
       driver_name: ride.AssignedDriver ? `${ride.AssignedDriver.first_name} ${ride.AssignedDriver.last_name}` : "-",
       vehicle_model: ride.Car ? ride.Car.model : "-",
       package_name: ride.Package ? ride.Package.name : "-",

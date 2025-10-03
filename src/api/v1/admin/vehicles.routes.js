@@ -3,7 +3,8 @@ const router = express.Router();
 const vehicleController = require("../../../controllers/admin/vehicle.controller");
 const {authMiddleware} = require("../../../middlewares/admin/authMiddleware");
 
-router.get("/", authMiddleware,vehicleController.getAllVehicles);
+router.get("/", authMiddleware, vehicleController.getAllVehicles);
+router.get("/:driverId", authMiddleware, vehicleController.getVehiclesByDriver);
 router.post("/:id/approve", authMiddleware, vehicleController.approveVehicle);
 router.post("/:id/reject", authMiddleware, vehicleController.rejectVehicle);
 router.post("/:id/verify-rc", authMiddleware, vehicleController.verifyRc);
