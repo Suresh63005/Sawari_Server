@@ -220,7 +220,7 @@ app.post("/upload-token", async (req, res) => {
   // Expect `files` as JSON string in form-data 
   let files;
   try {
-    files = JSON.parse(req.body.files);
+    files = req.body.files;
   } catch (err) {
     console.error("Invalid JSON in files field:", err.message);
     return res.status(400).json({ message: "Invalid JSON in files field" });
