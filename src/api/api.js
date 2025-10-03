@@ -25,9 +25,9 @@ const endPoints = {
         getCarsBySubPackageId: "/by-sub-package/:sub_package_id",
     },
     dashboard: {
-        getDashboardStats: "/dashboard/stats",
-        getRecentActivity: "/dashboard/recent-activity",
-        getPendingApprovals: "/dashboard/pending-approvals",
+        getDashboardStats: "/stats",
+        getRecentActivity: "/recent-activity",
+        getPendingApprovals: "/pending-approvals",
     },
     driver: {
         getAllDrivers: "/",
@@ -85,7 +85,7 @@ const endPoints = {
         getRideById: "/:id",
         createRide: "/",
         updateRide: "/:id",
-        getAvailableCarsAndPrices: "/available-cars/:package-id/:sub_package-id",
+        getAvailableCarsAndPrices: "/available-cars/:package_id/:sub_package_id",
     },
     ridesreports: {
         getAllRides: "/all",
