@@ -1,5 +1,6 @@
 const sequelize = require("../../config/db");
 const { razorpayInstance } = require("../../config/razorpay");
+const { sendPushNotification } = require("../../helper/sendPushNotification");
 const { getDriverById, updateDriverBalance } = require("../../services/driver.service");
 const { wallet, createWalletReport,getWalletBalance } = require("../../services/wallet.service");
 const crypto = require("crypto");
@@ -77,29 +78,63 @@ const verifyPayment = async (req, res) => {
   let t;
   try {
     const generatedSignature = crypto
-        .createHmac("sha256", process.env.KEY_SECRET)
-        .update(order_id + "|" + payment_id)
-        .digest("hex");
+      .createHmac("sha256", process.env.KEY_SECRET)
+      .update(order_id + "|" + payment_id)
+      .digest("hex");
 
     if (generatedSignature !== signature) {
-      return res.status(401).json({ success: false, message: "Invalid signature" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid signature" });
     }
     t = await sequelize.transaction();
-    const driver = await getDriverById(driver_id);
-    const updatedBalance = parseFloat(driver.wallet_balance || 0) + parseFloat(amount);
+    try {
+      const driver = await getDriverById(driver_id);
+      const updatedBalance =
+        parseFloat(driver.wallet_balance || 0) + parseFloat(amount);
 
-    await updateDriverBalance(driver_id, updatedBalance); // update driver balance afetr adding payment
+      await updateDriverBalance(driver_id, updatedBalance); // update driver balance afetr adding payment
 
-    await createWalletReport(driver_id, amount, updatedBalance, order_id,t); //create wallet report 
-    await t.commit();
-    return res.status(200).json({
-      success: true,
-      message: "Payment verified and wallet updated"
-    });
+      await createWalletReport(driver_id, amount, updatedBalance, order_id, t); //create wallet report
+      await t.commit();
+
+      // Send push notification
+      if (driver.one_signal_id) {
+        const fullName =
+          `${driver.first_name || ""} ${driver.last_name || ""}`.trim() ||
+          "Driver";
+        await sendPushNotification(
+          driver.one_signal_id,
+          { en: "Wallet Updated" },
+          {
+            en: `Hi ${fullName}, ${amount} has been added to your wallet. New balance is ${updatedBalance.toFixed(
+              2
+            )}.`,
+          }
+        );
+        console.log(
+          `📢 Push notification sent to driver (${fullName}) for wallet update`
+        );
+      } else {
+        console.warn(
+          `⚠️ Driver with ID ${driver_id} has no OneSignal ID, skipping push notification`
+        );
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Payment verified and wallet updated",
+      });
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
   } catch (error) {
     await t.rollback();
     console.error("Payment verification error:", error);
-    return res.status(500).json({ message: "Internal server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 

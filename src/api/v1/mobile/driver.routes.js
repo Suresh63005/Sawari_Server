@@ -3,10 +3,9 @@ const router = express.Router();
 const driverAuthController = require("../../../controllers/mobile/driver-auth.controller");
 const authMiddleware = require("../../../middlewares/mobile/authMiddleware");
 const { endPoints } = require("../../api");
-const { validateRequest } = require("../../../middlewares/validateRequest");
-const { verifyMobileSchema } = require("../../../validators/mobile/driver");
 
-router.post(endPoints["mob-driver"].verifyMobile, validateRequest(verifyMobileSchema), driverAuthController.verifyMobile);
+
+router.post(endPoints["mob-driver"].verifyMobile, driverAuthController.verifyMobile);
 router.post(endPoints["mob-driver"].blockDriverByIdentifier, driverAuthController.blockDriverByIdentifier);
 router.post(endPoints["mob-driver"].updateProfileAndCarDetails, authMiddleware.isAuthenticated, driverAuthController.updateProfileAndCarDetails);
 router.get(endPoints["mob-driver"].verifdriverAccountDetailsyRc, authMiddleware.isAuthenticated, driverAuthController.driverAccountDetails);
