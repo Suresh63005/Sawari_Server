@@ -33,7 +33,7 @@ const exportAllRidesController = async (req, res) => {
     const buffer = await exportAllRides(search, status);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=All_Ride_Reports_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`
+      `attachment; filename=All_Ride_Reports.xlsx`
     );
     res.setHeader(
       "Content-Type",
