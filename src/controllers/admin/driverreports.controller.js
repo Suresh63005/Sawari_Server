@@ -33,7 +33,7 @@ const exportAllDriversController = async (req, res) => {
     const buffer = await exportAllDrivers(search, status);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=all_driver_reports_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`
+      `attachment; filename=All_Driver_Reports_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`
     );
     res.setHeader(
       "Content-Type",
@@ -52,7 +52,7 @@ const exportDriverByIdController = async (req, res) => {
     const buffer = await exportDriverById(driverId);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=driver_report_${driverId}.xlsx`
+      `attachment; filename=Driver_Report_${driverId}.xlsx`
     );
     res.setHeader(
       "Content-Type",
