@@ -118,7 +118,7 @@ const exportAllDrivers = async (search = "", status = "") => {
 
     drivers.forEach((driver) => {
       worksheet.addRow({
-        id: driver.id,
+        id: driver.id ? driver.id.split("-")[0] : "-",
         first_name: driver.first_name || "-",
         last_name: driver.last_name || "-",
         email: driver.email || "-",
@@ -156,7 +156,7 @@ const exportDriverById = async (driverId) => {
     ];
 
     worksheet.addRow({
-      id: driver.id,
+      id: driver.id ? driver.id.split("-")[0] : "-",
       first_name: driver.first_name || "-",
       last_name: driver.last_name || "-",
       email: driver.email || "-",

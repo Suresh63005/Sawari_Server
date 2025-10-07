@@ -33,7 +33,7 @@ const exportAllDriversController = async (req, res) => {
     const buffer = await exportAllDrivers(search, status);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=All_Driver_Reports_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`
+      "attachment; filename=All_Driver_Reports.xlsx"
     );
     res.setHeader(
       "Content-Type",
@@ -49,21 +49,31 @@ const exportAllDriversController = async (req, res) => {
 const exportDriverByIdController = async (req, res) => {
   try {
     const { driverId } = req.params;
+    const driver = await getDriverById(driverId); // Fetch driver first to get name
+
+    if (!driver) {
+      return res.status(404).json({ success: false, message: "Driver not found" });
+    }
+
     const buffer = await exportDriverById(driverId);
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=Driver_Report_${driverId}.xlsx`
-    );
+
+    // Sanitize driver name for filename (remove spaces/special chars)
+    const firstName = driver.first_name?.replace(/\s+/g, "_") || "Unknown";
+    const lastName = driver.last_name?.replace(/\s+/g, "_") || "";
+    const fileName = `Driver_Report_${firstName}_${lastName}.xlsx`;
+
+    res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
     res.send(buffer);
   } catch (error) {
-    res.status(404).json({ success: false, error: error.message });
     console.log(error, "error in exportDriverByIdController");
+    res.status(500).json({ success: false, error: error.message });
   }
 };
+
 
 module.exports = {
   getAllDriversController,
