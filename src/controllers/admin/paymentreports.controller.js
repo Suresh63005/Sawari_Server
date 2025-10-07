@@ -27,6 +27,7 @@ const getPaymentByIdController = async (req, res) => {
   }
 };
 
+
 const exportAllPaymentsController = async (req, res) => {
   try {
     const { search = "", status = "" } = req.query;
