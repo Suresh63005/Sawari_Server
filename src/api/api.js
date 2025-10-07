@@ -152,7 +152,7 @@ const endPoints = {
         earningsHistory: "/earnings-history",
     },
     "mob-notifications": {
-        getNotifications: "/notifications/",
+        getNotifications: "/notifications",
     },
     "mob-package": {
         getAllPackages: "/get-all-packages",

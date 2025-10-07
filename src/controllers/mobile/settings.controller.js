@@ -1,10 +1,10 @@
 const { getAllSettingService } = require("../../services/settings.service");
 
 const getAllSettings = async (req, res) => {
-    const driver_id = req.driver?.id;
-    if (!driver_id) {
-        return res.status(401).json({ message: "Unauthorized" });
-    }
+    // const driver_id = req.driver?.id;
+    // if (!driver_id) {
+    //     return res.status(401).json({ message: "Unauthorized" });
+    // }
     try {
         const settings = await getAllSettingService();
         if (!settings) {
