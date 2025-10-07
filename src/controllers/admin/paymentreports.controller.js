@@ -33,7 +33,7 @@ const exportAllPaymentsController = async (req, res) => {
     const buffer = await exportAllPayments(search, status);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=all_payment_reports_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`
+      `attachment; filename=All_Payment_Reports_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`
     );
     res.setHeader(
       "Content-Type",
@@ -52,7 +52,7 @@ const exportPaymentByIdController = async (req, res) => {
     const buffer = await exportPaymentById(paymentId);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=payment_report_${paymentId}.xlsx`
+      `attachment; filename=Payment_Report_${paymentId}.xlsx`
     );
     res.setHeader(
       "Content-Type",
