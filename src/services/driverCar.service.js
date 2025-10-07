@@ -187,9 +187,9 @@ const getAllVehicles = async ({ page = 1, limit = 5, search = "", status = "all"
   // Add search filter for car_brand, car_model, and license_plate
   if (search) {
     where[Op.or] = [
-      { "$Car.brand$": { [Op.iLike]: `%${search}%` } },
-      { "$Car.model$": { [Op.iLike]: `%${search}%` } },
-      { license_plate: { [Op.iLike]: `%${search}%` } }
+      { "$Car.brand$": { [Op.like]: `%${search}%` } },
+      { "$Car.model$": { [Op.like]: `%${search}%` } },
+      { license_plate: { [Op.like]: `%${search}%` } }
     ];
   }
 

@@ -110,13 +110,18 @@ const getRideById = async (rideId) => {
 const formatDateTimeExcel = (dateStr) => {
   if (!dateStr) return "-";
   const date = new Date(dateStr);
+
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = String(date.getFullYear()).slice(-2);
+
+  // ✅ Ensure 24-hour time format
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
+
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
+
 
 const exportAllRides = async (search = "", status = "") => {
   const where = {};
@@ -172,7 +177,7 @@ const exportAllRides = async (search = "", status = "") => {
       { header: "Phone", key: "phone", width: 15 },
       { header: "Pickup Address", key: "pickup_address", width: 30 },
       { header: "Drop Address", key: "drop_address", width: 30 },
-      { header: "Ride Date", key: "ride_date", width: 20 },
+      // { header: "Ride Date", key: "ride_date", width: 20 },
       { header: "Scheduled Time", key: "scheduled_time", width: 20 },
       { header: "Driver Name", key: "driver_name", width: 20 },
       { header: "Vehicle Model", key: "vehicle_model", width: 20 },
@@ -185,13 +190,13 @@ const exportAllRides = async (search = "", status = "") => {
 
     rides.forEach((ride) => {
       worksheet.addRow({
-        id: ride.id,
+        id: ride.id ? ride.id.split("-")[0] : "-",
         customer_name: ride.customer_name || "-",
         email: ride.email || "-",
         phone: ride.phone || "-",
         pickup_address: ride.pickup_address || "-",
         drop_address: ride.drop_address || "-",
-        rideDate: formatDateTimeExcel(ride.ride_date)||"-",
+        // rideDate: formatDateTimeExcel(ride.ride_date)||"-",
         scheduled_time: formatDateTimeExcel(ride.scheduled_time)||"-",
         driver_name: ride.AssignedDriver ? `${ride.AssignedDriver.first_name} ${ride.AssignedDriver.last_name}` : "-",
         vehicle_model: ride.Car ? ride.Car.model : "-",
@@ -225,7 +230,7 @@ const exportRideById = async (rideId) => {
       { header: "Phone", key: "phone", width: 15 },
       { header: "Pickup Address", key: "pickup_address", width: 30 },
       { header: "Drop Address", key: "drop_address", width: 30 },
-      { header: "Ride Date", key: "ride_date", width: 20 },
+      // { header: "Ride Date", key: "ride_date", width: 20 },
       { header: "Scheduled Time", key: "scheduled_time", width: 20 },
       { header: "Driver Name", key: "driver_name", width: 20 },
       { header: "Vehicle Model", key: "vehicle_model", width: 20 },
@@ -237,13 +242,13 @@ const exportRideById = async (rideId) => {
     ];
 
     worksheet.addRow({
-      id: ride.id,
+      id: ride.id ? ride.id.split("-")[0] : "-",
       customer_name: ride.customer_name || "-",
       email: ride.email || "-",
       phone: ride.phone || "-",
       pickup_address: ride.pickup_address || "-",
       drop_address: ride.drop_address || "-",
-      ride_date: formatDateTimeExcel(ride.ride_date)||"-",
+      // ride_date: formatDateTimeExcel(ride.ride_date)||"-",
       scheduled_time: formatDateTimeExcel(ride.scheduled_time)||"-",
       driver_name: ride.AssignedDriver ? `${ride.AssignedDriver.first_name} ${ride.AssignedDriver.last_name}` : "-",
       vehicle_model: ride.Car ? ride.Car.model : "-",
