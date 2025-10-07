@@ -67,6 +67,7 @@ exports.approveVehicle = async (req, res) => {
 };
 
 
+
 exports.rejectVehicle = async (req, res) => {
   try {
     const { id } = req.params;
