@@ -33,7 +33,7 @@ const exportAllPaymentsController = async (req, res) => {
     const buffer = await exportAllPayments(search, status);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=All_Payment_Reports.xlsx`
+      "attachment; filename=All_Payment_Reports.xlsx"
     );
     res.setHeader(
       "Content-Type",
