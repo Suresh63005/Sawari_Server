@@ -15,7 +15,7 @@ const reddisConnect = require("./config/connectRedis");
 const CacheManager=require("./utils/cache-manager");
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
-const crypto = require("rypto");
+const crypto = require("crypto"); 
 
 
 const app = express();
