@@ -11,6 +11,7 @@ const { sendPushNotification } = require("../helper/sendPushNotification");
 const DriverCar = require("../models/driver-cars.model");
 const { updateDriverBalance } = require("./driver.service");
 const { createWalletReport } = require("./wallet.service");
+const {sendNotificationService}=require("./notifications.service");
 // const DriverCar = require("../models/driver-cars.model");
 
 const acceptRide = async (ride_id, driver_id) => {
@@ -130,8 +131,37 @@ const upsertRide = async (rideData) => {
       throw new Error("Unauthorized: You can only update rides you initiated");
     }
 
-    if (ride.status !== "pending") {
-      throw new Error("Unauthorized: Can only update pending rides before acceptance");
+    if (["on-route", "completed", "cancelled"].includes(ride.status)) {
+      return {
+          success: false,
+          statusCode: 400,
+          message:
+            "Cannot edit ride once it is on-route, completed, or cancelled",
+        };
+    }
+
+    // ⏳ Check time limit (only applicable after ride is accepted)
+    if (ride.status === "accepted") {
+      const settings = await Settings.findOne({
+        attributes: ["ride_edit_time_limit"],
+      });
+
+      // ride_edit_time_limit is now in HOURS
+      const editTimeLimitHours = settings?.ride_edit_time_limit || 1; // default 1 hour
+
+      const acceptTime = new Date(ride.accept_time);
+      const now = new Date();
+
+      // Difference in hours
+      const diffHours = (now - acceptTime) / (1000 * 60 * 60);
+
+      if (diffHours > editTimeLimitHours) {
+       return {
+            success: false,
+            statusCode: 400,
+            message: `Edit time expired. You can edit the ride only within ${editTimeLimitHours} hour(s) after acceptance.`,
+       };
+      }
     }
 
     await ride.update({
@@ -183,6 +213,29 @@ const upsertRide = async (rideData) => {
       status:"pending"
     });
 
+    // Ride Auto Cancel Flow:
+    const settings = await Settings.findOne({
+      attributes:["ride_auto_cancel_time_limit"]
+    });
+    const cancelTimeLimitHours = settings?.ride_auto_cancel_time_limit || 6;
+
+    // ⏳ Schedule auto-cancel check
+    setTimeout(async()=>{
+      try {
+        const rideToCheck = await Ride.findByPk(newRide.id);
+        if(rideToCheck && rideToCheck.status === "pending"){
+          await rideToCheck.update({
+            status:"cancelled",
+            cancellation_reason:`No driver accepted the ride within ${cancelTimeLimitHours} hour(s)`,
+          });
+          console.log(`🚫 Ride ${rideToCheck.id} auto-cancelled after ${cancelTimeLimitHours} hour(s)`);
+        }
+      } catch (error) {
+        console.error("❌ Auto-cancel check failed:", error.message);
+      }
+    },cancelTimeLimitHours * 60 * 60 * 1000);
+
+
     // Find drivers with matching car model
     const matchingDrivers = await Driver.findAll({
       include:[
@@ -205,21 +258,36 @@ const upsertRide = async (rideData) => {
       }
     });
 
-    // Send push notifications to matching drivers
-    for(const driver of matchingDrivers){
-      if(driver.one_signal_id){
-        const carModel = driver.Vehicles[0]?.Car?.model || "N/A";
-        const heading={en:"New Ride Available"};
-        const message={
-          en:`A new ride with car model ${carModel} is available from ${pickup_address} to ${drop_address} on ${scheduled_time}.`
-        };
-        try {
-          await sendPushNotification(driver.one_signal_id, heading,message);
-        } catch (error) {
-          console.error(`Failed to send notification to driver ${driver.id}:`, error.message);
-        };
-      }else{
-        console.warn(`⚠️ Driver with ID ${driver.id} has no OneSignal ID`);
+    for (const driver of matchingDrivers) {
+      const carModel = driver.Vehicles[0]?.Car?.model || "N/A";
+
+      const heading = { en: "New Ride Available" };
+      const message = {
+        en: `A new ride with car model ${carModel} is available from ${pickup_address} to ${drop_address} on ${scheduled_time}.`,
+      };
+
+      try {
+        // ✅ Send push notification if driver has OneSignal ID
+        if (driver.one_signal_id) {
+          await sendPushNotification(driver.one_signal_id, heading, message);
+          console.log(`✅ Push notification sent to driver ${driver.id}`);
+        } else {
+          console.warn(`⚠️ Driver with ID ${driver.id} has no OneSignal ID`);
+        }
+
+        // ✅ Create notification entry in the database
+        await sendNotificationService({
+          user_id: driver.id,
+          title: heading.en,
+          message: message.en,
+          is_read: false,
+          image: null,
+        });
+      } catch (error) {
+        console.error(
+          `❌ Failed to notify driver ${driver.id}:`,
+          error.message
+        );
       }
     }
 
