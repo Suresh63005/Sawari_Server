@@ -490,7 +490,6 @@ const deleteOneSignalId = async (req, res) => {
   }
 };
 
-// src/controllers/driverController.js (suggested modification)
 const updateProfileAndCarDetails = async (req, res) => {
   try {
     console.log("=== Start: updateProfileAndCarDetails ===");
