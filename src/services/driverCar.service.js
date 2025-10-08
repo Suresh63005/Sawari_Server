@@ -1,5 +1,6 @@
 const { uploadToS3 } = require("../config/fileUpload.aws");
 const DriverCar = require("../models/driver-cars.model");
+const Driver = require("../models/driver.model");
 const Car = require("../models/cars.model");
 const { Op } = require("sequelize");
 const Admin = require("../models/admin.model");
@@ -20,26 +21,32 @@ const carDTO = (data) => {
   };
 };
 
+
+const parseCarPhotos = (photos) => {
+  if (!photos) return [];
+  if (Array.isArray(photos)) return photos;
+  try {
+    return JSON.parse(photos);
+  } catch (e) {
+    console.error("Error parsing car_photos:", e);
+    return [];
+  }
+};
+
 const carResponseDTO = async (data) => {
   const carDetails = await Car.findByPk(data.car_id);
 
-  let carPhotos = [];
-  try {
-    carPhotos = Array.isArray(data.car_photos) 
-      ? data.car_photos 
-      : JSON.parse(data.car_photos || "[]");
-  } catch (e) {
-    carPhotos = [];
-    console.error("Error parsing car_photos:", e);
-  }
+  const carPhotos = parseCarPhotos(data.car_photos);
 
   let verifiedByInfo = null;
-  if (data.verified_by) {
-    const admin = await Admin.findByPk(data.verified_by);
-    if (admin) {
-      verifiedByInfo = { id: admin.id, name: admin.first_name + " " + admin.last_name, role: admin.role };
-    }
-  }
+if (data.VerifierAdmin) {
+  verifiedByInfo = {
+    id: data.VerifierAdmin.id,
+    name: `${data.VerifierAdmin.first_name} ${data.VerifierAdmin.last_name}`,
+    role: data.VerifierAdmin.role
+  };
+}
+
 
   return {
     id: data.id,
@@ -65,46 +72,57 @@ const carResponseDTO = async (data) => {
 
 
 const getVehiclesByDriver = async (driverId) => {
-  if (!driverId) {
-    throw new Error("Driver ID is required");
-  }
+  if (!driverId) throw new Error("Driver ID is required");
+
   try {
     const vehicles = await DriverCar.findAll({
       where: { driver_id: driverId },
       include: [
         {
           model: Car,
-          as: "Car", // Match the association alias
-          attributes: ["brand", "model"],
-          required: false, // Handle missing Car records
+          as: "Car",
+          attributes: ["brand", "model"]
         },
-      ],
+        {
+          model: Admin,
+          as: "VerifierAdmin",
+          attributes: ["id", "first_name", "last_name", "role"],
+          required: false
+        }
+      ]
     });
 
-    return vehicles.map((v) => ({
+    return vehicles.map(v => ({
       id: v.id,
       driver_id: v.driver_id,
       car_id: v.car_id,
       car_brand: v.Car?.brand || null,
       car_model: v.Car?.model || null,
       license_plate: v.license_plate,
-      car_photos: Array.isArray(v.car_photos) ? v.car_photos : [],
+      car_photos: parseCarPhotos(v.car_photos),
       rc_doc: v.rc_doc,
       rc_doc_back: v.rc_doc_back,
       insurance_doc: v.insurance_doc,
-      rc_doc_status: v.rc_doc_status || "pending",
-      insurance_doc_status: v.insurance_doc_status || "pending",
+      rc_doc_status: v.rc_doc_status,
+      insurance_doc_status: v.insurance_doc_status,
       is_approved: v.is_approved ?? false,
+      verified_by: v.VerifierAdmin
+        ? {
+            id: v.VerifierAdmin.id,
+            name: `${v.VerifierAdmin.first_name} ${v.VerifierAdmin.last_name}`,
+            role: v.VerifierAdmin.role
+          }
+        : null,
       status: v.status || "active",
-      verified_by: v.verified_by || null,
       createdAt: v.createdAt,
-      updatedAt: v.updatedAt,
+      updatedAt: v.updatedAt
     }));
   } catch (error) {
     console.error("Error in getVehiclesByDriver for driverId:", driverId, error);
     throw new Error("Failed to fetch vehicles for driver: " + error.message);
   }
 };
+
 
 const upsertDriverCar = async (driverId, data) => {
   const sanitizedData = carDTO(data);
@@ -175,16 +193,26 @@ const getDriverCarByDriverId = async (driver_id, car_id = null) => {
 const rejectDriverCar = async (carId, reason, verifiedBy) => {
   const car = await DriverCar.findByPk(carId);
   if (!car) throw new Error("Vehicle not found");
+
   await car.update({ is_approved: false, status: "rejected", reason, verified_by: verifiedBy });
+
+  // Try fetching driver, but don’t fail if missing
+  const driver = await Driver.findByPk(car.driver_id, { paranoid: false });
+  if (!driver) {
+    console.warn(`Driver with ID ${car.driver_id} not found. Vehicle rejected anyway.`);
+  } else {
+    // optional: send notification to driver
+  }
+
   return { message: "Vehicle rejected" };
 };
 
-// Service to get all vehicles
+
 const getAllVehicles = async ({ page = 1, limit = 5, search = "", status = "all" }) => {
   const offset = (page - 1) * limit;
   const where = {};
 
-  // Add search filter for car_brand, car_model, and license_plate
+  // Add search filter
   if (search) {
     where[Op.or] = [
       { "$Car.brand$": { [Op.like]: `%${search}%` } },
@@ -207,17 +235,53 @@ const getAllVehicles = async ({ page = 1, limit = 5, search = "", status = "all"
 
   const { rows, count } = await DriverCar.findAndCountAll({
     where,
-    include: [{ model: Car, as: "Car", attributes: [] }],
+    include: [
+      {
+        model: Car,
+        as: "Car",
+        attributes: ["brand", "model"]
+      },
+      {
+        model: Admin,
+        as: "VerifierAdmin", // Alias for clarity
+        attributes: ["id", "first_name", "last_name", "role"],
+        required: false
+      }
+    ],
     limit,
     offset
   });
 
-
-  return {
-    data: await Promise.all(rows.map(async vehicle => await carResponseDTO(vehicle))),
-    total: count
-  };
+  // Map results with formatted verified_by info
+  const data = rows.map(v => ({
+    id: v.id,
+    driver_id: v.driver_id,
+    car_id: v.car_id,
+    car_brand: v.Car?.brand || null,
+    car_model: v.Car?.model || null,
+    license_plate: v.license_plate,
+    car_photos: parseCarPhotos(v.car_photos),
+    rc_doc: v.rc_doc,
+    rc_doc_back: v.rc_doc_back,
+    insurance_doc: v.insurance_doc,
+    rc_doc_status: v.rc_doc_status,
+    insurance_doc_status: v.insurance_doc_status,
+    is_approved: v.is_approved,
+    verified_by: v.VerifierAdmin
+      ? {
+          id: v.VerifierAdmin.id,
+          name: `${v.VerifierAdmin.first_name} ${v.VerifierAdmin.last_name}`,
+          role: v.VerifierAdmin.role
+        }
+      : null,
+    status: v.status,
+    createdAt: v.createdAt,
+    updatedAt: v.updatedAt
+  }));
+  console.log(data, count, "data in getAllVehicles");
+  return { data, total: count };
 };
+
 // ... (previous imports and functions remain the same)
 
 const verifyRc = async (carId, verifiedBy) => {
