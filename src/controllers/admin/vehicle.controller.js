@@ -2,6 +2,7 @@ const DriverCar = require("../../models/driver-cars.model");
 const vehicleService = require("../../services/driverCar.service");
 const driverService = require("../../services/driver.service");
 const { sendPushNotification } = require("../../helper/sendPushNotification");
+const { sendNotificationService } = require("../../services/notifications.service");
 
 exports.getAllVehicles = async (req, res) => {
   try {
@@ -48,13 +49,22 @@ exports.approveVehicle = async (req, res) => {
 
     // Correctly fetch driver by driver_id
     const driver = await driverService.getDriverById(car.driver_id);
+    const fullName = `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
+    const heading = { en: "Vehicle Approved" };
+    const message = {
+      en: `Hi ${fullName}, your vehicle (License Plate: ${car.license_plate}) has been approved!`,
+    };
+    // ✅ Always create a notification entry in DB
+    await sendNotificationService({
+      user_id: driver.id,
+      title: heading.en,
+      message: message.en,
+      is_read: false,
+      image: null,
+    });
+    console.log(`🗂️ Notification saved for driver (${driver.id})`);
     if (driver?.one_signal_id) {
-      const fullName = `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
-      await sendPushNotification(
-        driver.one_signal_id,
-        { en: "Vehicle Approved" },
-        { en: `Hi ${fullName}, your vehicle (License Plate: ${car.license_plate}) has been approved!` }
-      );
+      await sendPushNotification(driver.one_signal_id,heading,message);
       console.log(`📢 Push notification sent to driver (${fullName}) for vehicle approval`);
     } else {
       console.warn(`⚠️ Driver with ID ${car.driver_id} has no OneSignal ID, skipping push notification`);
@@ -79,15 +89,21 @@ exports.rejectVehicle = async (req, res) => {
     await car.update({ is_approved: false, status: "rejected", reason, verified_by: req.user.id });
     // Fetch driver to get one_signal_id
     const driver = await driverService.getDriverById(id);
+    const fullName = `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
+    const heading = {en:"Vehicle Rejected"};
+    const message = {en:`Hi ${fullName}, your vehicle (License Plate: ${car.license_plate}) has been rejected!`};
+    await sendNotificationService({
+      user_id: driver.id,
+      title: heading.en,
+      message: message.en,
+      is_read: false,
+      image: null,
+    });
+    console.log(`🗂️ Notification saved for driver (${driver.id})`);
     if(driver?.one_signal_id){
-      const fullName = `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
-      await sendPushNotification(
-        driver.one_signal_id,
-        {en:"Vehicle Rejected"},
-        {en:`Hi ${fullName}, your vehicle (License Plate: ${car.license_plate}) has been rejected!`}
-      );
+      await sendPushNotification(driver.one_signal_id,heading,message);
       console.log(`📢 Push notification sent to driver (${fullName}) for vehicle approval`);
-    }else{
+    }else{ 
       console.warn(`⚠️ Driver with ID ${car.driver_id} has no OneSignal ID, skipping push notification`);
     }
     res.status(200).json({ message: "Vehicle rejected" });
