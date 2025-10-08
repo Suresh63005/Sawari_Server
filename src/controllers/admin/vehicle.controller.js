@@ -103,7 +103,7 @@ exports.rejectVehicle = async (req, res) => {
     if(driver?.one_signal_id){
       await sendPushNotification(driver.one_signal_id,heading,message);
       console.log(`📢 Push notification sent to driver (${fullName}) for vehicle approval`);
-    }else{
+    }else{ 
       console.warn(`⚠️ Driver with ID ${car.driver_id} has no OneSignal ID, skipping push notification`);
     }
     res.status(200).json({ message: "Vehicle rejected" });
