@@ -12,6 +12,7 @@ const DriverCar = require("../models/driver-cars.model");
 const { updateDriverBalance } = require("./driver.service");
 const { createWalletReport } = require("./wallet.service");
 const {sendNotificationService}=require("./notifications.service");
+const { generateUniqueRideCode } = require("../utils/generateCode");
 // const DriverCar = require("../models/driver-cars.model");
 
 const acceptRide = async (ride_id, driver_id) => {
@@ -189,6 +190,7 @@ const upsertRide = async (rideData) => {
 
     return ride;
   } else {
+    const rideCode = generateUniqueRideCode();
     const newRide = await Ride.create({
       initiated_by_driver_id: driver_id,
       customer_name,
@@ -210,7 +212,8 @@ const upsertRide = async (rideData) => {
       Price,
       tax,
       Total,
-      status:"pending"
+      status:"pending",
+      ride_code:rideCode
     });
 
     // Ride Auto Cancel Flow:
@@ -518,7 +521,7 @@ const endRide = async (rideId, driver_id,transaction=null) => {
             commission,
             percentage,
             // payment_method:ride.payment_method,
-            status: "pending"
+            status: "completed"
         },{transaction:t});
 
         // Create wallet report
