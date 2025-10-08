@@ -50,10 +50,17 @@ const exportAllPaymentsController = async (req, res) => {
 const exportPaymentByIdController = async (req, res) => {
   try {
     const { paymentId } = req.params;
+    const payment = await getPaymentById(paymentId); // fetch payment to get customer name
     const buffer = await exportPaymentById(paymentId);
+
+    // Use customer name for filename, fallback to paymentId if not available
+    const customerName = payment?.ride?.customer_name
+      ? payment.ride.customer_name.replace(/\s+/g, "_") // replace spaces with _
+      : paymentId;
+
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=Payment_Report_${paymentId}.xlsx`
+      `attachment; filename=Payment_Report_${customerName}.xlsx`
     );
     res.setHeader(
       "Content-Type",
@@ -65,6 +72,7 @@ const exportPaymentByIdController = async (req, res) => {
     console.log(error, "error in exportPaymentByIdController");
   }
 };
+
 
 module.exports = {
   getAllPaymentsController,
