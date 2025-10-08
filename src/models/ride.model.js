@@ -10,6 +10,12 @@ const Ride = sequelize.define(
       allowNull: false,
       defaultValue: DataTypes.UUIDV4,
     },
+    ride_code: {
+      type: DataTypes.STRING(10),
+      allowNull: false,
+      unique: true,
+      comment: "A unique short ride identifier (e.g., RIDE123456)",
+    },
     admin_id: {
       type: DataTypes.UUID,
       allowNull: true,

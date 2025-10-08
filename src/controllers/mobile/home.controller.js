@@ -45,10 +45,12 @@ const getAllHomeData = async (req, res) => {
     const todayEarnings = await getEarningsSum({
       where: {
         driver_id,
-        createdAt: {
+        updatedAt: {
           [Op.between]: [startOfDay, endOfDay]
         },
-        status: "completed"
+        status: {
+          [Op.in]: ["completed", "pending"], 
+        },
       }
     });
 
@@ -293,7 +295,7 @@ const acceptRide = async (req, res) => {
           transaction_date: new Date(),
           transaction_type: "debit",
           description: `Debit due to insufficient balance for ride ${ride_id} (wallet deducted: $${balance.toFixed(2)}, remaining debit: $${amountToDebit.toFixed(2)})`,
-          ride_id,
+          // ride_id,
         },
         { transaction: t }
       );
