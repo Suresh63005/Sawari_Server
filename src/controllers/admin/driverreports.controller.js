@@ -27,6 +27,8 @@ const getDriverByIdController = async (req, res) => {
   }
 };
 
+
+
 const exportAllDriversController = async (req, res) => {
   try {
     const { search = "", status = "" } = req.query;
