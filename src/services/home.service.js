@@ -191,7 +191,7 @@ const upsertRide = async (rideData) => {
     return ride;
   } else {
     // const rideCode = generateRideCode();
-    const newRide = await Ride.create({
+    const newRide = await Ride.create({ 
       initiated_by_driver_id: driver_id,
       customer_name,
       phone,
