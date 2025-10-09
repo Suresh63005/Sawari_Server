@@ -217,7 +217,9 @@ const getAllVehicles = async ({ page = 1, limit = 5, search = "", status = "all"
     where[Op.or] = [
       { "$Car.brand$": { [Op.like]: `%${search}%` } },
       { "$Car.model$": { [Op.like]: `%${search}%` } },
-      { license_plate: { [Op.like]: `%${search}%` } }
+      { license_plate: { [Op.like]: `%${search}%` } },
+      { "$Driver.first_name$": { [Op.like]: `%${search}%` } },
+    { "$Driver.last_name$": { [Op.like]: `%${search}%` } }
     ];
   }
 
