@@ -698,7 +698,7 @@ const canceRide = async(driverId,rideId)=>{
         initiated_by_driver_id:driverId,
         status:"pending"
       }
-    });
+    }); 
     if(!ride){
       throw new Error("Ride not found, not initiated by this driver, or not in pending status");
     }
