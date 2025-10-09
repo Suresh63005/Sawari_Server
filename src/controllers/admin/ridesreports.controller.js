@@ -31,10 +31,15 @@ const exportAllRidesController = async (req, res) => {
   try {
     const { search = "", status = "" } = req.query;
     const buffer = await exportAllRides(search, status);
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=All_Ride_Reports.xlsx"
-    );
+
+    // Create a dynamic filename based on status
+    let fileName = "All_Ride_Reports.xlsx";
+    if (status && status.toLowerCase() !== "all") {
+      const capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+      fileName = `All_${capitalizedStatus}_Ride_Reports.xlsx`;
+    }
+
+    res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -45,6 +50,7 @@ const exportAllRidesController = async (req, res) => {
     console.log(error, "error in exportAllRidesController");
   }
 };
+
 
 const exportRideByIdController = async (req, res) => {
   try {
