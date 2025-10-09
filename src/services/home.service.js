@@ -12,6 +12,7 @@ const DriverCar = require("../models/driver-cars.model");
 const { updateDriverBalance } = require("./driver.service");
 const { createWalletReport } = require("./wallet.service");
 const {sendNotificationService}=require("./notifications.service");
+const { formatDate } = require("../utils/formatDate");
 // const { generateRideCode } = require("../utils/generateCode");
 // const DriverCar = require("../models/driver-cars.model");
 
@@ -31,6 +32,8 @@ const acceptRide = async (ride_id, driver_id) => {
     }
 
     ride.driver_id = driver_id;
+    ride.accept_time=formatDate(new Date());
+    // ride.accept_time=new Date();
     ride.status = "accepted";
     await ride.save();
 
@@ -483,6 +486,8 @@ const startRide = async (rideId, driver_id) => {
     }
 
     ride.status = "on-route";
+    ride.pickup_time = formatDate(new Date());
+    // ride.pickup_time = new Date();
     await ride.save();
 
     return ride;
@@ -506,7 +511,8 @@ const endRide = async (rideId, driver_id,transaction=null) => {
         }
     
         ride.status = "completed";
-        ride.dropoff_time = new Date();
+        ride.dropoff_time = formatDate(new Date());
+        // ride.dropoff_time = new Date();
         await ride.save();
     
         // get tax/commisstion percentage from settings table
@@ -692,7 +698,7 @@ const canceRide = async(driverId,rideId)=>{
         initiated_by_driver_id:driverId,
         status:"pending"
       }
-    });
+    }); 
     if(!ride){
       throw new Error("Ride not found, not initiated by this driver, or not in pending status");
     }
