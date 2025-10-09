@@ -12,7 +12,8 @@ const DriverCar = require("../models/driver-cars.model");
 const { updateDriverBalance } = require("./driver.service");
 const { createWalletReport } = require("./wallet.service");
 const {sendNotificationService}=require("./notifications.service");
-const { generateUniqueRideCode } = require("../utils/generateCode");
+const { formatDate } = require("../utils/formatDate");
+// const { generateRideCode } = require("../utils/generateCode");
 // const DriverCar = require("../models/driver-cars.model");
 
 const acceptRide = async (ride_id, driver_id) => {
@@ -31,6 +32,8 @@ const acceptRide = async (ride_id, driver_id) => {
     }
 
     ride.driver_id = driver_id;
+    ride.accept_time=formatDate(new Date());
+    // ride.accept_time=new Date();
     ride.status = "accepted";
     await ride.save();
 
@@ -113,13 +116,19 @@ const upsertRide = async (rideData) => {
 
   // ✅ Validate related IDs
   const pkg = await Package.findByPk(package_id);
-  if (!pkg) throw new Error("Invalid package_id");
+  if (!pkg) throw new Error("Invalid package_id"); 
 
   const subPkg = await SubPackage.findByPk(subpackage_id);
   if (!subPkg) throw new Error("Invalid subpackage_id");
 
   const car = await Car.findByPk(car_id);
   if (!car) throw new Error("Invalid car_id");
+
+   const formatDate = (val) => {
+    if (!val) return null;
+    const dateStr = typeof val === "string" ? val : new Date(val).toISOString();
+    return dateStr.replace(".000Z", "");
+  };
 
   if (id) {
     const ride = await Ride.findByPk(id);
@@ -188,10 +197,14 @@ const upsertRide = async (rideData) => {
       Total,
     });
 
-    return ride;
+    const updatedRide = ride.toJSON();
+    updatedRide.scheduled_time = formatDate(updatedRide.scheduled_time);
+    updatedRide.pickup_time = formatDate(updatedRide.pickup_time);
+
+    return updatedRide;
   } else {
-    const rideCode = generateUniqueRideCode();
-    const newRide = await Ride.create({
+    // const rideCode = generateRideCode();
+    const newRide = await Ride.create({ 
       initiated_by_driver_id: driver_id,
       customer_name,
       phone,
@@ -213,7 +226,7 @@ const upsertRide = async (rideData) => {
       tax,
       Total,
       status:"pending",
-      ride_code:rideCode
+      // ride_code:rideCode
     });
 
     // Ride Auto Cancel Flow:
@@ -294,7 +307,13 @@ const upsertRide = async (rideData) => {
       }
     }
 
-    return newRide;
+    // return newRide;
+
+    const formattedRide = newRide.toJSON();
+    formattedRide.scheduled_time = formatDate(formattedRide.scheduled_time);
+    formattedRide.pickup_time = formatDate(formattedRide.pickup_time);
+
+    return formattedRide;
   }
 };
 
@@ -467,6 +486,8 @@ const startRide = async (rideId, driver_id) => {
     }
 
     ride.status = "on-route";
+    ride.pickup_time = formatDate(new Date());
+    // ride.pickup_time = new Date();
     await ride.save();
 
     return ride;
@@ -490,7 +511,8 @@ const endRide = async (rideId, driver_id,transaction=null) => {
         }
     
         ride.status = "completed";
-        ride.dropoff_time = new Date();
+        ride.dropoff_time = formatDate(new Date());
+        // ride.dropoff_time = new Date();
         await ride.save();
     
         // get tax/commisstion percentage from settings table
@@ -521,7 +543,7 @@ const endRide = async (rideId, driver_id,transaction=null) => {
             commission,
             percentage,
             // payment_method:ride.payment_method,
-            status: "completed"
+            status: "processed"
         },{transaction:t});
 
         // Create wallet report
@@ -676,7 +698,7 @@ const canceRide = async(driverId,rideId)=>{
         initiated_by_driver_id:driverId,
         status:"pending"
       }
-    });
+    }); 
     if(!ride){
       throw new Error("Ride not found, not initiated by this driver, or not in pending status");
     }
