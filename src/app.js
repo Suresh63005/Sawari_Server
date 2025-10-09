@@ -29,7 +29,7 @@ console.log("🌍 API Version:", API_VERSION);
 // Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000000,
+  max: 10000000,
   message: "Too many requests from this IP, please try again later",
 });
 
