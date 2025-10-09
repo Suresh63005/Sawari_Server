@@ -1,5 +1,5 @@
 const { getSettings, upsertSettings } = require("../../services/settings.service");
-const { uploadToS3, deleteFromS3 } = require("../../config/fileUpload.aws");
+
 
 const getSettingsController = async (req, res) => {
   try {

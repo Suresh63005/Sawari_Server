@@ -31,14 +31,19 @@ const getSettings = async () => {
 const upsertSettings = async (data, file) => {
   try {
     let weblogoUrl = data.weblogo || null;
+
+    // Fetch existing settings if updating
+    let existingSettings = null;
+    if (data.id) {
+      existingSettings = await Settings.findOne({ where: { id: data.id } });
+    }
+
+    // Upload new file if provided
     if (file) {
       weblogoUrl = await uploadToS3(file, "settings");
-    } else if (data.id) {
+    } else if (existingSettings && existingSettings.weblogo) {
       // Preserve existing logo if no new file is uploaded
-      const existingSettings = await Settings.findOne({ where: { id: data.id } });
-      if (existingSettings && existingSettings.weblogo) {
-        weblogoUrl = existingSettings.weblogo;
-      }
+      weblogoUrl = existingSettings.weblogo;
     }
 
     const settingsData = {
@@ -51,7 +56,7 @@ const upsertSettings = async (data, file) => {
     });
 
     // Delete old logo from S3 if a new one was uploaded
-    if (data.id && file && existingSettings && existingSettings.weblogo && existingSettings.weblogo !== weblogoUrl) {
+    if (existingSettings && file && existingSettings.weblogo && existingSettings.weblogo !== weblogoUrl) {
       await deleteFromS3(existingSettings.weblogo);
     }
 
@@ -60,6 +65,7 @@ const upsertSettings = async (data, file) => {
     throw new Error("Failed to save settings: " + error.message);
   }
 };
+
 
 module.exports = {
   getAllSettingService,

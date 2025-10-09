@@ -22,8 +22,8 @@ const getOpenTickets = async (filters = {}) => {
       include: [
         {
           model: Driver,
-          attributes: ['first_name', 'last_name', 'phone'],
-          as: 'driver'
+          attributes: ["first_name", "last_name", "phone"],
+          as: "driver"
         }
       ],
       order: [["createdAt", "DESC"]],
@@ -45,8 +45,8 @@ const getOpenTickets = async (filters = {}) => {
       return {
         ...ticket.get({ plain: true }),
         images,
-        driver_name: ticket.driver ? `${ticket.driver.first_name || ''} ${ticket.driver.last_name || ''}`.trim() : 'ntg',
-        driver_phone: ticket.driver ? ticket.driver.phone || 'N/A' : 'N/A'
+        driver_name: ticket.driver ? `${ticket.driver.first_name || ""} ${ticket.driver.last_name || ""}`.trim() : "Unknown",
+        driver_phone: ticket.driver ? ticket.driver.phone || "N/A" : "N/A"
       };
     });
 
