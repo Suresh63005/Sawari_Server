@@ -14,6 +14,7 @@ const Settings = require("../../models/settings.model");
 const WalletReports = require("../../models/wallet-report.model");
 const { v4: uuid } = require("uuid");
 const DriverCar = require("../../models/driver-cars.model");
+const { now } = require("moment");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -86,6 +87,9 @@ const getAllHomeData = async (req, res) => {
       where: {
         driver_id: null,
         status: "pending",
+        scheduled_time: {
+          [Op.gte]: now
+        }
       },
       attributes: [
         "id", "customer_name", "email", "phone", "pickup_address", "pickup_location", "initiated_by_driver_id",
@@ -113,7 +117,7 @@ const getAllHomeData = async (req, res) => {
         }
       ],
       limit: 10,
-      order: [["scheduled_time", "DESC"]]
+      order: [["scheduled_time", "ASC"]]
     });
 
     console.log("DriverCar with Car:", JSON.stringify(driverCar, null, 2));
