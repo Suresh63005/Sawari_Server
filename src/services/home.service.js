@@ -121,6 +121,12 @@ const upsertRide = async (rideData) => {
   const car = await Car.findByPk(car_id);
   if (!car) throw new Error("Invalid car_id");
 
+   const formatDate = (val) => {
+    if (!val) return null;
+    const dateStr = typeof val === "string" ? val : new Date(val).toISOString();
+    return dateStr.replace(".000Z", "");
+  };
+
   if (id) {
     const ride = await Ride.findByPk(id);
     if (!ride) {
@@ -188,7 +194,11 @@ const upsertRide = async (rideData) => {
       Total,
     });
 
-    return ride;
+    const updatedRide = ride.toJSON();
+    updatedRide.scheduled_time = formatDate(updatedRide.scheduled_time);
+    updatedRide.pickup_time = formatDate(updatedRide.pickup_time);
+
+    return updatedRide;
   } else {
     // const rideCode = generateRideCode();
     const newRide = await Ride.create({ 
@@ -294,7 +304,13 @@ const upsertRide = async (rideData) => {
       }
     }
 
-    return newRide;
+    // return newRide;
+
+    const formattedRide = newRide.toJSON();
+    formattedRide.scheduled_time = formatDate(formattedRide.scheduled_time);
+    formattedRide.pickup_time = formatDate(formattedRide.pickup_time);
+
+    return formattedRide;
   }
 };
 
