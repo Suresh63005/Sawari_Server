@@ -374,6 +374,7 @@ const getAllDrivers = async (page = 1, limit = 10, search = "", status = "") => 
       { last_name: { [Op.like]: searchTerm } },
       { email: { [Op.like]: searchTerm } },
       { phone: { [Op.like]: searchTerm } },
+      { experience: { [Op.like]: searchTerm } }
     ];
   }
 

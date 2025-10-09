@@ -1,7 +1,6 @@
-// backend/services/ticketService.js
-
 const { uploadToS3 } = require("../config/fileUpload.aws");
 const Ticket = require("../models/ticket.model");
+const Driver = require("../models/driver.model");
 const { Op } = require("sequelize");
 
 const getOpenTickets = async (filters = {}) => {
@@ -20,13 +19,39 @@ const getOpenTickets = async (filters = {}) => {
     const offset = (page - 1) * limit;
     const { count, rows } = await Ticket.findAndCountAll({
       where: whereClause,
+      include: [
+        {
+          model: Driver,
+          attributes: ['first_name', 'last_name', 'phone'],
+          as: 'driver'
+        }
+      ],
       order: [["createdAt", "DESC"]],
       offset,
       limit: Number(limit),
     });
 
+    // Format the response to include driver details
+    const formattedRows = rows.map(ticket => {
+      let images = [];
+      if (ticket.images) {
+        try {
+          const cleaned = ticket.images.startsWith("\"") ? JSON.parse(ticket.images) : ticket.images;
+          images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
+        } catch (e) {
+          console.error("❌ Error parsing images for ticket", ticket.id, e.message);
+        }
+      }
+      return {
+        ...ticket.get({ plain: true }),
+        images,
+        driver_name: ticket.driver ? `${ticket.driver.first_name || ''} ${ticket.driver.last_name || ''}`.trim() : 'ntg',
+        driver_phone: ticket.driver ? ticket.driver.phone || 'N/A' : 'N/A'
+      };
+    });
+
     return {
-      data: rows,
+      data: formattedRows,
       total: count,
     };
   } catch (error) {
@@ -61,11 +86,9 @@ const createTicket = async (ticketData) => {
       throw new Error("Title, priority, and raised_by are required");
     }
 
-    // Generate ticket_number
     const ticketCount = await Ticket.count({ transaction });
     const ticketNumber = String(ticketCount + 1).padStart(6, "0");
 
-    // Upload images to S3 if present
     let uploadedUrls = [];
     if (files && files.length > 0) {
       try {
@@ -76,7 +99,6 @@ const createTicket = async (ticketData) => {
       }
     }
 
-    // Create ticket
     const ticket = await Ticket.create(
       {
         ticket_number: ticketNumber,
@@ -120,7 +142,6 @@ const updateTicketStatus = async (id, status) => {
   }
 };
 
-
 const getTickets = async (filters = {}) => {
   try {
     const { raised_by } = filters;
@@ -136,12 +157,10 @@ const getTickets = async (filters = {}) => {
       raw: true,
     });
 
-    // ✅ Force parse images
     const formattedTickets = tickets.map(ticket => {
       let images = [];
       if (ticket.images) {
         try {
-          // First remove extra escaping if it"s double-stringified
           const cleaned = ticket.images.startsWith("\"") ? JSON.parse(ticket.images) : ticket.images;
           images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
         } catch (e) {
@@ -163,7 +182,7 @@ const getTicketsById = async (data) => {
   try {
     const ticket = await Ticket.findOne({
       where: { id, raised_by },
-      raw: true, // returns plain object instead of Sequelize instance
+      raw: true,
     });
 
     if (!ticket) {
@@ -173,11 +192,9 @@ const getTicketsById = async (data) => {
     let images = [];
     if (ticket.images) {
       try {
-        // Remove extra escaping if it"s double-stringified
         const cleaned = ticket.images.startsWith("\"")
           ? JSON.parse(ticket.images)
           : ticket.images;
-
         images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
       } catch (e) {
         console.error("❌ Error parsing images for ticket", ticket.id, e.message);
@@ -190,7 +207,4 @@ const getTicketsById = async (data) => {
   }
 };
 
-
-
-
-module.exports = { getOpenTickets, resolveTicket, createTicket, updateTicketStatus,getTickets,getTicketsById };
+module.exports = { getOpenTickets, resolveTicket, createTicket, updateTicketStatus, getTickets, getTicketsById };
