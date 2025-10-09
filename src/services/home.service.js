@@ -113,7 +113,7 @@ const upsertRide = async (rideData) => {
 
   // ✅ Validate related IDs
   const pkg = await Package.findByPk(package_id);
-  if (!pkg) throw new Error("Invalid package_id");
+  if (!pkg) throw new Error("Invalid package_id"); 
 
   const subPkg = await SubPackage.findByPk(subpackage_id);
   if (!subPkg) throw new Error("Invalid subpackage_id");
