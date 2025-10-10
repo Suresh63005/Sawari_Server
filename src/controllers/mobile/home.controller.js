@@ -101,7 +101,7 @@ const getAllHomeData = async (req, res) => {
       include: [
         {
           model: Car,
-          as: "Car", // must match Ride.belongsTo(Car, { as: "Car" })
+          as: "Car", // must match Ride.belongsTo(Car, { as: "Car" }) 
           attributes: ["id", "brand", "model"],
           where: {
             brand: driverCar.Car?.brand,
