@@ -69,7 +69,7 @@ const getAllHomeData = async (req, res) => {
         }
       },
       attributes: [
-        "customer_name", "email", "phone", "pickup_address", "pickup_location", "initiated_by_driver_id",
+        "ride_code","customer_name", "email", "phone", "pickup_address", "pickup_location", "initiated_by_driver_id",
         "drop_location", "drop_address", "scheduled_time", "pickup_time", "dropoff_time"
       ],
       limit: 10,
@@ -95,7 +95,7 @@ const getAllHomeData = async (req, res) => {
         }
       },
       attributes: [
-        "id", "customer_name", "email", "phone", "pickup_address", "pickup_location", "initiated_by_driver_id",
+        "ride_code","id", "customer_name", "email", "phone", "pickup_address", "pickup_location", "initiated_by_driver_id",
         "drop_location", "drop_address", "scheduled_time", "pickup_time", "dropoff_time", "Price", "Total"
       ],
       include: [

@@ -473,7 +473,7 @@ const startRide = async (rideId, driver_id,pickup_time) => {
             id: rideId,
             driver_id: driver_id,
             status: "accepted"
-        }
+        } 
     });
 
     if (!ride) {
@@ -488,7 +488,7 @@ const startRide = async (rideId, driver_id,pickup_time) => {
     await ride.update(
     {
       driver_id,
-      status: "accepted",
+      status: "on-route",
       pickup_time, 
     });
 
