@@ -14,7 +14,9 @@ const Settings = require("../../models/settings.model");
 const WalletReports = require("../../models/wallet-report.model");
 const { v4: uuid } = require("uuid");
 const DriverCar = require("../../models/driver-cars.model");
-const { now } = require("moment");
+// const { now } = require("moment");
+const moment = require("moment-timezone");
+
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -83,6 +85,7 @@ const getAllHomeData = async (req, res) => {
       });
     }
 
+    const now = new Date();
     const availableRides = await conditionalRides({
       where: {
         driver_id: null,
@@ -182,6 +185,10 @@ const acceptRide = async (req, res) => {
       });
     }
 
+    // Compute accept_time here in Riyadh timezone
+    const acceptTime = moment().tz("Asia/Riyadh").format("YYYY-MM-DD HH:mm:ss");
+    console.log("accept_time =>", acceptTime, typeof acceptTime);
+
     // Validate driver's car model matches ride's car model (via car_id)
     const driverCar = await DriverCar.findOne({
       where: { driver_id: driverId },
@@ -277,7 +284,7 @@ const acceptRide = async (req, res) => {
 
     // Update ride
     await ride.update(
-      { driver_id: driverId, status: "accepted", accept_time: new Date(), is_credit: isCredit },
+      { driver_id: driverId, status: "accepted", accept_time: acceptTime, is_credit: isCredit },
       { transaction: t }
     );
 
