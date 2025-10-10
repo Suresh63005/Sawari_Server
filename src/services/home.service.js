@@ -473,7 +473,7 @@ const startRide = async (rideId, driver_id,pickup_time) => {
             id: rideId,
             driver_id: driver_id,
             status: "accepted"
-        }
+        } 
     });
 
     if (!ride) {
