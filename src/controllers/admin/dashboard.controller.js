@@ -9,6 +9,7 @@ const getDashboardStatsController = async (req, res) => {
   }
 };
 
+
 const getRecentActivityController = async (req, res) => {
   try {
     const activities = await getRecentActivity();
