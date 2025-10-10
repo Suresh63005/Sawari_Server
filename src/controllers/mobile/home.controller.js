@@ -656,7 +656,7 @@ const getMyRides = async (req, res) => {
   const driverId = req.driver?.id;
   const { statuses, sortBy, sortOrder, page, limit } = req.query;
 
-  if (!driverId) {
+  if (!driverId) { 
     return res.status(400).json({
       success: false,
       message: "Driver ID is required.",
