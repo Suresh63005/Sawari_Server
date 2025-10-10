@@ -7,6 +7,7 @@ const SubPackage = require("../models/sub-package.model");
 const Car = require("../models/cars.model");
 const Earnings = require("../models/earnings.model");
 const Settings = require("../models/settings.model");
+const { generateRideCode } = require("../utils/generateCode");
 // Response DTO
 const rideResponseDTO = (ride) => ({
   id: ride.id,
@@ -119,8 +120,10 @@ const createRide = async (data) => {
     const tax = subtotal * (taxRate / 100);
     const total = subtotal + tax;
 
+    const ride_code = generateRideCode();
     const ride = await Ride.create(
       {
+        ride_code,
         customer_name: data.customer_name,
         phone: data.phone,
         email: data.email,

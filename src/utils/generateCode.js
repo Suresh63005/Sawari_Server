@@ -3,4 +3,4 @@ function generateRideCode(prefix = "RIDE") {
   return `${prefix}${random6Digits}`;
 }
 
-module.exports = { generateRideCode };
+module.exports = { generateRideCode }; 

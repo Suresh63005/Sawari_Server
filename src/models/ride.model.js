@@ -10,6 +10,11 @@ const Ride = sequelize.define(
       allowNull: false,
       defaultValue: DataTypes.UUIDV4,
     },
+    ride_code: {
+      type: DataTypes.STRING(10),
+      allowNull: true,
+      comment: "Unique ride code for reference",
+    },
     admin_id: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -105,6 +110,12 @@ const Ride = sequelize.define(
       type: DataTypes.ENUM("pending", "completed", "failed"),
       allowNull: true,
       defaultValue: "pending",
+    },
+    is_credit:{
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: "Indicates if the ride was accepted on credit due to insufficient wallet balance",
     },
     accept_time: {
       type: DataTypes.STRING,

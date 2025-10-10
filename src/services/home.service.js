@@ -12,6 +12,7 @@ const DriverCar = require("../models/driver-cars.model");
 const { updateDriverBalance } = require("./driver.service");
 const { createWalletReport } = require("./wallet.service");
 const {sendNotificationService}=require("./notifications.service");
+const { generateRideCode } = require("../utils/generateCode");
 // const { formatToAST } = require("../utils/timezone");
 // const { generateRideCode } = require("../utils/generateCode");
 // const DriverCar = require("../models/driver-cars.model");
@@ -202,8 +203,9 @@ const upsertRide = async (rideData) => {
     return ride.toJSON();
 
   } else {
-    // const rideCode = generateRideCode();
+    const ride_code = generateRideCode();
     const newRide = await Ride.create({ 
+      ride_code,
       initiated_by_driver_id: driver_id,
       customer_name,
       phone,
@@ -225,7 +227,6 @@ const upsertRide = async (rideData) => {
       tax,
       Total,
       status:"pending",
-      // ride_code:rideCode
     });
     
 
