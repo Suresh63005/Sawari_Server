@@ -226,8 +226,9 @@ const acceptRide = async (req, res) => {
       });
     }
 
-    // Fetch driver wallet
-    const driver = await Driver.findByPk(driverId, {
+    // Fetch driver wallet & check if active
+    const driver = await Driver.findOne({
+      where:{id:driverId,status:"active"},
       attributes: ["id", "wallet_balance", "credit_ride_count"],
       transaction: t,
       lock: t.LOCK.UPDATE,
@@ -237,7 +238,7 @@ const acceptRide = async (req, res) => {
       await t.rollback();
       return res.status(404).json({
         success: false,
-        message: "Driver not found.",
+        message: "Driver not found or inactive. Only active drivers can accept rides.",
       });
     }
 
