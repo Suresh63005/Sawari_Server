@@ -11,6 +11,7 @@ const { generateRideCode } = require("../utils/generateCode");
 // Response DTO
 const rideResponseDTO = (ride) => ({
   id: ride.id,
+  ride_code: ride.ride_code,
   customer_name: ride.customer_name,
   phone: ride.phone,
   email: ride.email,
