@@ -68,7 +68,7 @@ const Ride = sequelize.define(
       comment: "ID of the associated car",
     },
     scheduled_time: {
-      type: DataTypes.DATE,
+      type: DataTypes.STRING,
       allowNull: true,
     },
     driver_id: {
@@ -107,15 +107,15 @@ const Ride = sequelize.define(
       defaultValue: "pending",
     },
     accept_time: {
-      type: DataTypes.DATE,
+      type: DataTypes.STRING,
       allowNull: true,
     },
     pickup_time: {
-      type: DataTypes.DATE,
+      type: DataTypes.STRING,
       allowNull: true,
     },
     dropoff_time: {
-      type: DataTypes.DATE,
+      type: DataTypes.STRING,
       allowNull: true,
     },
     rider_hours: {

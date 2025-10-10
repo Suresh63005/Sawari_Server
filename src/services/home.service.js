@@ -12,11 +12,11 @@ const DriverCar = require("../models/driver-cars.model");
 const { updateDriverBalance } = require("./driver.service");
 const { createWalletReport } = require("./wallet.service");
 const {sendNotificationService}=require("./notifications.service");
-const { formatDate } = require("../utils/formatDate");
+// const { formatToAST } = require("../utils/timezone");
 // const { generateRideCode } = require("../utils/generateCode");
 // const DriverCar = require("../models/driver-cars.model");
 
-const acceptRide = async (ride_id, driver_id) => {
+const acceptRide = async (ride_id, driver_id,accept_time) => {
     const ride = await Ride.findOne({
         where: {
             id: ride_id,
@@ -31,11 +31,19 @@ const acceptRide = async (ride_id, driver_id) => {
         throw new Error("Ride is not available or already accepted.");
     }
 
-    ride.driver_id = driver_id;
-    ride.accept_time=formatDate(new Date());
-    // ride.accept_time=new Date();
-    ride.status = "accepted";
-    await ride.save();
+    // ride.driver_id = driver_id;
+    // // ride.accept_time=new Date();
+    // ride.status = "accepted";
+    // await ride.save();
+
+    await ride.update(
+    {
+      driver_id,
+      status: "accepted",
+      accept_time, // this is already a string from controller
+    },
+  );
+
 
     return ride;
 };
@@ -124,12 +132,6 @@ const upsertRide = async (rideData) => {
   const car = await Car.findByPk(car_id);
   if (!car) throw new Error("Invalid car_id");
 
-   const formatDate = (val) => {
-    if (!val) return null;
-    const dateStr = typeof val === "string" ? val : new Date(val).toISOString();
-    return dateStr.replace(".000Z", "");
-  };
-
   if (id) {
     const ride = await Ride.findByPk(id);
     if (!ride) {
@@ -197,11 +199,8 @@ const upsertRide = async (rideData) => {
       Total,
     });
 
-    const updatedRide = ride.toJSON();
-    updatedRide.scheduled_time = formatDate(updatedRide.scheduled_time);
-    updatedRide.pickup_time = formatDate(updatedRide.pickup_time);
+    return ride.toJSON();
 
-    return updatedRide;
   } else {
     // const rideCode = generateRideCode();
     const newRide = await Ride.create({ 
@@ -228,6 +227,7 @@ const upsertRide = async (rideData) => {
       status:"pending",
       // ride_code:rideCode
     });
+    
 
     // Ride Auto Cancel Flow:
     const settings = await Settings.findOne({
@@ -307,13 +307,7 @@ const upsertRide = async (rideData) => {
       }
     }
 
-    // return newRide;
-
-    const formattedRide = newRide.toJSON();
-    formattedRide.scheduled_time = formatDate(formattedRide.scheduled_time);
-    formattedRide.pickup_time = formatDate(formattedRide.pickup_time);
-
-    return formattedRide;
+    return newRide;
   }
 };
 
@@ -472,7 +466,7 @@ const releaseRide = async (rideId, driver_id) => {
 };
 
 // Start the ride service
-const startRide = async (rideId, driver_id) => {
+const startRide = async (rideId, driver_id,pickup_time) => {
     const ride = await Ride.findOne({
         where: {
             id: rideId,
@@ -485,16 +479,23 @@ const startRide = async (rideId, driver_id) => {
         throw new Error("Ride not found or cannot be started.");
     }
 
-    ride.status = "on-route";
-    ride.pickup_time = formatDate(new Date());
-    // ride.pickup_time = new Date();
-    await ride.save();
+    // ride.status = "on-route";
+    // ride.pickup_time;
+    // // ride.pickup_time = new Date();
+    // await ride.save();
+
+    await ride.update(
+    {
+      driver_id,
+      status: "accepted",
+      pickup_time, 
+    });
 
     return ride;
 };
 
 // service for end the ride
-const endRide = async (rideId, driver_id,transaction=null) => {
+const endRide = async (rideId, driver_id,transaction=null,dropoff_time) => {
   // Use provided trasaction or create new one
   const t = transaction || await sequelize.transaction();
   try {
@@ -509,11 +510,17 @@ const endRide = async (rideId, driver_id,transaction=null) => {
         if (!ride) {
             throw new Error("Ride not found or cannot be ended.");
         }
+
+        await ride.update({
+          status: "completed",
+          dropoff_time,
+
+        });
     
-        ride.status = "completed";
-        ride.dropoff_time = formatDate(new Date());
-        // ride.dropoff_time = new Date();
-        await ride.save();
+        // ride.status = "completed";
+        // ride.dropoff_time;
+        // // ride.dropoff_time = new Date();
+        // await ride.save();
     
         // get tax/commisstion percentage from settings table
         const settings = await Settings.findOne();
