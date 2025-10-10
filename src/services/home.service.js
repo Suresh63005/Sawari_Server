@@ -525,7 +525,7 @@ const endRide = async (rideId, driver_id,transaction=null,dropoff_time) => {
         // get tax/commisstion percentage from settings table
         const settings = await Settings.findOne();
         const percentage = settings?.tax_rate || 0;
-    
+     
         // Calculate commission and driver's earnings
         const amount = parseFloat(ride.Total) || 0;
         const commission = (amount * percentage) / 100;
