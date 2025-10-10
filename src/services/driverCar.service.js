@@ -217,7 +217,9 @@ const getAllVehicles = async ({ page = 1, limit = 5, search = "", status = "all"
     where[Op.or] = [
       { "$Car.brand$": { [Op.like]: `%${search}%` } },
       { "$Car.model$": { [Op.like]: `%${search}%` } },
-      { license_plate: { [Op.like]: `%${search}%` } }
+      { license_plate: { [Op.like]: `%${search}%` } },
+      { "$Driver.first_name$": { [Op.like]: `%${search}%` } },
+    { "$Driver.last_name$": { [Op.like]: `%${search}%` } }
     ];
   }
 
@@ -246,6 +248,12 @@ const getAllVehicles = async ({ page = 1, limit = 5, search = "", status = "all"
         as: "VerifierAdmin", // Alias for clarity
         attributes: ["id", "first_name", "last_name", "role"],
         required: false
+      },
+      {
+        model: Driver,
+        as: "Driver", // Alias for clarity
+        attributes: ["id", "first_name", "last_name"],
+        required: false
       }
     ],
     limit,
@@ -256,6 +264,7 @@ const getAllVehicles = async ({ page = 1, limit = 5, search = "", status = "all"
   const data = rows.map(v => ({
     id: v.id,
     driver_id: v.driver_id,
+    driver_name: v.Driver ? `${v.Driver.first_name} ${v.Driver.last_name}` : "N/A",
     car_id: v.car_id,
     car_brand: v.Car?.brand || null,
     car_model: v.Car?.model || null,

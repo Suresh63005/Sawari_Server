@@ -32,10 +32,15 @@ const exportAllPaymentsController = async (req, res) => {
   try {
     const { search = "", status = "" } = req.query;
     const buffer = await exportAllPayments(search, status);
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=All_Payment_Reports.xlsx"
-    );
+
+    // Create dynamic filename based on status
+    let fileName = "All_Payment_Reports.xlsx";
+    if (status && status.toLowerCase() !== "all") {
+      const capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+      fileName = `All_${capitalizedStatus}_Payment_Reports.xlsx`;
+    }
+
+    res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -46,6 +51,7 @@ const exportAllPaymentsController = async (req, res) => {
     console.log(error, "error in exportAllPaymentsController");
   }
 };
+
 
 const exportPaymentByIdController = async (req, res) => {
   try {

@@ -11,7 +11,7 @@ const Car = require("./cars.model");
 const Package = require("./package.model");
 const SubPackage = require("./sub-package.model");
 const PackagePrice = require("./packageprice.model");
-
+const Ticket = require("./ticket.model");
 // Admin associations
 Admin.hasMany(Ride, { foreignKey: "admin_id", as: "CreatedRides", onDelete: "SET NULL", constraints: false });
 Ride.belongsTo(Admin, { foreignKey: "admin_id", as: "CreatorAdmin", constraints: false });
@@ -98,6 +98,10 @@ Package.hasMany(PackagePrice, { foreignKey: "package_id", as: "PackagePrices" })
 
 PackagePrice.belongsTo(SubPackage, { foreignKey: "sub_package_id", as: "SubPackage" });
 SubPackage.hasMany(PackagePrice, { foreignKey: "sub_package_id", as: "PackagePrices" });
+
+
+Ticket.belongsTo(Driver, { foreignKey: "raised_by", as: "driver", constraints: false });
+Driver.hasMany(Ticket, { foreignKey: "raised_by", as: "tickets", onDelete: "CASCADE", constraints: false });
 // Export models
 module.exports = {
   Admin,

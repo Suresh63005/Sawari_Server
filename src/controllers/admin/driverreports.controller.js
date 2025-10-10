@@ -27,14 +27,23 @@ const getDriverByIdController = async (req, res) => {
   }
 };
 
+
+
 const exportAllDriversController = async (req, res) => {
   try {
-    const { search = "", status = "" } = req.query; // Fixed: Use req.query instead of req.params
+    const { search = "", status = "" } = req.query;
+
     const buffer = await exportAllDrivers(search, status);
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=All_Driver_Reports.xlsx"
-    );
+
+    // Create a dynamic filename based on status
+    let fileName = "All_Driver_Reports.xlsx";
+    if (status && status.toLowerCase() !== "all") {
+      // Capitalize first letter for neatness
+      const capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+      fileName = `All_${capitalizedStatus}_Driver_Reports.xlsx`;
+    }
+
+    res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -45,6 +54,7 @@ const exportAllDriversController = async (req, res) => {
     console.log(error, "error in exportAllDriversController");
   }
 };
+
 
 const exportDriverByIdController = async (req, res) => {
   try {
