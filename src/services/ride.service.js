@@ -363,23 +363,37 @@ const getAllRides = async ({ search = "", status = "", limit = "10", page = "1",
     }
 
     const where = {};
-   if (search) {
+if (search) {
+  const trimmedSearch = search.trim();
+
   where[Op.or] = [
-    { customer_name: { [Op.like]: `%${search}%` } },
-    { pickup_location: { [Op.like]: `%${search}%` } },
-    { drop_location: { [Op.like]: `%${search}%` } },
-    { pickup_address: { [Op.like]: `%${search}%` } },
-    { drop_address: { [Op.like]: `%${search}%` } },
-    { phone: { [Op.like]: `%${search}%` } },
-    { email: { [Op.like]: `%${search}%` } },
-    { "$Car.brand$": { [Op.like]: `%${search}%` } },
-    { "$Car.model$": { [Op.like]: `%${search}%` } },
-    // Scheduled_time formatted as date (dd-mm-yyyy)
+    { customer_name: { [Op.like]: `%${trimmedSearch}%` } },
+    { pickup_location: { [Op.like]: `%${trimmedSearch}%` } },
+    { drop_location: { [Op.like]: `%${trimmedSearch}%` } },
+    { pickup_address: { [Op.like]: `%${trimmedSearch}%` } },
+    { drop_address: { [Op.like]: `%${trimmedSearch}%` } },
+    { phone: { [Op.like]: `%${trimmedSearch}%` } },
+    { email: { [Op.like]: `%${trimmedSearch}%` } },
+    { "$Car.brand$": { [Op.like]: `%${trimmedSearch}%` } },
+    { "$Car.model$": { [Op.like]: `%${trimmedSearch}%` } },
+    sequelizeWhere(
+      fn("REPLACE", col("customer_name"), " ", ""),
+      { [Op.like]: `%${trimmedSearch.replace(/\s+/g, "")}%` }
+    ),
+    sequelizeWhere(
+      fn("REPLACE", col("pickup_address"), " ", ""),
+      { [Op.like]: `%${trimmedSearch.replace(/\s+/g, "")}%` }
+    ),
+    sequelizeWhere(
+      fn("REPLACE", col("drop_address"), " ", ""),
+      { [Op.like]: `%${trimmedSearch.replace(/\s+/g, "")}%` }
+    ),
     sequelizeWhere(fn("DATE_FORMAT", col("scheduled_time"), "%d-%m-%Y"), {
-      [Op.like]: `%${search}%`,
+      [Op.like]: `%${trimmedSearch}%`,
     }),
   ];
 }
+
 
     if (status && status !== "all") {
       where.status = status;

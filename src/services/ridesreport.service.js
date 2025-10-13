@@ -17,6 +17,7 @@ const getAllRides = async (search = "", status = "", page = 1, limit = 10) => {
       { phone: { [Op.like]: `%${search}%` } },
       { pickup_address: { [Op.like]: `%${search}%` } },
       { drop_address: { [Op.like]: `%${search}%` } },
+      { ride_code: { [Op.like]: `%${search}%` } },
     ];
   }
 
@@ -197,7 +198,7 @@ const exportAllRides = async (search = "", status = "") => {
         pickup_address: ride.pickup_address || "-",
         drop_address: ride.drop_address || "-",
         // rideDate: formatDateTimeExcel(ride.ride_date)||"-",
-        scheduled_time: formatDateTimeExcel(ride.scheduled_time)||"-",
+        scheduled_time: ride.scheduled_time || "-",
         driver_name: ride.AssignedDriver ? `${ride.AssignedDriver.first_name} ${ride.AssignedDriver.last_name}` : "-",
         vehicle_model: ride.Car ? ride.Car.model : "-",
         package_name: ride.Package ? ride.Package.name : "-",
@@ -249,7 +250,7 @@ const exportRideById = async (rideId) => {
       pickup_address: ride.pickup_address || "-",
       drop_address: ride.drop_address || "-",
       // ride_date: formatDateTimeExcel(ride.ride_date)||"-",
-      scheduled_time: formatDateTimeExcel(ride.scheduled_time)||"-",
+      scheduled_time: ride.scheduled_time || "-",
       driver_name: ride.AssignedDriver ? `${ride.AssignedDriver.first_name} ${ride.AssignedDriver.last_name}` : "-",
       vehicle_model: ride.Car ? ride.Car.model : "-",
       package_name: ride.Package ? ride.Package.name : "-",

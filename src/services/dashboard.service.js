@@ -100,13 +100,13 @@ const getDashboardStats = async () => {
   });
 
   const onlineDrivers = await Driver.count({
-  where: {
-    status: "active",
-    is_approved: true,
-    availability_status: "online", // 👈 your online flag
-    deletedAt: null,
-  },
-});
+    where: {
+      status: "active",
+      is_approved: true,
+      availability_status: "online",
+      deletedAt: null,
+    },
+  });
 
   return {
     totalRides: {
@@ -140,11 +140,11 @@ const getDashboardStats = async () => {
       description: "approved vehicles",
     },
     onlineDrivers: {
-    value: onlineDrivers,
-    trend: "", // leave empty if you don’t want green/red arrow
-    description: "drivers currently online",
-  },
-};
+      value: onlineDrivers,
+      trend: "", // No trend for online drivers
+      description: "drivers currently online",
+    },
+  };
 };
 
 const getRecentActivity = async () => {
@@ -153,18 +153,18 @@ const getRecentActivity = async () => {
       where: { deletedAt: null },
       order: [["createdAt", "DESC"]],
       limit: 5,
-      attributes: ["id", "pickup_address", "drop_address", "status", "createdAt"],
+      attributes: ["id", "pickup_address", "drop_address", "status", "createdAt", "scheduled_time"],
       include: [
         {
           model: Driver,
-          as:"AssignedDriver",
+          as: "AssignedDriver",
           attributes: ["first_name", "last_name"],
           required: false,
           where: { deletedAt: null },
         },
         {
           model: Car,
-          as:"Car",
+          as: "Car",
           attributes: ["model"],
           required: false,
           where: { deletedAt: null },
@@ -177,10 +177,10 @@ const getRecentActivity = async () => {
         return {
           id: index + 1,
           action: `Ride ${ride.status || "unknown"}`,
-          user: ride.Driver
-            ? `${ride.Driver.first_name || "Unknown"} ${ride.Driver.last_name || ""} - ${ride.Cars?.car_model || "Unknown"}`
+          user: ride.AssignedDriver
+            ? `${ride.AssignedDriver.first_name || "Unknown"} ${ride.AssignedDriver.last_name || ""} - ${ride.Car?.model || "Unknown"}`
             : `${ride.pickup_address || "Unknown"} → ${ride.drop_address || "Unknown"}`,
-          time: ride.createdAt ? new Date(ride.createdAt).toLocaleString() : "Unknown",
+          time: ride.scheduled_time,
           type: "ride",
         };
       } catch (error) {
@@ -193,7 +193,7 @@ const getRecentActivity = async () => {
           id: index + 1,
           action: `Ride ${ride.status || "unknown"}`,
           user: `${ride.pickup_address || "Unknown"} → ${ride.drop_address || "Unknown"}`,
-          time: ride.createdAt ? new Date(ride.createdAt).toLocaleString() : "Unknown",
+          time: ride.scheduled_time,
           type: "ride",
         };
       }
@@ -216,21 +216,20 @@ const getPendingApprovals = async () => {
     });
 
     const pendingVehicles = await DriverCar.findAll({
-  where: { 
-    is_approved: false,
-    status: "inactive",
-    deletedAt: null
-  },
-  attributes: ["id", "license_plate"], // only DriverCar columns here
-  include: [
-    {
-      model: Car,
-      as: "Car", // must match alias
-      attributes: ["id", "brand", "model", "image_url"], // Car columns here
-    },
-  ],
-});
-
+      where: {
+        is_approved: false,
+        status: "inactive",
+        deletedAt: null,
+      },
+      attributes: ["id", "license_plate"],
+      include: [
+        {
+          model: Car,
+          as: "Car",
+          attributes: ["id", "brand", "model"],
+        },
+      ],
+    });
 
     return [
       ...pendingDrivers.map((driver) => ({
@@ -244,7 +243,7 @@ const getPendingApprovals = async () => {
       ...pendingVehicles.map((vehicle) => ({
         id: vehicle.id,
         type: "Vehicle",
-        name: `${vehicle.model} - ${vehicle.license_plate}`,
+        name: `${vehicle.Car?.brand || "Unknown"} ${vehicle.Car?.model || "Unknown"} - ${vehicle.license_plate}`,
         status: "pending",
         priority: "medium",
         permission: "vehicles",
@@ -256,8 +255,56 @@ const getPendingApprovals = async () => {
       stack: error.stack,
       name: error.name,
     });
-    console.log("Error details:", error);
     throw new Error(`Failed to fetch pending approvals: ${error.message}`);
+  }
+};
+
+const getOnlineDrivers = async () => {
+  try {
+    const onlineDrivers = await Driver.findAll({
+      where: {
+        status: "active",
+        is_approved: true,
+        availability_status: "online",
+        deletedAt: null,
+      },
+      attributes: ["id", "first_name", "last_name"],
+      include: [
+        {
+          model: DriverCar,
+          as: "Vehicles", // Ensure this matches the association alias
+          attributes: ["license_plate"],
+          where: {
+            status: "active",
+            is_approved: true,
+            deletedAt: null,
+          },
+          required: false,
+          include: [
+            {
+              model: Car,
+              as: "Car",
+              attributes: ["brand", "model"],
+            },
+          ],
+        },
+      ],
+    });
+
+    return onlineDrivers.map((driver) => ({
+      id: driver.id,
+      name: `${driver.first_name || "Unknown"} ${driver.last_name || ""}`,
+      vehicle: driver.Vehicles.length
+        ? `${driver.Vehicles[0].Car?.brand || "Unknown"} ${driver.Vehicles[0].Car?.model || "Unknown"} - ${driver.Vehicles[0].license_plate}`
+        : "No vehicle assigned",
+    }));
+  } catch (error) {
+    console.error("Error fetching online drivers:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+    throw new Error(`Failed to fetch online drivers: ${error.message}`);
   }
 };
 
@@ -265,4 +312,5 @@ module.exports = {
   getDashboardStats,
   getRecentActivity,
   getPendingApprovals,
+  getOnlineDrivers,
 };
