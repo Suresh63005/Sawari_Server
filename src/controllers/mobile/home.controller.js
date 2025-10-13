@@ -504,6 +504,7 @@ const updateRideStatus = async (req, res) => {
 
 //6 Get Rides by Status (accepted, completed, cancelled)
 const getRidesByStatus = async (req, res) => {
+  console.log("getRidesByStatus called");
   const driver_id = req.driver?.id;
   if (!driver_id) {
     return res.status(401).json({
