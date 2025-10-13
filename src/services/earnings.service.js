@@ -188,8 +188,8 @@ const monthFilteredEarnings = async (dateRange, search = "", page = 1, limit = 5
   };
 };
 
-const getEarningsSum = async (where = {}) => {
-  const amount = await Earnings.sum("amount", where);
+const getEarningsSum = async (conditions = {}) => {
+  const amount = await Earnings.sum("amount", conditions);
   return amount || 0;
 };
 

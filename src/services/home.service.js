@@ -9,11 +9,10 @@ const Settings = require("../models/settings.model");
 const { sequelize } = require("../models");
 const { sendPushNotification } = require("../helper/sendPushNotification");
 const DriverCar = require("../models/driver-cars.model");
-const { updateDriverBalance } = require("./driver.service");
-const { createWalletReport } = require("./wallet.service");
+// const { updateDriverBalance } = require("./driver.service");
+// const { createWalletReport } = require("./wallet.service");
 const {sendNotificationService}=require("./notifications.service");
 const { generateRideCode } = require("../utils/generateCode");
-// const { formatToAST } = require("../utils/timezone");
 // const { generateRideCode } = require("../utils/generateCode");
 // const DriverCar = require("../models/driver-cars.model");
 
@@ -87,7 +86,7 @@ const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
     const rides = await Ride.findAll({
         where: {
             [Op.or]: [
-                { driver_id: driver_id },
+                { driver_id: driver_id }, 
                 { initiated_by_driver_id: driver_id }],
             status: status
         },
@@ -496,85 +495,92 @@ const startRide = async (rideId, driver_id,pickup_time) => {
 };
 
 // service for end the ride
-const endRide = async (rideId, driver_id,transaction=null,dropoff_time) => {
-  // Use provided trasaction or create new one
-  const t = transaction || await sequelize.transaction();
-  try {
-        const ride = await Ride.findOne({
-            where: {
-                id: rideId,
-                driver_id: driver_id,
-                status: "on-route"
-            }
-        });
+// const endRide = async (rideId, driver_id,transaction=null,dropoff_time) => {
+//   // Use provided trasaction or create new one
+//   const t = transaction || await sequelize.transaction();
+//   try {
+//         const ride = await Ride.findOne({
+//             where: {
+//                 id: rideId,
+//                 driver_id: driver_id,
+//                 status: "on-route"
+//             }
+//         });
     
-        if (!ride) {
-            throw new Error("Ride not found or cannot be ended.");
-        }
+//         if (!ride) {
+//             throw new Error("Ride not found or cannot be ended.");
+//         }
 
-        await ride.update({
-          status: "completed",
-          dropoff_time,
+//         await ride.update({
+//           status: "completed",
+//           dropoff_time,
 
-        });
+//         });
     
-        // ride.status = "completed";
-        // ride.dropoff_time;
-        // // ride.dropoff_time = new Date();
-        // await ride.save();
+//         // ride.status = "completed";
+//         // ride.dropoff_time;
+//         // // ride.dropoff_time = new Date();
+//         // await ride.save();
     
-        // get tax/commisstion percentage from settings table
-        const settings = await Settings.findOne();
-        const percentage = settings?.tax_rate || 0;
+//         // get tax/commisstion percentage from settings table
+//         const settings = await Settings.findOne();
+//         const percentage = settings?.tax_rate || 0;
      
-        // Calculate commission and driver's earnings
-        const amount = parseFloat(ride.Total) || 0;
-        const commission = (amount * percentage) / 100;
-        const netEarnings = amount - commission;
+//         // Calculate commission and driver's earnings
+//         const amount = parseFloat(ride.Total) || 0;
+//         const commission = (amount * percentage) / 100;
+//         const netEarnings = amount - commission;
     
-        // Fetch current wallent balance
-        const driver = await Driver.findByPk(driver_id,{transaction:t});
-        if(!driver){
-          throw new Error("Driver not found.");
-        }
-        const currentBalance = parseFloat(driver.wallet_balance || 0);
-        const updatedBalance = currentBalance + netEarnings;
+//         // Fetch current wallent balance
+//         const driver = await Driver.findByPk(driver_id,{transaction:t});
+//         if(!driver){
+//           throw new Error("Driver not found.");
+//         }
+//         const currentBalance = parseFloat(driver.wallet_balance || 0);
+//         const updatedBalance = currentBalance + netEarnings;
     
-        // Update Wallet balance using service
-        await updateDriverBalance(driver_id,updatedBalance.toFixed(2),t);
+//         // Update Wallet balance using service
+//         await updateDriverBalance(driver_id,updatedBalance.toFixed(2),t);
     
-        // create earnings record
-        const earnings = await Earnings.create({
-            driver_id: driver_id,
-            ride_id: ride.id,
-            amount,
-            commission,
-            percentage,
-            // payment_method:ride.payment_method,
-            status: "processed"
-        },{transaction:t});
+//         // create earnings record
+//         const earnings = await Earnings.create({
+//             driver_id: driver_id,
+//             ride_id: ride.id,
+//             amount,
+//             commission,
+//             percentage,
+//             // payment_method:ride.payment_method,
+//             status: "processed"
+//         },{transaction:t});
 
-        // Create wallet report
-        await createWalletReport(driver_id,netEarnings,updatedBalance,ride.id,t,{
-          transaction_type:"credit",
-          description: `Earnings from ride ${rideId}`,
-          status:"completed"
-        });
+//         // Create wallet report
+//         // await createWalletReport(driver_id,netEarnings,updatedBalance,ride.id,t,{
+//         //   transaction_type:"credit",
+//         //   description: `Earnings from ride ${rideId}`,
+//         //   status:"completed"
+//         // });
 
-        console.log(`EndRide: driver_id=${driver_id}, rideId=${rideId}, amount=${amount.toFixed(2)}, commission=${commission.toFixed(2)}, netEarnings=${netEarnings.toFixed(2)}, updatedBalance=${updatedBalance.toFixed(2)}`);
+//         console.log(`EndRide: driver_id=${driver_id}, rideId=${rideId}, amount=${amount.toFixed(2)}, commission=${commission.toFixed(2)}, netEarnings=${netEarnings.toFixed(2)}`);
 
-        if(!transaction){
-          await t.commit();
-        };
+//         if(!transaction){
+//           await t.commit();
+//         };
 
-        return {ride,earnings,wallet_balance:updatedBalance.toFixed(2)};
-  } catch (error) {
-    if (!transaction && !t.finished) {
-        await t.rollback();
-      }
-      console.error("Error ending ride:", error);
-      throw new Error("Failed to end ride: " + error.message);
-  }
+//         return {ride,earnings,wallet_balance:updatedBalance.toFixed(2)};
+//   } catch (error) {
+//     if (!transaction && !t.finished) {
+//         await t.rollback();
+//       }
+//       console.error("Error ending ride:", error);
+//       throw new Error("Failed to end ride: " + error.message);
+//   }
+// };
+
+const endRide = async (rideId, driver_id) => {
+  // Fetch ride and driver only, controller will handle logic
+  const ride = await Ride.findOne({ where: { id: rideId, driver_id } });
+  const driver = await Driver.findByPk(driver_id);
+  return { ride, driver };
 };
 
 // service for fetch initiated_by_driver_id rides (my rides)

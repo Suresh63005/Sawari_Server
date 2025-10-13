@@ -120,6 +120,7 @@ const createRide = async (data) => {
     const subtotal = isOneHourSubPackage(subPackage) ? baseFare * riderHours : baseFare;
     const tax = subtotal * (taxRate / 100);
     const total = subtotal + tax;
+    
 
     const ride_code = generateRideCode();
     const ride = await Ride.create(
