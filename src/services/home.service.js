@@ -83,14 +83,21 @@ const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
     if (!["accepted", "completed", "cancelled"].includes(status)) {
         throw new Error("Invalid status. Allowed values: 'accepted', 'cancelled','completed");
     }
+
+    const whereCondition = {
+      [Op.or]: [{ driver_id }, { initiated_by_driver_id: driver_id }],
+      status,
+    };
+
+      if (status === "accepted") {
+        whereCondition.scheduled_time = { [Op.gte]: new Date() };
+      }
+
+    const orderBy = status === "accepted" ? [["scheduled_time", "DESC"]] : [["updatedAt", "DESC"]];
+
     const rides = await Ride.findAll({
-        where: {
-            [Op.or]: [
-                { driver_id: driver_id }, 
-                { initiated_by_driver_id: driver_id }],
-            status: status
-        },
-        order: [["updatedAt", "DESC"]]
+      where: whereCondition,
+      order: orderBy,
     });
 
     return rides;
