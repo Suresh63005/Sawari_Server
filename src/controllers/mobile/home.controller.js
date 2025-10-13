@@ -54,8 +54,8 @@ const getAllHomeData = async (req, res) => {
     const todayEarnings = await getEarningsSum({
         driver_id,
         updatedAt: {[Op.between]: [startOfDay, endOfDay],},
-        status: {[Op.in]: ["completed", "pending"], },
-    });
+        status: {[Op.in]: ["completed"], },
+    }); 
 
     // 3. Driver profile with vehicle
     const driverProfile = await driverProfileWithCar(driver_id);
@@ -120,7 +120,7 @@ const getAllHomeData = async (req, res) => {
         }
       ],
       limit: 10,
-      order: [["scheduled_time", "ASC"]]
+      order: [["scheduled_time", "DESC"]]
     });
 
     console.log("DriverCar with Car:", JSON.stringify(driverCar, null, 2));
