@@ -1,3 +1,5 @@
+
+
 const endPoints = {
     // for admin
     auth: {
@@ -28,6 +30,7 @@ const endPoints = {
         getDashboardStats: "/stats",
         getRecentActivity: "/recent-activity",
         getPendingApprovals: "/pending-approvals",
+        getOnlineDrivers   : "/online-drivers",
     },
     driver: {
         getAllDrivers: "/",
