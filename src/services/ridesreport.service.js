@@ -108,20 +108,20 @@ const getRideById = async (rideId) => {
   }
 };
 
-const formatDateTimeExcel = (dateStr) => {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
+// const formatDateTimeExcel = (dateStr) => {
+//   if (!dateStr) return "-";
+//   const date = new Date(dateStr);
 
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = String(date.getFullYear()).slice(-2);
+//   const day = String(date.getDate()).padStart(2, "0");
+//   const month = String(date.getMonth() + 1).padStart(2, "0");
+//   const year = String(date.getFullYear()).slice(-2);
 
-  // ✅ Ensure 24-hour time format
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
+//   // ✅ Ensure 24-hour time format
+//   const hours = String(date.getHours()).padStart(2, "0");
+//   const minutes = String(date.getMinutes()).padStart(2, "0");
 
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
-};
+//   return `${day}/${month}/${year} ${hours}:${minutes}`;
+// };
 
 
 const exportAllRides = async (search = "", status = "") => {
