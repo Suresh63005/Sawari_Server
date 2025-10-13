@@ -11,6 +11,7 @@ const { generateRideCode } = require("../utils/generateCode");
 // Response DTO
 const rideResponseDTO = (ride) => ({
   id: ride.id,
+  ride_code: ride.ride_code,
   customer_name: ride.customer_name,
   phone: ride.phone,
   email: ride.email,
@@ -135,7 +136,10 @@ const createRide = async (data) => {
         car_id: data.car_id,
         package_id: data.package_id,
         subpackage_id: data.subpackage_id,
-        scheduled_time: scheduledTime ? scheduledTime.toISOString() : null,
+        scheduled_time: scheduledTime
+  ? `${scheduledTime.getFullYear()}-${String(scheduledTime.getMonth() + 1).padStart(2, "0")}-${String(scheduledTime.getDate()).padStart(2, "0")}T${String(scheduledTime.getHours()).padStart(2, "0")}:${String(scheduledTime.getMinutes()).padStart(2, "0")}:${String(scheduledTime.getSeconds()).padStart(2, "0")}`
+  : null,
+
         notes: data.notes,
         Price: baseFare,
         tax: Number(tax.toFixed(2)), // Store tax amount
@@ -172,7 +176,8 @@ const updateRide = async (id, data) => {
       if (isNaN(scheduledTime.getTime())) {
         throw new Error("Invalid scheduled_time: Must be a valid ISO datetime string");
       }
-      scheduledTime = scheduledTime.toISOString();
+      scheduledTime = `${scheduledTime.getFullYear()}-${String(scheduledTime.getMonth() + 1).padStart(2, "0")}-${String(scheduledTime.getDate()).padStart(2, "0")}T${String(scheduledTime.getHours()).padStart(2, "0")}:${String(scheduledTime.getMinutes()).padStart(2, "0")}:${String(scheduledTime.getSeconds()).padStart(2, "0")}`;
+
     }
 
     // ✅ force numeric types right away
@@ -385,7 +390,7 @@ const getAllRides = async ({ search = "", status = "", limit = "10", page = "1",
 
     const { rows, count } = await Ride.findAndCountAll({
       where,
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [["createdAt", "DESC"]],
       limit: parsedLimit,
       offset,
       include: [
@@ -513,6 +518,7 @@ const getRideByIdData=async(driver_id,ride_id)=>{
     }
     return ride;
 };
+
 
 
 const getRidesByStatusAndDriver = async (status, driverId) => {

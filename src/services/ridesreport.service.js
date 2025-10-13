@@ -190,7 +190,7 @@ const exportAllRides = async (search = "", status = "") => {
 
     rides.forEach((ride) => {
       worksheet.addRow({
-        id: ride.id ? ride.id.split("-")[0] : "-",
+        id: ride.ride_code || "-",
         customer_name: ride.customer_name || "-",
         email: ride.email || "-",
         phone: ride.phone || "-",
@@ -242,7 +242,7 @@ const exportRideById = async (rideId) => {
     ];
 
     worksheet.addRow({
-      id: ride.id ? ride.id.split("-")[0] : "-",
+      id: ride.ride_code || "-",
       customer_name: ride.customer_name || "-",
       email: ride.email || "-",
       phone: ride.phone || "-",
