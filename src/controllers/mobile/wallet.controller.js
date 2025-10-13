@@ -109,7 +109,7 @@ const verifyPayment = async (req, res) => {
         console.log(`✅ credit_ride_count reset for driver ${driver_id}`);
       }
 
-      await t.commit();
+      await t.commit(); 
 
       // Send push notification
       if (driver.one_signal_id) {
