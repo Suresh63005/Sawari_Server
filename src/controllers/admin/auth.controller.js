@@ -62,7 +62,9 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: !email ? "Email is required" : "Password is required" });
+      return res.status(400).json({
+        message: !email ? "Email is required" : "Password is required",
+      });
     }
 
     const admin = await AuthService.getAdminByEmail(email);
@@ -72,10 +74,14 @@ const login = async (req, res) => {
 
     // ✅ Check account status
     if (!admin.status || admin.status !== "active") {
-      return res.status(403).json({ message: "This account is inactive. Please contact support." });
+      return res
+        .status(403)
+        .json({ message: "This account is inactive. Please contact support." });
     }
     if (admin.status === "blocked") {
-      return res.status(403).json({ message: "This account is blocked. Please contact support." });
+      return res
+        .status(403)
+        .json({ message: "This account is blocked. Please contact support." });
     }
 
     const isPasswordValid = await bcrypt.compare(password, admin.password);
@@ -118,7 +124,7 @@ const login = async (req, res) => {
         admin_management: permissions.manage_admin,
         fleet: permissions.manage_fleet,
         reports: permissions.manage_reports,
-      }
+      },
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -126,13 +132,15 @@ const login = async (req, res) => {
   }
 };
 
-
 const register = async (req, res) => {
   try {
-    const { first_name, last_name, email, phone, role, granted_by, password } = req.body;
+    const { first_name, last_name, email, phone, role, granted_by, password } =
+      req.body;
 
     if (!first_name || !last_name || !email || !phone || !role || !password) {
-      return res.status(400).json({ message: "All required fields must be provided" });
+      return res
+        .status(400)
+        .json({ message: "All required fields must be provided" });
     }
 
     const existingAdmin = await AuthService.getAdminByEmail(email);
@@ -254,4 +262,11 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { login, register, logout, getPermissions, getRolePermissions, getMe };
+module.exports = {
+  login,
+  register,
+  logout,
+  getPermissions,
+  getRolePermissions,
+  getMe,
+};

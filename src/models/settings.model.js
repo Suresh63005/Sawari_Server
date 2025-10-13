@@ -50,11 +50,11 @@ const Settings = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    min_wallet_percentage:{
+    min_wallet_percentage: {
       type: DataTypes.FLOAT,
       allowNull: true,
       defaultValue: 0.0,
-    }
+    },
   },
   { tableName: "Settings", timestamps: true, paranoid: true }
 );

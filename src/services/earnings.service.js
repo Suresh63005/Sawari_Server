@@ -5,7 +5,6 @@ const Car = require("../models/cars.model");
 const Driver = require("../models/driver.model"); // Added Driver model
 const ExcelJS = require("exceljs");
 
-
 const earningsDTO = (data) => {
   return {
     driver_id: data.driver_id,
@@ -62,16 +61,34 @@ const earningsResponseDTO = (earnings) => {
   };
 };
 
-const createEarnings = async (data) => {
-  if (!data.driver_id || !data.ride_id || !data.amount || !data.percentage || !data.commission) {
-    throw new Error("Missing required fields: driver_id, ride_id, amount, percentage, commission");
-  }
-  const earningsData = earningsDTO(data);
-  const earnings = await Earnings.create(earningsData);
+const createEarnings = async (data, transaction = null) => {
+  const {
+    driver_id,
+    ride_id,
+    amount,
+    commission = 0,
+    percentage = 0,
+    status = "pending",
+  } = data;
+  const earningsData = earningsDTO({
+    driver_id,
+    ride_id,
+    amount,
+    commission,
+    percentage,
+    status,
+  });
+
+  const earnings = await Earnings.create(earningsData, { transaction });
   return earningsResponseDTO(earnings);
 };
 
-const getEarningsByDriver = async ({ driverId, status, limit = 10, page = 1 }) => {
+const getEarningsByDriver = async ({
+  driverId,
+  status,
+  limit = 10,
+  page = 1,
+}) => {
   const where = { driver_id: driverId };
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -104,7 +121,10 @@ const getEarningsByDriver = async ({ driverId, status, limit = 10, page = 1 }) =
     ],
   });
 
-  console.log("Fetched earnings by driver:", rows.map((e) => earningsResponseDTO(e))); // Debug log
+  console.log(
+    "Fetched earnings by driver:",
+    rows.map((e) => earningsResponseDTO(e))
+  ); // Debug log
   return {
     total: count,
     page: parseInt(page),
@@ -142,7 +162,12 @@ const getEarningsByRide = async (rideId) => {
   return earningsResponseDTO(earnings);
 };
 
-const monthFilteredEarnings = async (dateRange, search = "", page = 1, limit = 5) => {
+const monthFilteredEarnings = async (
+  dateRange,
+  search = "",
+  page = 1,
+  limit = 5
+) => {
   const offset = (page - 1) * limit;
   const where = { ...dateRange };
 
@@ -171,7 +196,7 @@ const monthFilteredEarnings = async (dateRange, search = "", page = 1, limit = 5
           {
             model: Driver,
             as: "AssignedDriver",
-            attributes: ["id","first_name"],
+            attributes: ["id", "first_name"],
           },
         ],
       },
@@ -181,7 +206,10 @@ const monthFilteredEarnings = async (dateRange, search = "", page = 1, limit = 5
     offset,
   });
 
-  console.log("Fetched month filtered earnings:", rows.map((e) => earningsResponseDTO(e))); // Debug log
+  console.log(
+    "Fetched month filtered earnings:",
+    rows.map((e) => earningsResponseDTO(e))
+  ); // Debug log
   return {
     earningsList: rows.map((earnings) => earningsResponseDTO(earnings)),
     total: count,
@@ -228,7 +256,10 @@ const singleEarnings = async (id, signal) => {
   });
   if (!result) throw new Error("Earnings not found");
   if (signal?.aborted) throw new Error("Operation aborted after query");
-  console.log("Fetched single earning:", result ? earningsResponseDTO(result) : null); // Debug log
+  console.log(
+    "Fetched single earning:",
+    result ? earningsResponseDTO(result) : null
+  ); // Debug log
   return result;
 };
 
@@ -268,7 +299,10 @@ const allEarnings = async (dateRange = {}, search = "", signal) => {
     ],
     order: [["createdAt", "DESC"]],
   });
-  console.log("Fetched all earnings:", result.map((e) => earningsResponseDTO(e))); // Debug log
+  console.log(
+    "Fetched all earnings:",
+    result.map((e) => earningsResponseDTO(e))
+  ); // Debug log
   if (signal?.aborted) throw new Error("Operation aborted after query");
   return result;
 };
@@ -318,21 +352,31 @@ const generateExcel = async (earnings, signal) => {
       amount: parseFloat(e.amount),
       commission: parseFloat(e.commission),
       percentage: parseFloat(e.percentage),
-      payment_method: e.payment_method ? e.payment_method.replace("_", " ").toUpperCase() : "N/A",
+      payment_method: e.payment_method
+        ? e.payment_method.replace("_", " ").toUpperCase()
+        : "N/A",
       status: e.status,
       createdAt: e.createdAt ? new Date(e.createdAt).toLocaleString() : "N/A",
       customer_name: e.Ride?.customer_name || "N/A",
       customer_email: e.Ride?.email || "N/A",
       customer_phone: e.Ride?.phone || "N/A",
       pickup_address: e.Ride?.pickup_address || "N/A",
-      pickup_location: e.Ride?.pickup_location ? JSON.stringify(e.Ride.pickup_location) : "N/A",
+      pickup_location: e.Ride?.pickup_location
+        ? JSON.stringify(e.Ride.pickup_location)
+        : "N/A",
       drop_address: e.Ride?.drop_address || "N/A",
-      drop_location: e.Ride?.drop_location ? JSON.stringify(e.Ride.drop_location) : "N/A",
+      drop_location: e.Ride?.drop_location
+        ? JSON.stringify(e.Ride.drop_location)
+        : "N/A",
       car_brand: e.Ride?.Car?.brand || "N/A",
       car_model: e.Ride?.Car?.model || "N/A",
       ride_type: e.Ride?.ride_type || "N/A",
-      pickup_time: e.Ride?.pickup_time ? new Date(e.Ride.pickup_time).toLocaleString() : "N/A",
-      dropoff_time: e.Ride?.dropoff_time ? new Date(e.Ride.dropoff_time).toLocaleString() : "N/A",
+      pickup_time: e.Ride?.pickup_time
+        ? new Date(e.Ride.pickup_time).toLocaleString()
+        : "N/A",
+      dropoff_time: e.Ride?.dropoff_time
+        ? new Date(e.Ride.dropoff_time).toLocaleString()
+        : "N/A",
       rider_hours: e.Ride?.rider_hours || "N/A",
       price: e.Ride?.Price ? parseFloat(e.Ride.Price) : "N/A",
       total: e.Ride?.Total ? parseFloat(e.Ride.Total) : "N/A",

@@ -4,7 +4,12 @@ const Ride = require("../models/ride.model");
 const { Op } = require("sequelize");
 const ExcelJS = require("exceljs");
 
-const getAllPayments = async (search = "", status = "", page = 1, limit = 10) => {
+const getAllPayments = async (
+  search = "",
+  status = "",
+  page = 1,
+  limit = 10
+) => {
   const offset = (page - 1) * limit;
   const where = {};
 
@@ -43,10 +48,12 @@ const getAllPayments = async (search = "", status = "", page = 1, limit = 10) =>
       counts: {
         totalPayments: count,
         pending: await PaymentReports.count({ where: { status: "pending" } }),
-        completed: await PaymentReports.count({ where: { status: "completed" } }),
+        completed: await PaymentReports.count({
+          where: { status: "completed" },
+        }),
         failed: await PaymentReports.count({ where: { status: "failed" } }),
-        totalAmount: await PaymentReports.sum("amount") || 0,
-        totalCommission: await PaymentReports.sum("commission") || 0,
+        totalAmount: (await PaymentReports.sum("amount")) || 0,
+        totalCommission: (await PaymentReports.sum("commission")) || 0,
       },
     };
   } catch (error) {
@@ -134,16 +141,23 @@ const exportAllPayments = async (search = "", status = "") => {
     payments.forEach((payment) => {
       worksheet.addRow({
         id: payment.id,
-        driver_name: payment.driver ? `${payment.driver.first_name} ${payment.driver.last_name}` : "-",
+        driver_name: payment.driver
+          ? `${payment.driver.first_name} ${payment.driver.last_name}`
+          : "-",
         driver_email: payment.driver ? payment.driver.email : "-",
         driver_phone: payment.driver ? payment.driver.phone : "-",
         customer_name: payment.ride ? payment.ride.customer_name : "-",
-        ride_date: payment.ride && payment.ride.ride_date ? new Date(payment.ride.ride_date).toLocaleString() : "-",
+        ride_date:
+          payment.ride && payment.ride.ride_date
+            ? new Date(payment.ride.ride_date).toLocaleString()
+            : "-",
         amount: payment.amount || 0,
         commission: payment.commission || 0,
         payment_method: payment.payment_method || "-",
         transaction_id: payment.transaction_id || "-",
-        payment_date: payment.payment_date ? new Date(payment.payment_date).toLocaleString() : "-",
+        payment_date: payment.payment_date
+          ? new Date(payment.payment_date).toLocaleString()
+          : "-",
         status: payment.status || "-",
         notes: payment.notes || "-",
       });
@@ -182,16 +196,23 @@ const exportPaymentById = async (paymentId) => {
 
     worksheet.addRow({
       id: payment.id,
-      driver_name: payment.driver ? `${payment.driver.first_name} ${payment.driver.last_name}` : "-",
+      driver_name: payment.driver
+        ? `${payment.driver.first_name} ${payment.driver.last_name}`
+        : "-",
       driver_email: payment.driver ? payment.driver.email : "-",
       driver_phone: payment.driver ? payment.driver.phone : "-",
       customer_name: payment.ride ? payment.ride.customer_name : "-",
-      ride_date: payment.ride && payment.ride.ride_date ? new Date(payment.ride.ride_date).toLocaleString() : "-",
+      ride_date:
+        payment.ride && payment.ride.ride_date
+          ? new Date(payment.ride.ride_date).toLocaleString()
+          : "-",
       amount: payment.amount || 0,
       commission: payment.commission || 0,
       payment_method: payment.payment_method || "-",
       transaction_id: payment.transaction_id || "-",
-      payment_date: payment.payment_date ? new Date(payment.payment_date).toLocaleString() : "-",
+      payment_date: payment.payment_date
+        ? new Date(payment.payment_date).toLocaleString()
+        : "-",
       status: payment.status || "-",
       notes: payment.notes || "-",
     });

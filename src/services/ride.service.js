@@ -51,20 +51,35 @@ const createRide = async (data) => {
 
     // Validate required fields
     if (!data.package_id || !data.subpackage_id || !data.car_id) {
-      throw new Error("Missing required fields: package_id, subpackage_id, or car_id");
+      throw new Error(
+        "Missing required fields: package_id, subpackage_id, or car_id"
+      );
     }
-    if (!data.customer_name || !data.phone || !data.pickup_location || !data.drop_location) {
-      throw new Error("Missing required fields: customer_name, phone, pickup_location, or drop_location");
+    if (
+      !data.customer_name ||
+      !data.phone ||
+      !data.pickup_location ||
+      !data.drop_location
+    ) {
+      throw new Error(
+        "Missing required fields: customer_name, phone, pickup_location, or drop_location"
+      );
     }
 
     // Validate date formats
-    const scheduledTime = data.scheduled_time ? new Date(data.scheduled_time) : null;
+    const scheduledTime = data.scheduled_time
+      ? new Date(data.scheduled_time)
+      : null;
     if (scheduledTime && isNaN(scheduledTime.getTime())) {
-      throw new Error("Invalid scheduled_time: Must be a valid ISO datetime string");
+      throw new Error(
+        "Invalid scheduled_time: Must be a valid ISO datetime string"
+      );
     }
 
     // Validate package exists
-    const packageExists = await Package.findByPk(data.package_id, { transaction });
+    const packageExists = await Package.findByPk(data.package_id, {
+      transaction,
+    });
     if (!packageExists) {
       throw new Error("Invalid package_id: Package does not exist");
     }
@@ -78,7 +93,9 @@ const createRide = async (data) => {
       transaction,
     });
     if (!subPackage) {
-      throw new Error("Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package");
+      throw new Error(
+        "Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package"
+      );
     }
 
     // Validate car exists
@@ -113,8 +130,12 @@ const createRide = async (data) => {
     }
 
     // Calculate Total and Tax
-    const riderHours = isOneHourSubPackage(subPackage) ? (data.rider_hours || 1) : 1;
-    const subtotal = isOneHourSubPackage(subPackage) ? baseFare * riderHours : baseFare;
+    const riderHours = isOneHourSubPackage(subPackage)
+      ? data.rider_hours || 1
+      : 1;
+    const subtotal = isOneHourSubPackage(subPackage)
+      ? baseFare * riderHours
+      : baseFare;
     const tax = subtotal * (taxRate / 100);
     const total = subtotal + tax;
 
@@ -165,7 +186,9 @@ const updateRide = async (id, data) => {
     if (data.scheduled_time) {
       scheduledTime = new Date(data.scheduled_time);
       if (isNaN(scheduledTime.getTime())) {
-        throw new Error("Invalid scheduled_time: Must be a valid ISO datetime string");
+        throw new Error(
+          "Invalid scheduled_time: Must be a valid ISO datetime string"
+        );
       }
       scheduledTime = scheduledTime.toISOString();
     }
@@ -179,7 +202,9 @@ const updateRide = async (id, data) => {
     // Validate package, sub-package, and car combination if provided
     if (data.package_id && data.subpackage_id && data.car_id) {
       // Validate package exists
-      const packageExists = await Package.findByPk(data.package_id, { transaction });
+      const packageExists = await Package.findByPk(data.package_id, {
+        transaction,
+      });
       if (!packageExists) {
         throw new Error("Invalid package_id: Package does not exist");
       }
@@ -193,7 +218,9 @@ const updateRide = async (id, data) => {
         transaction,
       });
       if (!subPackage) {
-        throw new Error("Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package");
+        throw new Error(
+          "Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package"
+        );
       }
 
       // Validate car exists
@@ -227,8 +254,12 @@ const updateRide = async (id, data) => {
         );
       }
 
-      riderHours = isOneHourSubPackage(subPackage) ? (data.rider_hours || ride.rider_hours || 1) : 1;
-      const subtotal = isOneHourSubPackage(subPackage) ? baseFare * riderHours : baseFare;
+      riderHours = isOneHourSubPackage(subPackage)
+        ? data.rider_hours || ride.rider_hours || 1
+        : 1;
+      const subtotal = isOneHourSubPackage(subPackage)
+        ? baseFare * riderHours
+        : baseFare;
       tax = subtotal * (taxRate / 100);
       total = subtotal + tax;
     }
@@ -248,8 +279,8 @@ const updateRide = async (id, data) => {
         scheduled_time: scheduledTime,
         notes: data.notes || ride.notes,
         Price: baseFare,
-        tax: Number(tax).toFixed(2),// ✅ always number before toFixed
-        Total: Number(total).toFixed(2),// ✅ always number before toFixed
+        tax: Number(tax).toFixed(2), // ✅ always number before toFixed
+        Total: Number(total).toFixed(2), // ✅ always number before toFixed
         rider_hours: riderHours,
         status: data.status || ride.status,
         payment_status: data.payment_status || ride.payment_status,
@@ -267,11 +298,13 @@ const updateRide = async (id, data) => {
   }
 };
 
-
 // Get available cars and prices for a package and sub-package
 const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
   try {
-    console.log("getAvailableCarsAndPrices query:", { package_id, sub_package_id });
+    console.log("getAvailableCarsAndPrices query:", {
+      package_id,
+      sub_package_id,
+    });
 
     // Validate package exists
     const packageExists = await Package.findByPk(package_id);
@@ -288,7 +321,9 @@ const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
       },
     });
     if (!subPackage) {
-      throw new Error("Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package");
+      throw new Error(
+        "Invalid subpackage_id: Sub-package does not exist or does not belong to the selected package"
+      );
     }
 
     // Fetch package prices with associated cars
@@ -308,10 +343,12 @@ const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
     });
 
     if (!packagePrices.length) {
-      throw new Error("No cars available for this package and sub-package combination");
+      throw new Error(
+        "No cars available for this package and sub-package combination"
+      );
     }
 
-    const result = packagePrices.map(pp => ({
+    const result = packagePrices.map((pp) => ({
       car_id: pp.car_id,
       car_model: pp.Car ? pp.Car.model : `${pp.car_id} (Unknown)`,
       base_fare: pp.base_fare,
@@ -325,9 +362,23 @@ const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
 };
 
 // Get all rides with filters
-const getAllRides = async ({ search = "", status = "", limit = "10", page = "1", sortBy = "createdAt", sortOrder = "DESC" }) => {
+const getAllRides = async ({
+  search = "",
+  status = "",
+  limit = "10",
+  page = "1",
+  sortBy = "createdAt",
+  sortOrder = "DESC",
+}) => {
   try {
-    console.log("getAllRides query:", { search, status, limit, page, sortBy, sortOrder });
+    console.log("getAllRides query:", {
+      search,
+      status,
+      limit,
+      page,
+      sortBy,
+      sortOrder,
+    });
 
     // Validate query parameters
     const parsedLimit = parseInt(limit, 10);
@@ -338,17 +389,36 @@ const getAllRides = async ({ search = "", status = "", limit = "10", page = "1",
     if (isNaN(parsedPage) || parsedPage <= 0) {
       throw new Error("Invalid page parameter");
     }
-    const validStatuses = ["all", "pending", "accepted", "on-route", "completed", "cancelled"];
+    const validStatuses = [
+      "all",
+      "pending",
+      "accepted",
+      "on-route",
+      "completed",
+      "cancelled",
+    ];
     if (status && !validStatuses.includes(status)) {
-      throw new Error(`Invalid status parameter. Must be one of: ${validStatuses.join(", ")}`);
+      throw new Error(
+        `Invalid status parameter. Must be one of: ${validStatuses.join(", ")}`
+      );
     }
-    const validSortFields = ["createdAt", "ride_date", "Price", "Total", "status"];
+    const validSortFields = [
+      "createdAt",
+      "ride_date",
+      "Price",
+      "Total",
+      "status",
+    ];
     if (!validSortFields.includes(sortBy)) {
-      throw new Error(`Invalid sortBy parameter. Must be one of: ${validSortFields.join(", ")}`);
+      throw new Error(
+        `Invalid sortBy parameter. Must be one of: ${validSortFields.join(", ")}`
+      );
     }
     const validSortOrders = ["ASC", "DESC"];
     if (!validSortOrders.includes(sortOrder.toUpperCase())) {
-      throw new Error(`Invalid sortOrder parameter. Must be one of: ${validSortOrders.join(", ")}`);
+      throw new Error(
+        `Invalid sortOrder parameter. Must be one of: ${validSortOrders.join(", ")}`
+      );
     }
 
     const where = {};
@@ -400,7 +470,7 @@ const getAllRides = async ({ search = "", status = "", limit = "10", page = "1",
       totalRevenue: 0,
     };
 
-    counts.forEach(c => {
+    counts.forEach((c) => {
       if (c.status === "pending") summary.pending = Number(c.count);
       if (c.status === "accepted") summary.accepted = Number(c.count);
       if (c.status === "on-route") summary.onRoute = Number(c.count);
@@ -411,7 +481,7 @@ const getAllRides = async ({ search = "", status = "", limit = "10", page = "1",
 
     return {
       data: {
-        rides: rows.map(ride => ({
+        rides: rows.map((ride) => ({
           ...rideResponseDTO(ride),
           package_name: ride.Package ? ride.Package.name : null,
           subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
@@ -437,7 +507,7 @@ const getRideById = async (id, transaction = null, lock = null) => {
         { model: Car, as: "Car", attributes: ["id", "model"] },
       ],
       transaction,
-      lock
+      lock,
     });
     if (!ride) throw new Error("Ride not found with the given ID");
     return {
@@ -446,8 +516,8 @@ const getRideById = async (id, transaction = null, lock = null) => {
         ...rideResponseDTO(ride),
         package_name: ride.Package ? ride.Package.name : null,
         subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
-        car_name: ride.Car ? ride.Car.model : null
-      }
+        car_name: ride.Car ? ride.Car.model : null,
+      },
     };
   } catch (error) {
     console.error("getRideById error:", error);
@@ -459,45 +529,43 @@ const conditionalRides = async (options = {}) => {
   return Ride.findAll(options);
 };
 
-
-const acceptedRides=async(where={})=>{
-  return await Ride.findAll({where});
+const acceptedRides = async (where = {}) => {
+  return await Ride.findAll({ where });
 };
 
-const getRideByIdData=async(driver_id,ride_id)=>{
+const getRideByIdData = async (driver_id, ride_id) => {
   const ride = await Ride.findOne({
-        where: {
-            id: ride_id,
-            [Op.or]: [
-                { driver_id: driver_id },
-                { initiated_by_driver_id: driver_id }
-            ]
-        },
-        // attributes: ["customer_name", "pickup_location", "drop_location", "status"],
+    where: {
+      id: ride_id,
+      [Op.or]: [
+        { driver_id: driver_id },
+        { initiated_by_driver_id: driver_id },
+      ],
+    },
+    // attributes: ["customer_name", "pickup_location", "drop_location", "status"],
+    include: [
+      {
+        model: Package,
+        as: "Package",
         include: [
           {
-            model:Package,
-            as:"Package",
-            include:[
-              {
-                model:SubPackage,
-                as:"PackageRates"
-              }
-            ]
+            model: SubPackage,
+            as: "PackageRates",
           },
-            {
-                model: Earnings,
-                as: "Earnings",
-                attributes: ["amount", "commission", "percentage"]
-            }
-        ]
-    });
-    if (!ride) {
-        throw new Error("Ride not found");
-    }
-    return ride;
+        ],
+      },
+      {
+        model: Earnings,
+        as: "Earnings",
+        attributes: ["amount", "commission", "percentage"],
+      },
+    ],
+  });
+  if (!ride) {
+    throw new Error("Ride not found");
+  }
+  return ride;
 };
-
 
 const getRidesByStatusAndDriver = async (status, driverId) => {
   try {
@@ -506,10 +574,9 @@ const getRidesByStatusAndDriver = async (status, driverId) => {
       if (status === "accepted") {
         // Show both "accepted" and "on-route" rides
         where.status = { [Op.or]: ["accepted", "on-route"] };
-      } else if(status==="cancelled"){
+      } else if (status === "cancelled") {
         where.status = "cancelled";
-      }
-      else {
+      } else {
         where.status = status;
       }
     }
@@ -524,7 +591,7 @@ const getRidesByStatusAndDriver = async (status, driverId) => {
       ],
     });
 
-    return rides.map(ride => ({
+    return rides.map((ride) => ({
       ...rideResponseDTO(ride),
       package_name: ride.Package ? ride.Package.name : null,
       subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
@@ -536,9 +603,6 @@ const getRidesByStatusAndDriver = async (status, driverId) => {
   }
 };
 
-
-
-
 module.exports = {
   createRide,
   updateRide,
@@ -548,5 +612,5 @@ module.exports = {
   conditionalRides,
   acceptedRides,
   getRideByIdData,
-  getRidesByStatusAndDriver
+  getRidesByStatusAndDriver,
 };

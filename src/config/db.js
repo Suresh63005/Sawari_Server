@@ -48,7 +48,6 @@
 
 // module.exports = sequelize;
 
-
 // src/config/db.js
 require("dotenv").config();
 const { Sequelize } = require("sequelize");
@@ -56,7 +55,11 @@ const config = require("../config/config");
 
 // Pick environment (default = development)
 const env = process.env.NODE_ENV || "development";
-const dbConfig = config[env] || { dialect: "sqlite", storage: ":memory:", logging: false };
+const dbConfig = config[env] || {
+  dialect: "sqlite",
+  storage: ":memory:",
+  logging: false,
+};
 
 // Initialize Sequelize options
 const sequelizeOptions = {
@@ -85,10 +88,15 @@ const sequelize = new Sequelize(
 sequelize
   .authenticate()
   .then(() => {
-    console.log(`✅ ${dbConfig.dialect === "sqlite" ? "SQLite" : "MySQL"} connection established.`);
+    console.log(
+      `✅ ${dbConfig.dialect === "sqlite" ? "SQLite" : "MySQL"} connection established.`
+    );
   })
   .catch((err) => {
-    console.error(`❌ ${dbConfig.dialect === "sqlite" ? "SQLite" : "MySQL"} connection error:`, err);
+    console.error(
+      `❌ ${dbConfig.dialect === "sqlite" ? "SQLite" : "MySQL"} connection error:`,
+      err
+    );
     process.exit(1);
   });
 

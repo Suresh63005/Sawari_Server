@@ -10,34 +10,42 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ message: "Authentication required" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "your-secret-key"
+    );
     console.log("Token decoded:", decoded);
 
     const admin = await Admin.findByPk(decoded.id);
     if (!admin || admin.status === "blocked") {
       console.log("Invalid or blocked admin:", admin);
-      return res.status(401).json({ message: "invalid or this account is blocked" });
+      return res
+        .status(401)
+        .json({ message: "invalid or this account is blocked" });
     }
 
-    const permissions = await Permissions.findOne({ where: { user_id: admin.id } });
-    
+    const permissions = await Permissions.findOne({
+      where: { user_id: admin.id },
+    });
 
     req.user = {
       id: admin.id,
       email: admin.email,
       role: admin.role,
       name: `${admin.first_name} ${admin.last_name}`,
-      permissions: permissions ? {
-        dashboard: permissions.dashboard_access,
-        drivers: permissions.manage_drivers,
-        vehicles: permissions.manage_vehicles,
-        rides: permissions.manage_ride,
-        earnings: permissions.manage_earnings,
-        support: permissions.manage_support_tickets,
-        push_notifications: permissions.manage_push_notifications, // Renamed
-        admin_management: permissions.manage_admin,
-        fleet: permissions.manage_fleet, // New
-      } : {},
+      permissions: permissions
+        ? {
+            dashboard: permissions.dashboard_access,
+            drivers: permissions.manage_drivers,
+            vehicles: permissions.manage_vehicles,
+            rides: permissions.manage_ride,
+            earnings: permissions.manage_earnings,
+            support: permissions.manage_support_tickets,
+            push_notifications: permissions.manage_push_notifications, // Renamed
+            admin_management: permissions.manage_admin,
+            fleet: permissions.manage_fleet, // New
+          }
+        : {},
     };
 
     next();
@@ -56,7 +64,9 @@ const permissionMiddleware = (requiredPermission) => {
 
     if (!req.user.permissions[requiredPermission]) {
       console.log(`Insufficient permissions for ${requiredPermission}`); // Debug log
-      return res.status(403).json({ message: `Insufficient permissions for ${requiredPermission}` });
+      return res.status(403).json({
+        message: `Insufficient permissions for ${requiredPermission}`,
+      });
     }
 
     next();

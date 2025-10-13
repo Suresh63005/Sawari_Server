@@ -4,7 +4,12 @@ const Car = require("../models/cars.model"); //Added: Assume this exists for veh
 const { Op } = require("sequelize");
 const ExcelJS = require("exceljs");
 
-const getAllDrivers = async (search = "", status = "", page = 1, limit = 10) => {
+const getAllDrivers = async (
+  search = "",
+  status = "",
+  page = 1,
+  limit = 10
+) => {
   const offset = (page - 1) * limit;
   const where = {};
 
@@ -60,7 +65,15 @@ const getDriverById = async (driverId) => {
           model: DriverCar,
           as: "Vehicles",
           include: [{ model: Car, as: "Car", attributes: ["model"] }], // Added: Nested include for car model
-          attributes: ["id", "color", "license_plate", "status", "car_photos", "rc_doc", "insurance_doc"],
+          attributes: [
+            "id",
+            "color",
+            "license_plate",
+            "status",
+            "car_photos",
+            "rc_doc",
+            "insurance_doc",
+          ],
         },
       ],
     });
@@ -124,9 +137,11 @@ const exportAllDrivers = async (search = "", status = "") => {
         email: driver.email || "-",
         phone: driver.phone || "-",
         status: driver.status || "-",
-        vehicles: driver.Vehicles // Fixed: driver.Vehicles instead of driver.cars
-          .map((car) => `Name: ${car.Car?.model || "-"}, License: ${car.license_plate}, Color: ${car.color || "-"}, Status: ${car.status}`)
-          .join("; "),
+        vehicles: driver.Vehicles.map(
+          // Fixed: driver.Vehicles instead of driver.cars
+          (car) =>
+            `Name: ${car.Car?.model || "-"}, License: ${car.license_plate}, Color: ${car.color || "-"}, Status: ${car.status}`
+        ).join("; "),
       });
     });
 
@@ -162,9 +177,11 @@ const exportDriverById = async (driverId) => {
       email: driver.email || "-",
       phone: driver.phone || "-",
       status: driver.status || "-",
-      vehicles: driver.Vehicles // Fixed: driver.Vehicles instead of driver.cars
-        .map((car) => `Name: ${car.Car?.model || "-"}, License: ${car.license_plate}, Color: ${car.color || "-"}, Status: ${car.status}`)
-        .join("; "),
+      vehicles: driver.Vehicles.map(
+        // Fixed: driver.Vehicles instead of driver.cars
+        (car) =>
+          `Name: ${car.Car?.model || "-"}, License: ${car.license_plate}, Color: ${car.color || "-"}, Status: ${car.status}`
+      ).join("; "),
     });
 
     const buffer = await workbook.xlsx.writeBuffer();

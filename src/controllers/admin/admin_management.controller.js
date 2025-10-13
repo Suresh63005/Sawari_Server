@@ -23,9 +23,20 @@ const listAdmins = async (req, res) => {
     const currentUser = req.user;
     console.log("Listing admins for user:", currentUser.id, currentUser.role);
 
-    const { search = "", page = "1", limit = "10", sortBy = "createdAt", sortOrder = "DESC" } = req.query;
+    const {
+      search = "",
+      page = "1",
+      limit = "10",
+      sortBy = "createdAt",
+      sortOrder = "DESC",
+    } = req.query;
 
-    const { data, total, page: currentPage, limit: currentLimit } = await AuthService.getAllAdmins({
+    const {
+      data,
+      total,
+      page: currentPage,
+      limit: currentLimit,
+    } = await AuthService.getAllAdmins({
       search,
       page,
       limit,
@@ -34,7 +45,9 @@ const listAdmins = async (req, res) => {
       currentUser, // Pass currentUser to apply role-based filtering in the service
     });
 
-    console.log(`getAllAdmins: page=${currentPage}, limit=${currentLimit}, count=${total}, rows=${data.length}`);
+    console.log(
+      `getAllAdmins: page=${currentPage}, limit=${currentLimit}, count=${total}, rows=${data.length}`
+    );
 
     // Map admins to response format
     const response = data.map((admin) => {
@@ -200,11 +213,9 @@ const updateAdminStatus = async (req, res) => {
     ); // Debug log
 
     if (!["active", "inactive", "blocked"].includes(status)) {
-      return res
-        .status(400)
-        .json({
-          message: "Invalid status. Must be \"active\", \"inactive\", or \"blocked\"",
-        });
+      return res.status(400).json({
+        message: 'Invalid status. Must be "active", "inactive", or "blocked"',
+      });
     }
 
     const admin = await AuthService.getAdminById(id);
@@ -301,5 +312,5 @@ module.exports = {
   updateAdmin,
   updateAdminStatus,
   updatePermissions,
-  getAdminHierarchy
+  getAdminHierarchy,
 };

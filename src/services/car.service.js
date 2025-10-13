@@ -73,7 +73,14 @@ const upsertCar = async (data) => {
 };
 
 // Service to get all cars with optional filters, pagination, searching, and sorting
-const getAllCars = async ({ search, limit = 10, page = 1, sortBy = "createdAt", sortOrder = "DESC", status }) => {
+const getAllCars = async ({
+  search,
+  limit = 10,
+  page = 1,
+  sortBy = "createdAt",
+  sortOrder = "DESC",
+  status,
+}) => {
   const where = {};
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -103,7 +110,7 @@ const getAllCars = async ({ search, limit = 10, page = 1, sortBy = "createdAt", 
     total: count,
     page: parseInt(page),
     limit: parseInt(limit),
-    data: rows.map(car => carResponseDTO(car)),
+    data: rows.map((car) => carResponseDTO(car)),
   };
 };
 
@@ -111,10 +118,13 @@ const getCarsForList = async () => {
   const cars = await Car.findAll({
     where: { status: "active" }, // only active cars for list
     attributes: ["id", "brand", "model"], // only essential fields
-    order: [["brand", "ASC"], ["model", "ASC"]],
+    order: [
+      ["brand", "ASC"],
+      ["model", "ASC"],
+    ],
   });
 
-  return cars.map(car => carResponseDTO(car));
+  return cars.map((car) => carResponseDTO(car));
 };
 
 // Service to get a car by ID
@@ -154,20 +164,30 @@ const toggleCarStatus = async (id) => {
     data: carResponseDTO(car),
   };
 };
+
 const getCarsBySubPackageId = async (sub_package_id) => {
   const packagePrices = await PackagePrice.findAll({
     where: { sub_package_id },
-    include: [{ model: Car,as:"Car", attributes: ["id", "brand","model"] }],
+    include: [{ model: Car, as: "Car", attributes: ["id", "brand", "model"] }],
   });
-  return packagePrices
-    .map(pp => pp.Car)
-    .filter(car => car)
-    .map(car => ({
+
+  // If no package prices or cars are found, return an empty array
+  if (!packagePrices || packagePrices.length === 0) {
+    return [];
+  }
+
+  const cars = packagePrices
+    .map((pp) => pp.Car)
+    .filter((car) => car)
+    .map((car) => ({
       id: car.id,
       brand: car.brand, // Ensure name is a meaningful field (e.g., "Toyota Camry")
-      model:car.model
+      model: car.model,
     }));
+
+  return cars;
 };
+
 module.exports = {
   upsertCar,
   getAllCars,
@@ -175,5 +195,5 @@ module.exports = {
   deleteCarById,
   toggleCarStatus,
   getCarsBySubPackageId,
-  getCarsForList
+  getCarsForList,
 };

@@ -6,7 +6,7 @@ const getAdmins = async (req, res) => {
   try {
     const admins = await AuthService.getAllAdmins();
     return res.json(
-      admins.map(admin => {
+      admins.map((admin) => {
         const rolePermissions = getRolePermissions(admin.role);
         return {
           id: admin.id,
@@ -18,16 +18,36 @@ const getAdmins = async (req, res) => {
           created_by: admin.created_by,
           createdAt: admin.createdAt ? admin.createdAt.toISOString() : null,
           permissions: {
-            dashboard: admin.permissions ? admin.permissions.dashboard_access : rolePermissions.dashboard_access,
-            drivers: admin.permissions ? admin.permissions.manage_drivers : rolePermissions.manage_drivers,
-            vehicles: admin.permissions ? admin.permissions.manage_vehicles : rolePermissions.manage_vehicles,
-            rides: admin.permissions ? admin.permissions.manage_ride : rolePermissions.manage_ride,
-            earnings: admin.permissions ? admin.permissions.manage_earnings : rolePermissions.manage_earnings,
-            support: admin.permissions ? admin.permissions.manage_support_tickets : rolePermissions.manage_support_tickets,
-            push_notifications: admin.permissions ? admin.permissions.manage_push_notifications : rolePermissions.manage_push_notifications, // Renamed
-            admin_management: admin.permissions ? admin.permissions.manage_admin : rolePermissions.manage_admin,
-            fleet: admin.permissions ? admin.permissions.manage_fleet : rolePermissions.manage_fleet, // New
-            reports: admin.permissions ? admin.permissions.manage_reports : rolePermissions.manage_reports, // New
+            dashboard: admin.permissions
+              ? admin.permissions.dashboard_access
+              : rolePermissions.dashboard_access,
+            drivers: admin.permissions
+              ? admin.permissions.manage_drivers
+              : rolePermissions.manage_drivers,
+            vehicles: admin.permissions
+              ? admin.permissions.manage_vehicles
+              : rolePermissions.manage_vehicles,
+            rides: admin.permissions
+              ? admin.permissions.manage_ride
+              : rolePermissions.manage_ride,
+            earnings: admin.permissions
+              ? admin.permissions.manage_earnings
+              : rolePermissions.manage_earnings,
+            support: admin.permissions
+              ? admin.permissions.manage_support_tickets
+              : rolePermissions.manage_support_tickets,
+            push_notifications: admin.permissions
+              ? admin.permissions.manage_push_notifications
+              : rolePermissions.manage_push_notifications, // Renamed
+            admin_management: admin.permissions
+              ? admin.permissions.manage_admin
+              : rolePermissions.manage_admin,
+            fleet: admin.permissions
+              ? admin.permissions.manage_fleet
+              : rolePermissions.manage_fleet, // New
+            reports: admin.permissions
+              ? admin.permissions.manage_reports
+              : rolePermissions.manage_reports, // New
           },
         };
       })

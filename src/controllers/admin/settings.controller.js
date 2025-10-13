@@ -1,4 +1,7 @@
-const { getSettings, upsertSettings } = require("../../services/settings.service");
+const {
+  getSettings,
+  upsertSettings,
+} = require("../../services/settings.service");
 
 const getSettingsController = async (req, res) => {
   try {

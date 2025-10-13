@@ -8,7 +8,12 @@ const {
 const getAllPaymentsController = async (req, res) => {
   try {
     const { search = "", status = "", page = 1, limit = 10 } = req.query;
-    const data = await getAllPayments(search, status, parseInt(page), parseInt(limit));
+    const data = await getAllPayments(
+      search,
+      status,
+      parseInt(page),
+      parseInt(limit)
+    );
     res.status(200).json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

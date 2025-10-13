@@ -53,14 +53,10 @@ const resolveTicket = async (id) => {
 };
 
 const createTicket = async (ticketData) => {
+  const { title, description, priority, raised_by, files } = ticketData;
   const transaction = await Ticket.sequelize.transaction();
+
   try {
-    const { title, description, priority, raised_by, files } = ticketData;
-
-    if (!title || !priority || !raised_by) {
-      throw new Error("Title, priority, and raised_by are required");
-    }
-
     // Generate ticket_number
     const ticketCount = await Ticket.count({ transaction });
     const ticketNumber = String(ticketCount + 1).padStart(6, "0");
@@ -68,12 +64,7 @@ const createTicket = async (ticketData) => {
     // Upload images to S3 if present
     let uploadedUrls = [];
     if (files && files.length > 0) {
-      try {
-        uploadedUrls = await uploadToS3(files, "ticket-images");
-      } catch (err) {
-        console.error("S3 upload failed:", err);
-        throw new Error("Image upload failed");
-      }
+      uploadedUrls = await uploadToS3(files, "ticket-images");
     }
 
     // Create ticket
@@ -84,7 +75,7 @@ const createTicket = async (ticketData) => {
         description,
         priority,
         raised_by,
-        images: uploadedUrls.length > 0 ? JSON.stringify(uploadedUrls) : null
+        images: uploadedUrls.length > 0 ? JSON.stringify(uploadedUrls) : null,
       },
       { transaction }
     );
@@ -120,14 +111,13 @@ const updateTicketStatus = async (id, status) => {
   }
 };
 
-
 const getTickets = async (filters = {}) => {
   try {
-    const { raised_by } = filters;
+    const { driver_id } = filters;
     const whereClause = {};
 
-    if (raised_by) {
-      whereClause.raised_by = raised_by;
+    if (driver_id) {
+      whereClause.raised_by = driver_id;
     }
 
     const tickets = await Ticket.findAll({
@@ -137,15 +127,21 @@ const getTickets = async (filters = {}) => {
     });
 
     // ✅ Force parse images
-    const formattedTickets = tickets.map(ticket => {
+    const formattedTickets = tickets.map((ticket) => {
       let images = [];
       if (ticket.images) {
         try {
           // First remove extra escaping if it"s double-stringified
-          const cleaned = ticket.images.startsWith("\"") ? JSON.parse(ticket.images) : ticket.images;
+          const cleaned = ticket.images.startsWith('"')
+            ? JSON.parse(ticket.images)
+            : ticket.images;
           images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
         } catch (e) {
-          console.error("❌ Error parsing images for ticket", ticket.id, e.message);
+          console.error(
+            "❌ Error parsing images for ticket",
+            ticket.id,
+            e.message
+          );
         }
       }
       return { ...ticket, images };
@@ -158,29 +154,33 @@ const getTickets = async (filters = {}) => {
 };
 
 const getTicketsById = async (data) => {
-  const { raised_by, id } = data;
+  const { driver_id, id } = data;
 
   try {
     const ticket = await Ticket.findOne({
-      where: { id, raised_by },
-      raw: true, // returns plain object instead of Sequelize instance
+      where: { id, raised_by: driver_id },
+      raw: true, 
     });
 
     if (!ticket) {
-      throw new Error("Ticket not found");
+      return null;
     }
 
     let images = [];
     if (ticket.images) {
       try {
         // Remove extra escaping if it"s double-stringified
-        const cleaned = ticket.images.startsWith("\"")
+        const cleaned = ticket.images.startsWith('"')
           ? JSON.parse(ticket.images)
           : ticket.images;
 
         images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
       } catch (e) {
-        console.error("❌ Error parsing images for ticket", ticket.id, e.message);
+        console.error(
+          "❌ Error parsing images for ticket",
+          ticket.id,
+          e.message
+        );
       }
     }
 
@@ -190,7 +190,11 @@ const getTicketsById = async (data) => {
   }
 };
 
-
-
-
-module.exports = { getOpenTickets, resolveTicket, createTicket, updateTicketStatus,getTickets,getTicketsById };
+module.exports = {
+  getOpenTickets,
+  resolveTicket,
+  createTicket,
+  updateTicketStatus,
+  getTickets,
+  getTicketsById,
+};

@@ -28,10 +28,15 @@ const upsertSubPackage = async (data) => {
 
     if (data.id && data.id.trim() !== "") {
       // Update flow
-      const existingSubPackage = await SubPackage.findByPk(data.id, { transaction });
-      if (!existingSubPackage) throw new Error("Sub-Package not found with the given ID");
+      const existingSubPackage = await SubPackage.findByPk(data.id, {
+        transaction,
+      });
+      if (!existingSubPackage)
+        throw new Error("Sub-Package not found with the given ID");
 
-      if (data.name.trim().toLowerCase() !== existingSubPackage.name.toLowerCase()) {
+      if (
+        data.name.trim().toLowerCase() !== existingSubPackage.name.toLowerCase()
+      ) {
         const duplicate = await SubPackage.findOne({
           where: {
             name: { [Op.like]: data.name.trim() }, // Case-insensitive
@@ -39,7 +44,10 @@ const upsertSubPackage = async (data) => {
           },
           transaction,
         });
-        if (duplicate) throw new Error("Another sub-package with the same name already exists");
+        if (duplicate)
+          throw new Error(
+            "Another sub-package with the same name already exists"
+          );
       }
 
       await existingSubPackage.update(dto, { transaction });
@@ -86,7 +94,7 @@ const getAllSubPackages = async ({
     where[Op.or] = [
       { name: { [Op.like]: `%${search}%` } },
       { package_id: { [Op.like]: `%${search}%` } },
-      {description: { [Op.like]: `%${search}%` } },
+      { description: { [Op.like]: `%${search}%` } },
       { "$Package.name$": { [Op.like]: `%${search}%` } },
     ];
   }
@@ -162,6 +170,7 @@ const toggleSubPackageStatus = async (id) => {
     data: subPackageResponseDTO(sp),
   };
 };
+
 const getSubPackagesByPackageId = async (package_id) => {
   try {
     console.log("getSubPackagesByPackageId query:", { package_id });
@@ -192,5 +201,5 @@ module.exports = {
   deleteSubPackageById,
   toggleSubPackageStatus,
   getSubPackagesByPackageId,
-  getActiveSubPackages
+  getActiveSubPackages,
 };

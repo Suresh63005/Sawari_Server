@@ -9,4 +9,7 @@ fi
 # echo "🧼 Auto-fixing code with ESLint..."
 # npx eslint . --fix
 
+echo "🧼 Running Prettier before commit..."
+npx prettier --check .
+
 echo "✅ Lint passed. Proceeding with commit."

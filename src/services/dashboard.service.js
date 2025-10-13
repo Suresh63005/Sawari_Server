@@ -13,7 +13,11 @@ const calculateTrend = (current, previous) => {
 const getDashboardStats = async () => {
   const now = new Date();
   const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const startOfPreviousMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() - 1,
+    1
+  );
   const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
   // Current stats
@@ -33,13 +37,14 @@ const getDashboardStats = async () => {
     },
   });
 
-  const revenue = await Ride.sum("Total", {
-    where: {
-      status: "completed",
-      createdAt: { [Op.gte]: startOfCurrentMonth },
-      deletedAt: null,
-    },
-  }) || 0;
+  const revenue =
+    (await Ride.sum("Total", {
+      where: {
+        status: "completed",
+        createdAt: { [Op.gte]: startOfCurrentMonth },
+        deletedAt: null,
+      },
+    })) || 0;
 
   const drivers = await Driver.count({
     where: { status: "active", is_approved: true, deletedAt: null },
@@ -52,7 +57,10 @@ const getDashboardStats = async () => {
   // Previous month stats
   const previousTotalRides = await Ride.count({
     where: {
-      createdAt: { [Op.gte]: startOfPreviousMonth, [Op.lte]: endOfPreviousMonth },
+      createdAt: {
+        [Op.gte]: startOfPreviousMonth,
+        [Op.lte]: endOfPreviousMonth,
+      },
       deletedAt: null,
     },
   });
@@ -60,7 +68,10 @@ const getDashboardStats = async () => {
   const previousActiveRides = await Ride.count({
     where: {
       status: { [Op.in]: ["on-route", "accepted"] },
-      createdAt: { [Op.gte]: startOfPreviousMonth, [Op.lte]: endOfPreviousMonth },
+      createdAt: {
+        [Op.gte]: startOfPreviousMonth,
+        [Op.lte]: endOfPreviousMonth,
+      },
       deletedAt: null,
     },
   });
@@ -68,18 +79,25 @@ const getDashboardStats = async () => {
   const previousCompletedRides = await Ride.count({
     where: {
       status: "completed",
-      createdAt: { [Op.gte]: startOfPreviousMonth, [Op.lte]: endOfPreviousMonth },
+      createdAt: {
+        [Op.gte]: startOfPreviousMonth,
+        [Op.lte]: endOfPreviousMonth,
+      },
       deletedAt: null,
     },
   });
 
-  const previousRevenue = await Ride.sum("Total", {
-    where: {
-      status: "completed",
-      createdAt: { [Op.gte]: startOfPreviousMonth, [Op.lte]: endOfPreviousMonth },
-      deletedAt: null,
-    },
-  }) || 0;
+  const previousRevenue =
+    (await Ride.sum("Total", {
+      where: {
+        status: "completed",
+        createdAt: {
+          [Op.gte]: startOfPreviousMonth,
+          [Op.lte]: endOfPreviousMonth,
+        },
+        deletedAt: null,
+      },
+    })) || 0;
 
   const previousDrivers = await Driver.count({
     where: {
@@ -100,13 +118,13 @@ const getDashboardStats = async () => {
   });
 
   const onlineDrivers = await Driver.count({
-  where: {
-    status: "active",
-    is_approved: true,
-    availability_status: "online", // 👈 your online flag
-    deletedAt: null,
-  },
-});
+    where: {
+      status: "active",
+      is_approved: true,
+      availability_status: "online", // 👈 your online flag
+      deletedAt: null,
+    },
+  });
 
   return {
     totalRides: {
@@ -140,11 +158,11 @@ const getDashboardStats = async () => {
       description: "approved vehicles",
     },
     onlineDrivers: {
-    value: onlineDrivers,
-    trend: "", // leave empty if you don’t want green/red arrow
-    description: "drivers currently online",
-  },
-};
+      value: onlineDrivers,
+      trend: "", // leave empty if you don’t want green/red arrow
+      description: "drivers currently online",
+    },
+  };
 };
 
 const getRecentActivity = async () => {
@@ -153,18 +171,24 @@ const getRecentActivity = async () => {
       where: { deletedAt: null },
       order: [["createdAt", "DESC"]],
       limit: 5,
-      attributes: ["id", "pickup_address", "drop_address", "status", "createdAt"],
+      attributes: [
+        "id",
+        "pickup_address",
+        "drop_address",
+        "status",
+        "createdAt",
+      ],
       include: [
         {
           model: Driver,
-          as:"AssignedDriver",
+          as: "AssignedDriver",
           attributes: ["first_name", "last_name"],
           required: false,
           where: { deletedAt: null },
         },
         {
           model: Car,
-          as:"Car",
+          as: "Car",
           attributes: ["model"],
           required: false,
           where: { deletedAt: null },
@@ -180,7 +204,9 @@ const getRecentActivity = async () => {
           user: ride.Driver
             ? `${ride.Driver.first_name || "Unknown"} ${ride.Driver.last_name || ""} - ${ride.Cars?.car_model || "Unknown"}`
             : `${ride.pickup_address || "Unknown"} → ${ride.drop_address || "Unknown"}`,
-          time: ride.createdAt ? new Date(ride.createdAt).toLocaleString() : "Unknown",
+          time: ride.createdAt
+            ? new Date(ride.createdAt).toLocaleString()
+            : "Unknown",
           type: "ride",
         };
       } catch (error) {
@@ -193,7 +219,9 @@ const getRecentActivity = async () => {
           id: index + 1,
           action: `Ride ${ride.status || "unknown"}`,
           user: `${ride.pickup_address || "Unknown"} → ${ride.drop_address || "Unknown"}`,
-          time: ride.createdAt ? new Date(ride.createdAt).toLocaleString() : "Unknown",
+          time: ride.createdAt
+            ? new Date(ride.createdAt).toLocaleString()
+            : "Unknown",
           type: "ride",
         };
       }
@@ -216,21 +244,20 @@ const getPendingApprovals = async () => {
     });
 
     const pendingVehicles = await DriverCar.findAll({
-  where: { 
-    is_approved: false,
-    status: "inactive",
-    deletedAt: null
-  },
-  attributes: ["id", "license_plate"], // only DriverCar columns here
-  include: [
-    {
-      model: Car,
-      as: "Car", // must match alias
-      attributes: ["id", "brand", "model", "image_url"], // Car columns here
-    },
-  ],
-});
-
+      where: {
+        is_approved: false,
+        status: "inactive",
+        deletedAt: null,
+      },
+      attributes: ["id", "license_plate"], // only DriverCar columns here
+      include: [
+        {
+          model: Car,
+          as: "Car", // must match alias
+          attributes: ["id", "brand", "model", "image_url"], // Car columns here
+        },
+      ],
+    });
 
     return [
       ...pendingDrivers.map((driver) => ({

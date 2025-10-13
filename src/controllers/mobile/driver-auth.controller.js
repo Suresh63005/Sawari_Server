@@ -1,7 +1,6 @@
 const { deleteFromS3 } = require("../../config/fileUpload.aws");
 const driverService = require("../../services/driver.service");
 const driverCarService = require("../../services/driverCar.service");
-// const checkActiveRide = require('../../services/ride.service');
 const walletService = require("../../services/wallet.service");
 const moment = require("moment");
 
@@ -10,335 +9,22 @@ const verifyMobile = async (req, res) => {
     console.log("🔐 VERIFY endpoint hit");
 
     const { phone, token, email, social_login } = req.body;
-    const result = await driverService.verifyDriverMobile(phone, token, email, social_login);
+    const result = await driverService.verifyDriverMobile(
+      phone,
+      token,
+      email,
+      social_login
+    );
     res.status(200).json({ result });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
-// const updateProfile = async(req,res)=>{
-//     try {
-//         const driverId = req.driver.id;
-//         const driver = await driverService.updateDriverProfile(driverId);
-//         const updatedData = {...req.body}
-//         // Handle files: upload new, delete old if replaced
-//         const fields = ['profile_pic', 'emirates_doc_front', 'emirates_doc_back', 'license_front', 'license_back'];
-//         for (const field of fields) {
-//             if (req.files && req.files[field]) {
-//                 const uploadedUrl = await uploadToS3(req.files[field][0], 'drivers');
-
-//                 // Delete old if exists and different
-//                 if (driver[field] && driver[field] !== uploadedUrl) {
-//                 await deleteFromS3(driver[field]);
-//                 }
-
-//                 updatedData[field] = uploadedUrl;
-
-//                 // Reset verification if Emirates or License changed
-//                 if (['emirates_doc_front', 'emirates_doc_back'].includes(field)) {
-//                 updatedData.emirates_verification_status = 'pending';
-//                 }
-//                 if (['license_front', 'license_back'].includes(field)) {
-//                 updatedData.license_verification_status = 'pending';
-//                 }
-//             }
-//         }
-
-
-//         if (updatedData.languages) {
-//             try {
-//                 const lang = JSON.parse(updatedData.languages);
-//                 if (Array.isArray(lang)) {
-//                 updatedData.languages = lang;
-//                 }
-//             } catch (error) {
-//                 console.warn('Invalid languages format, expected JSON array string');
-//             }
-//         }
-
-//         const result = await driverService.updateDriverProfile(driverId,updatedData)
-//         res.status(200).json(result);
-//     } catch (error) {
-//         console.error('Error in updateProfile:', err.message);
-//         res.status(400).json({ error: err.message });
-//     }
-// }
-
-
-
-// const updateProfileAndCarDetails = async (req, res) => {
-//   try {
-//     console.log("=== Start: updateProfileAndCarDetails ===");
-//     // Step 1: Get driver ID from request
-//     const driverId = req?.driver?.id;
-//     console.log("Driver ID:", driverId);
-//     if (!driverId) {
-//       return res.status(400).json({ error: "Driver ID is missing in the request." });
-//     }
-
-//     // Step 2: Clone and log request body
-//     const updatedDriverData = { ...req.body };
-//     console.log("Request Body (updatedDriverData):", updatedDriverData);
-
-//     // Step 3: Fetch driver from DB
-//     const driver = await driverService.getDriverById(driverId);
-//     console.log("Fetched Driver Data from DB:", driver);
-//     if (!driver) {
-//       return res.status(404).json({ error: "Driver not found" });
-//     }
-
-//     // Step 4: Handle profile-related file uploads
-//     const profileFields = [
-//       "profile_pic",
-//       "emirates_doc_front",
-//       "emirates_doc_back",
-//       "license_front",
-//       "license_back",
-//     ];
-//     let hasVerificationFiles = false; // Track if verification-related files are uploaded
-
-//     for (const field of profileFields) {
-//       if (req.files?.[field]) {
-//         if (!req.files[field][0].size) {
-//           console.log(`Ignoring empty ${field} upload`);
-//           continue; // Skip empty file uploads
-//         }
-//         console.log(`Uploading ${field}...`);
-//         const uploadedUrl = await uploadToS3(req.files[field][0], "drivers");
-//         console.log(`${field} uploaded to S3:`, uploadedUrl);
-
-//         // If old file exists and is different, delete it
-//         if (driver?.[field] && driver[field] !== uploadedUrl) {
-//           console.log(`Deleting old ${field} from S3:`, driver[field]);
-//           await deleteFromS3(driver[field]);
-//         }
-//         updatedDriverData[field] = uploadedUrl;
-
-//         // Update verification statuses only for verification-related documents
-//         if (["emirates_doc_front", "emirates_doc_back"].includes(field)) {
-//           updatedDriverData.emirates_verification_status = "pending";
-//           hasVerificationFiles = true;
-//           console.log(`Set emirates_verification_status to 'pending' due to new ${field} upload`);
-//         }
-//         if (["license_front", "license_back"].includes(field)) {
-//           updatedDriverData.license_verification_status = "pending";
-//           hasVerificationFiles = true;
-//           console.log(`Set license_verification_status to 'pending' due to new ${field} upload`);
-//         }
-//       }
-//     }
-//     console.log("All profile files processed. Current uploaded file list:", req.files);
-
-//     // Step 5: Parse languages field (if exists)
-//     if (updatedDriverData.languages) {
-//       try {
-//         const parsedLanguages = JSON.parse(updatedDriverData.languages);
-//         updatedDriverData.languages = Array.isArray(parsedLanguages) ? parsedLanguages : [];
-//         console.log("Parsed languages:", updatedDriverData.languages);
-//       } catch (err) {
-//         console.warn("Invalid JSON in languages field. Setting to empty array.");
-//         updatedDriverData.languages = [];
-//         console.log(err);
-//       }
-//     }
-
-//     // Step 6: Set driver status and is_approved only if verification files are uploaded
-//     if (hasVerificationFiles) {
-//       updatedDriverData.is_approved = false; // Reset for re-verification
-//       updatedDriverData.status = "inactive"; // Set driver status to inactive
-//       console.log("Set is_approved to false and status to 'inactive' in Driver due to new verification files");
-//     } else {
-//       delete updatedDriverData.is_approved; // Preserve existing is_approved
-//       delete updatedDriverData.status; // Preserve existing status
-//       console.log("Preserving existing is_approved and status values in Driver");
-//     }
-
-//     // Step 7: Validate if any driver data is provided
-//     const hasDriverData = Object.keys(updatedDriverData).length > 0 || profileFields.some((field) => req.files?.[field]);
-//     if (hasDriverData) {
-//       // Update driver profile in DB
-//       await driverService.updateDriverProfile(driverId, updatedDriverData);
-//       console.log("Driver profile updated in DB.");
-//     } else {
-//       console.log("No driver data provided, proceeding to car data");
-//     }
-
-//     const updatedDriver = await driverService.getDriverById(driverId);
-
-//     // Step 8: Handle Vehicle/Car info
-//     const carData = {
-//       car_id: req.body.car_id,
-//       license_plate: req.body.license_plate,
-//       color: req.body.color,
-//       car_photos: [], // Initialize as empty array
-//     };
-//     console.log("Initial car data:", carData);
-
-//     // Step 9: Check if any car-related data is provided
-//     const hasCarFiles = req.files?.rc_doc || req.files?.rc_doc_back || req.files?.insurance_doc || req.files?.car_photos;
-//     const hasCarFields = carData.car_id || carData.license_plate || carData.color;
-//     const hasCarData = hasCarFields || hasCarFiles;
-
-//     if (!hasCarData) {
-//       console.log("Skipping car update: No car-related data provided.");
-//       return res.status(200).json({
-//         message: "Driver profile updated successfully. No car data provided.",
-//         driver: updatedDriver,
-//         vehicle: null,
-//       });
-//     }
-
-//     // Step 10: Validate required fields for new car record
-//     const existingCar = await driverCarService.getDriverCarByDriverId(driverId);
-//     if (!existingCar) {
-//       const requiredFields = ["car_id", "license_plate"];
-//       const missingFields = requiredFields.filter((field) => !carData[field]);
-//       if (missingFields.length > 0) {
-//         return res.status(400).json({
-//           error: `Missing required car fields for new car record: ${missingFields.join(", ")}`,
-//         });
-//       }
-//     }
-
-//     // Step 11: Handle car photo uploads and preserve existing photos
-//     const currentCar = existingCar || {};
-//     carData.car_photos = Array.isArray(currentCar.car_photos) ? currentCar.car_photos : []; // Preserve existing car_photos or initialize as empty array
-
-//     if (req.files?.car_photos) {
-//       if (req.files.car_photos.some((file) => !file.size)) {
-//         console.log("Ignoring empty car_photos upload");
-//       } else {
-//         console.log("Uploading car photos...");
-//         const carPhotos = await Promise.all(
-//           req.files.car_photos.map((file) => uploadToS3(file, "driver-cars"))
-//         );
-//         carData.car_photos = carPhotos; // Replace with new photos
-//         console.log("Uploaded car photos:", carPhotos);
-
-//         // Delete old photos from S3 if they exist and are an array
-//         if (Array.isArray(currentCar.car_photos) && currentCar.car_photos.length > 0) {
-//           console.log("Deleting old car photos from S3:", currentCar.car_photos);
-//           await Promise.all(currentCar.car_photos.map((photo) => deleteFromS3(photo)));
-//         } else if (typeof currentCar.car_photos === "string") {
-//           console.log("Attempting to parse stringified car_photos for deletion:", currentCar.car_photos);
-//           try {
-//             const parsedPhotos = JSON.parse(currentCar.car_photos);
-//             if (Array.isArray(parsedPhotos) && parsedPhotos.length > 0) {
-//               console.log("Deleting parsed car photos from S3:", parsedPhotos);
-//               await Promise.all(parsedPhotos.map((photo) => deleteFromS3(photo)));
-//             }
-//           } catch (e) {
-//             console.warn("Failed to parse stringified car_photos for deletion:", e.message);
-//           }
-//         }
-//       }
-//     }
-
-//     // Step 12: Upload car documents and update specific statuses
-//     let hasCarVerificationFiles = false;
-
-//     // Initialize carData statuses with existing values to preserve them
-//     carData.rc_doc_status = currentCar.rc_doc_status;
-//     carData.insurance_doc_status = currentCar.insurance_doc_status;
-
-//     if (req.files?.rc_doc) {
-//       if (!req.files.rc_doc[0].size) {
-//         console.log("Ignoring empty rc_doc upload");
-//       } else {
-//         console.log("Uploading RC document...");
-//         carData.rc_doc = await uploadToS3(req.files.rc_doc[0], "driver-cars");
-//         carData.rc_doc_status = "pending";
-//         hasCarVerificationFiles = true;
-//         console.log("Uploaded RC document and set rc_doc_status to 'pending':", carData.rc_doc);
-//         if (currentCar.rc_doc) {
-//           console.log("Deleting old rc_doc from S3:", currentCar.rc_doc);
-//           await deleteFromS3(currentCar.rc_doc);
-//         }
-//       }
-//     }
-//     if (req.files?.rc_doc_back) {
-//       if (!req.files.rc_doc_back[0].size) {
-//         console.log("Ignoring empty rc_doc_back upload");
-//       } else {
-//         console.log("Uploading RC document back...");
-//         carData.rc_doc_back = await uploadToS3(req.files.rc_doc_back[0], "driver-cars");
-//         carData.rc_doc_status = "pending"; // Assuming rc_doc and rc_doc_back share rc_doc_status
-//         hasCarVerificationFiles = true;
-//         console.log("Uploaded RC document back and set rc_doc_status to 'pending':", carData.rc_doc_back);
-//         if (currentCar.rc_doc_back) {
-//           console.log("Deleting old rc_doc_back from S3:", currentCar.rc_doc_back);
-//           await deleteFromS3(currentCar.rc_doc_back);
-//         }
-//       }
-//     }
-//     if (req.files?.insurance_doc) {
-//       if (!req.files.insurance_doc[0].size) {
-//         console.log("Ignoring empty insurance_doc upload");
-//       } else {
-//         console.log("Uploading insurance document...");
-//         carData.insurance_doc = await uploadToS3(req.files.insurance_doc[0], "driver-cars");
-//         carData.insurance_doc_status = "pending";
-//         hasCarVerificationFiles = true;
-//         console.log("Uploaded insurance document and set insurance_doc_status to 'pending':", carData.insurance_doc);
-//         if (currentCar.insurance_doc) {
-//           console.log("Deleting old insurance_doc from S3:", currentCar.insurance_doc);
-//           await deleteFromS3(currentCar.insurance_doc);
-//         }
-//       }
-//     }
-
-//     // Step 13: Set is_approved in carData and driver status only if car verification files are uploaded
-//     if (hasCarVerificationFiles) {
-//       carData.is_approved = false; // Reset for re-verification
-//       updatedDriverData.status = "inactive"; // Set driver status to inactive
-//       console.log("Set is_approved to false in DriverCar and status to 'inactive' in Driver due to new car verification files");
-//     } else {
-//       delete carData.is_approved; // Preserve existing is_approved
-//       console.log("Preserving existing is_approved value in DriverCar");
-//     }
-
-//     // Step 14: Update driver status if car verification files were uploaded
-//     if (hasCarVerificationFiles && !hasDriverData) {
-//       await driverService.updateDriverProfile(driverId, { status: "inactive" });
-//       console.log("Driver status updated to 'inactive' due to car verification files");
-//     }
-
-//     // Step 15: Save or update car details
-//     const vehicle = await driverCarService.upsertDriverCar(driverId, carData);
-//     console.log("DriverCar upsert result:", vehicle);
-//     return res.status(200).json({
-//       message: "Driver and vehicle profile submitted successfully.",
-//       driver: updatedDriver,
-//       vehicle,
-//     });
-//   } catch (error) {
-//     console.error("🚨 Submit driver & car profile error:", error);
-//     if (error.name === "SequelizeUniqueConstraintError") {
-//       if (error.fields?.email) {
-//         return res.status(400).json({ error: "Email is already in use." });
-//       }
-//       if (error.fields?.phone) {
-//         return res.status(400).json({ error: "Phone number is already in use." });
-//       }
-//       if (error.fields?.emirates_id) {
-//         return res.status(400).json({ error: "Emirates ID is already in use." });
-//       }
-//       if (error.fields?.license_plate) {
-//         return res.status(400).json({ error: "License plate is already in use." });
-//       }
-//       if (error.fields?.one_signal_id) {
-//         return res.status(400).json({ error: "OneSignal ID is already in use." });
-//       }
-//     }
-//     return res.status(500).json({ error: `Failed to update profile or car details: ${error.message}` });
-//   }
-// };
-
 
 const blockDriverByIdentifier = async (req, res) => {
-  const { phone, email, } = req.body;
-
+  const { phone, email } = req.body;
+  console.log(req.body, "from bodyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
   try {
     if ((phone && email) || (!phone && !email)) {
       return res.status(400).json({
@@ -346,13 +32,13 @@ const blockDriverByIdentifier = async (req, res) => {
       });
     }
     const result = await driverService.blockDriverByPhoneOrEmail(phone, email);
+    console.log(result, "ressssssssssssssssssssssssssss");
     res.status(200).json({
       message: "Driver status updated to blocked",
       data: result,
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
-
   }
 };
 
@@ -374,7 +60,7 @@ const driverAccountDetails = async (req, res) => {
       message: "Driver account details fetched successfully.",
       driver,
       vehicle,
-      walletBalance
+      walletBalance,
     });
   } catch (error) {
     console.error("Error fetching driver account:", error);
@@ -386,7 +72,10 @@ const deleteAccount = async (req, res) => {
   try {
     const driverId = req.driver.id;
 
-    await driverService.checkActiveRide(driverId);
+    const activeRides = await driverService.checkActiveRide(driverId);
+    if (activeRides.length > 0) {
+      throw new Error("Cannot deactivate account with active rides");
+    }
     const result = await driverService.deactivateDriver(driverId);
     res.status(200).json(result);
   } catch (error) {
@@ -397,16 +86,29 @@ const deleteAccount = async (req, res) => {
 const checkStatus = async (req, res) => {
   const driverId = req.driver.id;
   if (!driverId) {
-    return res.status(400).json({ success: false, message: "Driver ID is required" });
+    return res
+      .status(401)
+      .json({ success: false, message: "Unauthorized: No token provided" });
   }
 
   try {
     // Fetch driver data
     const driver = await driverService.getDriverById(driverId);
+    if (!driver) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Driver not found" });
+    }
     console.log("Driver data:", driver);
 
     // Fetch vehicle data (may return null if no vehicle exists)
     const vehicle = await driverCarService.getDriverCarByDriverId(driver.id);
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
     console.log("Vehicle data:", vehicle || "No vehicle found");
 
     return res.status(200).json({
@@ -418,40 +120,68 @@ const checkStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("checkStatus error:", error);
-    return res.status(500).json({ success: false, message: `Internal server error: ${error.message}` });
+    return res.status(500).json({
+      success: false,
+      message: `Internal server error: ${error.message}`,
+    });
   }
 };
 
 const getStatuses = async (req, res) => {
-
   try {
     const driverId = req.driver.id;
     if (!driverId) {
-      return res.status(400).json({ success: false, message: "Un Authorized" });
+      return res.status(401).json({ success: false, message: "UnAuthorized" });
     }
     const driver = await driverService.getStatusByDriver(driverId);
-    return res.status(200).json({ success: true, message: "Driver statuses fetched successfully", data: driver });
+    if (!driver) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Driver not found" });
+    }
 
+    return res.status(200).json({
+      success: true,
+      message: "Driver statuses fetched successfully",
+      data: driver,
+    });
   } catch (error) {
     console.error("getStatuses error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
-
 };
 
 const updateStatuses = async (req, res) => {
-
   try {
     const driverId = req.driver.id;
     if (!driverId) {
       return res.status(400).json({ success: false, message: "Un Authorized" });
     }
     const { ride_request, system_alerts, earning_updates } = req.body;
-    const updatedDriver = await driverService.updateDriverProfile(driverId, { ride_request, system_alerts, earning_updates });
-    return res.status(200).json({ success: true, message: "Driver statuses updated successfully", data: updatedDriver });
+    const updatedDriver = await driverService.updateDriverProfile(driverId, {
+      ride_request,
+      system_alerts,
+      earning_updates,
+    });
+
+    if (!updatedDriver) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Driver not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Driver statuses updated successfully",
+      data: updatedDriver,
+    });
   } catch (error) {
     console.error("updateStatuses error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -462,14 +192,26 @@ const updateOneSignalId = async (req, res) => {
     const { oneSignalId } = req.body;
 
     if (!driverId || !oneSignalId) {
-      return res.status(400).json({ success: false, message: "Driver ID and OneSignal ID are required" });
+      return res.status(400).json({
+        success: false,
+        message: "Driver ID and OneSignal ID are required",
+      });
     }
 
-    const updatedDriver = await driverService.updateOneSignalPlayerId(driverId, oneSignalId);
-    return res.status(200).json({ success: true, message: "OneSignal ID updated successfully", data: updatedDriver });
+    const updatedDriver = await driverService.updateOneSignalPlayerId(
+      driverId,
+      oneSignalId
+    );
+    return res.status(200).json({
+      success: true,
+      message: "OneSignal ID updated successfully",
+      data: updatedDriver,
+    });
   } catch (error) {
     console.error("updateOneSignalId error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -479,14 +221,28 @@ const deleteOneSignalId = async (req, res) => {
     const driverId = req.driver.id;
 
     if (!driverId) {
-      return res.status(400).json({ success: false, message: "Driver ID is required" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Driver ID is required" });
     }
 
     const updatedDriver = await driverService.deleteOneSignalPlayerId(driverId);
-    return res.status(200).json({ success: true, message: "OneSignal ID deleted successfully", data: updatedDriver });
+    if (!updatedDriver) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Driver not found" });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "OneSignal ID deleted successfully",
+      data: updatedDriver,
+    });
   } catch (error) {
-    console.error("deleteOneSignalId error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
@@ -497,7 +253,9 @@ const updateProfileAndCarDetails = async (req, res) => {
     const driverId = req?.driver?.id;
     console.log("Driver ID:", driverId);
     if (!driverId) {
-      return res.status(400).json({ error: "Driver ID is missing in the request." });
+      return res
+        .status(400)
+        .json({ error: "Driver ID is missing in the request." });
     }
 
     const updatedDriverData = { ...req.body };
@@ -534,44 +292,66 @@ const updateProfileAndCarDetails = async (req, res) => {
         if (["emirates_doc_front", "emirates_doc_back"].includes(field)) {
           updatedDriverData.emirates_verification_status = "pending";
           hasVerificationFiles = true;
-          console.log(`Set emirates_verification_status to 'pending' due to new ${field}`);
+          console.log(
+            `Set emirates_verification_status to 'pending' due to new ${field}`
+          );
         }
         if (["license_front", "license_back"].includes(field)) {
           updatedDriverData.license_verification_status = "pending";
           hasVerificationFiles = true;
-          console.log(`Set license_verification_status to 'pending' due to new ${field}`);
+          console.log(
+            `Set license_verification_status to 'pending' due to new ${field}`
+          );
         }
       }
     }
     console.log("All profile fields processed:", updatedDriverData);
 
     // Handle the languages field
-    if (updatedDriverData.languages && typeof updatedDriverData.languages === "string") {
+    // Handle the languages field
+    if (
+      updatedDriverData.languages &&
+      typeof updatedDriverData.languages === "string"
+    ) {
       try {
-        updatedDriverData.languages = JSON.parse(updatedDriverData.languages); // Convert to array if passed as string
+        updatedDriverData.languages = JSON.parse(updatedDriverData.languages);
       } catch (error) {
         console.error("Invalid JSON in languages field", error);
-        updatedDriverData.languages = []; // default to an empty array if parsing fails
+        updatedDriverData.languages = [];
       }
     } else if (!updatedDriverData.languages) {
-      updatedDriverData.languages = []; // default to empty array if no languages provided
+      updatedDriverData.languages = [];
+    }
+    // Add this to ensure database storage as JSON string
+    if (Array.isArray(updatedDriverData.languages)) {
+      updatedDriverData.languages = JSON.stringify(updatedDriverData.languages);
+      console.log(
+        "Converted languages to JSON string for storage:",
+        updatedDriverData.languages
+      );
     }
 
     // Ensure the dob is properly formatted, it should be a valid date
     if (updatedDriverData.dob) {
-      updatedDriverData.dob = moment(updatedDriverData.dob,"'DD-MM-YYYY").toDate();
+      updatedDriverData.dob = moment(
+        updatedDriverData.dob,
+        "'DD-MM-YYYY"
+      ).toDate();
     }
-
 
     // Set approval and status based on file verification
     if (hasVerificationFiles) {
       updatedDriverData.is_approved = false;
       updatedDriverData.status = "inactive";
-      console.log("Set is_approved to false and status to 'inactive' in Driver due to new verification files");
+      console.log(
+        "Set is_approved to false and status to 'inactive' in Driver due to new verification files"
+      );
     } else {
       delete updatedDriverData.is_approved;
       delete updatedDriverData.status;
-      console.log("Preserving existing is_approved and status values in Driver");
+      console.log(
+        "Preserving existing is_approved and status values in Driver"
+      );
     }
 
     // Update driver profile data if any changes
@@ -594,7 +374,11 @@ const updateProfileAndCarDetails = async (req, res) => {
     };
     console.log("Initial car data:", carData);
 
-    const hasCarFields = carData.car_id || carData.license_plate || carData.color || carData.car_photos.length > 0;
+    const hasCarFields =
+      carData.car_id ||
+      carData.license_plate ||
+      carData.color ||
+      carData.car_photos.length > 0;
     if (!hasCarFields) {
       console.log("Skipping car update: No car-related data provided.");
       return res.status(200).json({
@@ -616,10 +400,18 @@ const updateProfileAndCarDetails = async (req, res) => {
     }
 
     const currentCar = existingCar || {};
-    carData.car_photos = Array.isArray(carData.car_photos) ? carData.car_photos : [];
-    if (carData.car_photos.length > 0 && Array.isArray(currentCar.car_photos) && currentCar.car_photos.length > 0) {
+    carData.car_photos = Array.isArray(carData.car_photos)
+      ? carData.car_photos
+      : [];
+    if (
+      carData.car_photos.length > 0 &&
+      Array.isArray(currentCar.car_photos) &&
+      currentCar.car_photos.length > 0
+    ) {
       console.log("Deleting old car photos from S3:", currentCar.car_photos);
-      await Promise.all(currentCar.car_photos.map((photo) => deleteFromS3(photo)));
+      await Promise.all(
+        currentCar.car_photos.map((photo) => deleteFromS3(photo))
+      );
     }
 
     let hasCarVerificationFiles = false;
@@ -639,8 +431,14 @@ const updateProfileAndCarDetails = async (req, res) => {
     }
     if (req.body.rc_doc_back) {
       console.log("Processing rc_doc_back URL:", req.body.rc_doc_back);
-      if (currentCar.rc_doc_back && currentCar.rc_doc_back !== req.body.rc_doc_back) {
-        console.log("Deleting old rc_doc_back from S3:", currentCar.rc_doc_back);
+      if (
+        currentCar.rc_doc_back &&
+        currentCar.rc_doc_back !== req.body.rc_doc_back
+      ) {
+        console.log(
+          "Deleting old rc_doc_back from S3:",
+          currentCar.rc_doc_back
+        );
         await deleteFromS3(currentCar.rc_doc_back);
       }
       carData.rc_doc_back = req.body.rc_doc_back;
@@ -650,8 +448,14 @@ const updateProfileAndCarDetails = async (req, res) => {
     }
     if (req.body.insurance_doc) {
       console.log("Processing insurance_doc URL:", req.body.insurance_doc);
-      if (currentCar.insurance_doc && currentCar.insurance_doc !== req.body.insurance_doc) {
-        console.log("Deleting old insurance_doc from S3:", currentCar.insurance_doc);
+      if (
+        currentCar.insurance_doc &&
+        currentCar.insurance_doc !== req.body.insurance_doc
+      ) {
+        console.log(
+          "Deleting old insurance_doc from S3:",
+          currentCar.insurance_doc
+        );
         await deleteFromS3(currentCar.insurance_doc);
       }
       carData.insurance_doc = req.body.insurance_doc;
@@ -663,7 +467,9 @@ const updateProfileAndCarDetails = async (req, res) => {
     if (hasCarVerificationFiles) {
       carData.is_approved = false;
       updatedDriverData.status = "inactive";
-      console.log("Set is_approved to false in DriverCar and status to 'inactive' in Driver due to new car verification files");
+      console.log(
+        "Set is_approved to false in DriverCar and status to 'inactive' in Driver due to new car verification files"
+      );
     } else {
       delete carData.is_approved;
       console.log("Preserving existing is_approved value in DriverCar");
@@ -671,7 +477,9 @@ const updateProfileAndCarDetails = async (req, res) => {
 
     if (hasCarVerificationFiles && !hasDriverData) {
       await driverService.updateDriverProfile(driverId, { status: "inactive" });
-      console.log("Driver status updated to 'inactive' due to car verification files");
+      console.log(
+        "Driver status updated to 'inactive' due to car verification files"
+      );
     }
 
     const vehicle = await driverCarService.upsertDriverCar(driverId, carData);
@@ -687,7 +495,6 @@ const updateProfileAndCarDetails = async (req, res) => {
   }
 };
 
-
 module.exports = {
   verifyMobile,
   blockDriverByIdentifier,
@@ -698,5 +505,5 @@ module.exports = {
   getStatuses,
   updateStatuses,
   updateOneSignalId,
-  deleteOneSignalId
+  deleteOneSignalId,
 };

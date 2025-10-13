@@ -1,7 +1,17 @@
 const router = require("express").Router();
 const { authMiddleware } = require("../../../middlewares/admin/authMiddleware");
-const { login, register, logout, getPermissions, getMe } = require("../../../controllers/admin/auth.controller");
-const { getAdmins, updatePermissions, updateStatus } = require("../../../controllers/admin/admin.controller");
+const {
+  login,
+  register,
+  logout,
+  getPermissions,
+  getMe,
+} = require("../../../controllers/admin/auth.controller");
+const {
+  getAdmins,
+  updatePermissions,
+  updateStatus,
+} = require("../../../controllers/admin/admin.controller");
 const adminManagementController = require("../../../controllers/admin/admin_management.controller");
 const { endPoints } = require("../../api");
 
@@ -15,10 +25,30 @@ router.put(endPoints.auth.updatePermissions, authMiddleware, updatePermissions);
 router.put(endPoints.auth.updateStatus, authMiddleware, updateStatus);
 
 // Admin management routes
-router.get(endPoints.auth.listAdmins, authMiddleware, adminManagementController.listAdmins);
-router.post(endPoints.auth.createAdmin, authMiddleware, adminManagementController.createAdmin);
-router.put(endPoints.auth.updateAdmin, authMiddleware, adminManagementController.updateAdmin);
-router.put(endPoints.auth.updateAdminStatus, authMiddleware, adminManagementController.updateAdminStatus);
-router.put(endPoints.auth.adminManagementupdatePermissions, authMiddleware, adminManagementController.updatePermissions);
+router.get(
+  endPoints.auth.listAdmins,
+  authMiddleware,
+  adminManagementController.listAdmins
+);
+router.post(
+  endPoints.auth.createAdmin,
+  authMiddleware,
+  adminManagementController.createAdmin
+);
+router.put(
+  endPoints.auth.updateAdmin,
+  authMiddleware,
+  adminManagementController.updateAdmin
+);
+router.put(
+  endPoints.auth.updateAdminStatus,
+  authMiddleware,
+  adminManagementController.updateAdminStatus
+);
+router.put(
+  endPoints.auth.adminManagementupdatePermissions,
+  authMiddleware,
+  adminManagementController.updatePermissions
+);
 
 module.exports = router;

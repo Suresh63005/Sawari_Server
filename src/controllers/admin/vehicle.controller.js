@@ -10,7 +10,7 @@ exports.getAllVehicles = async (req, res) => {
       page: parseInt(page, 10),
       limit: parseInt(limit, 10),
       search,
-      status
+      status,
     });
 
     console.log("vehiclessssssssssssss:", vehicles);
@@ -39,23 +39,36 @@ exports.getVehiclesByDriver = async (req, res) => {
 exports.approveVehicle = async (req, res) => {
   try {
     const { id } = req.params;
-    const car = await DriverCar.findByPk(id,{
-      attributes:["id","driver_id","license_plate"]
+    const car = await DriverCar.findByPk(id, {
+      attributes: ["id", "driver_id", "license_plate"],
     });
     if (!car) throw new Error("Vehicle not found");
-    await car.update({ is_approved: true, status: "active", verified_by: req.user.id,reason:null });
+    await car.update({
+      is_approved: true,
+      status: "active",
+      verified_by: req.user.id,
+      reason: null,
+    });
     // Fetch driver to get one_signal_id
     const driver = await driverService.getDriverById(id);
-    if(driver?.one_signal_id){
-       const fullName = `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
+    if (driver?.one_signal_id) {
+      const fullName =
+        `${driver.first_name || ""} ${driver.last_name || ""}`.trim() ||
+        "Driver";
       await sendPushNotification(
         driver.one_signal_id,
         { en: "Vehicle Approved" },
-        { en: `Hi ${fullName}, your vehicle (License Plate: ${car.license_plate}) has been approved!` }
+        {
+          en: `Hi ${fullName}, your vehicle (License Plate: ${car.license_plate}) has been approved!`,
+        }
       );
-      console.log(`📢 Push notification sent to driver (${fullName}) for vehicle approval`);
+      console.log(
+        `📢 Push notification sent to driver (${fullName}) for vehicle approval`
+      );
     } else {
-      console.warn(`⚠️ Driver with ID ${car.driver_id} has no OneSignal ID, skipping push notification`);
+      console.warn(
+        `⚠️ Driver with ID ${car.driver_id} has no OneSignal ID, skipping push notification`
+      );
     }
     res.status(200).json({ message: "Vehicle approved" });
   } catch (error) {
@@ -67,30 +80,42 @@ exports.rejectVehicle = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    const car = await DriverCar.findByPk(id,{
-      attributes:["id","driver_id","license_plate"]
+    const car = await DriverCar.findByPk(id, {
+      attributes: ["id", "driver_id", "license_plate"],
     });
     if (!car) throw new Error("Vehicle not found");
-    await car.update({ is_approved: false, status: "rejected", reason, verified_by: req.user.id });
+    await car.update({
+      is_approved: false,
+      status: "rejected",
+      reason,
+      verified_by: req.user.id,
+    });
     // Fetch driver to get one_signal_id
     const driver = await driverService.getDriverById(id);
-    if(driver?.one_signal_id){
-      const fullName = `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
+    if (driver?.one_signal_id) {
+      const fullName =
+        `${driver.first_name || ""} ${driver.last_name || ""}`.trim() ||
+        "Driver";
       await sendPushNotification(
         driver.one_signal_id,
-        {en:"Vehicle Rejected"},
-        {en:`Hi ${fullName}, your vehicle (License Plate: ${car.license_plate}) has been rejected!`}
+        { en: "Vehicle Rejected" },
+        {
+          en: `Hi ${fullName}, your vehicle (License Plate: ${car.license_plate}) has been rejected!`,
+        }
       );
-      console.log(`📢 Push notification sent to driver (${fullName}) for vehicle approval`);
-    }else{
-      console.warn(`⚠️ Driver with ID ${car.driver_id} has no OneSignal ID, skipping push notification`);
+      console.log(
+        `📢 Push notification sent to driver (${fullName}) for vehicle approval`
+      );
+    } else {
+      console.warn(
+        `⚠️ Driver with ID ${car.driver_id} has no OneSignal ID, skipping push notification`
+      );
     }
     res.status(200).json({ message: "Vehicle rejected" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 exports.verifyRc = async (req, res) => {
   try {

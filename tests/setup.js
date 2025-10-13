@@ -35,7 +35,9 @@ module.exports.closeDatabase = async () => {
 
 module.exports.clearDatabase = async () => {
   const models = Object.values(sequelize.models);
-  await Promise.all(models.map((model) => model.destroy({ truncate: true, cascade: true })));
+  await Promise.all(
+    models.map((model) => model.destroy({ truncate: true, cascade: true }))
+  );
 };
 
 beforeAll(async () => {
