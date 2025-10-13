@@ -1,6 +1,7 @@
 const sequelize = require("../../config/db");
 const { razorpayInstance } = require("../../config/razorpay");
 const { sendPushNotification } = require("../../helper/sendPushNotification");
+const Driver = require("../../models/driver.model");
 const { getDriverById, updateDriverBalance } = require("../../services/driver.service");
 const { wallet, createWalletReport,getWalletBalance } = require("../../services/wallet.service");
 const crypto = require("crypto");
@@ -90,12 +91,24 @@ const verifyPayment = async (req, res) => {
     t = await sequelize.transaction();
     try {
       const driver = await getDriverById(driver_id);
-      const updatedBalance =
-        parseFloat(driver.wallet_balance || 0) + parseFloat(amount);
+      // const updatedBalance =
+      //   parseFloat(driver.wallet_balance || 0) + parseFloat(amount);
+      const previousBalance = parseFloat(driver.wallet_balance || 0);
+      const newBalance = previousBalance + parseFloat(amount);
 
-      await updateDriverBalance(driver_id, updatedBalance); // update driver balance afetr adding payment
+      await updateDriverBalance(driver_id, newBalance, t); // update driver balance afetr adding payment
 
-      await createWalletReport(driver_id, amount, updatedBalance, order_id, t); //create wallet report
+      await createWalletReport(driver_id, amount, newBalance, order_id, t); //create wallet report
+
+       // ✅ If wallet was negative and now positive, reset credit_ride_count
+      if (previousBalance < 0 && newBalance >= 0) {
+        await Driver.update(
+          { credit_ride_count: 0 },
+          { where: { id: driver_id }, transaction: t }
+        );
+        console.log(`✅ credit_ride_count reset for driver ${driver_id}`);
+      }
+
       await t.commit();
 
       // Send push notification
@@ -107,9 +120,7 @@ const verifyPayment = async (req, res) => {
           driver.one_signal_id,
           { en: "Wallet Updated" },
           {
-            en: `Hi ${fullName}, ${amount} has been added to your wallet. New balance is ${updatedBalance.toFixed(
-              2
-            )}.`,
+            en: `Hi ${fullName}, ${amount} has been added to your wallet. New balance is ${newBalance.toFixed(2)}.`,
           }
         );
         console.log(

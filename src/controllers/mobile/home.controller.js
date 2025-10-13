@@ -73,7 +73,7 @@ const getAllHomeData = async (req, res) => {
         "drop_location", "drop_address", "scheduled_time", "pickup_time", "dropoff_time"
       ],
       limit: 10,
-      order: [["scheduled_time", "ASC"]]
+      order: [["scheduled_time", "DESC"]]
     });
 
     // 5. Available Rides (unassigned)
