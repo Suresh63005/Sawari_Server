@@ -519,6 +519,7 @@ const getRideByIdData=async(driver_id,ride_id)=>{
 };
 
 
+
 const getRidesByStatusAndDriver = async (status, driverId) => {
   try {
     const where = { driver_id: driverId };
