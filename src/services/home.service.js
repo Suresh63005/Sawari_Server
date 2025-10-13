@@ -80,27 +80,49 @@ const RideDetails = async (driver_id, ride_id) => {
 
 
 const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
-    if (!["accepted", "completed", "cancelled"].includes(status)) {
-        throw new Error("Invalid status. Allowed values: 'accepted', 'cancelled','completed");
-    }
+  if (!["accepted", "completed", "cancelled"].includes(status)) {
+    throw new Error(
+      "Invalid status. Allowed values: 'accepted', 'cancelled', 'completed'"
+    );
+  }
 
-    const whereCondition = {
-      [Op.or]: [{ driver_id }, { initiated_by_driver_id: driver_id }],
-      status,
-    };
 
-      if (status === "accepted") {
-        whereCondition.scheduled_time = { [Op.gte]: new Date() };
-      }
+  const whereCondition = {
+    driver_id,
+    status,
+  };
 
-    const orderBy = status === "accepted" ? [["scheduled_time", "DESC"]] : [["updatedAt", "DESC"]];
+  // Fetch all rides first
+  const rides = await Ride.findAll({
+    where: whereCondition,
+    order: [["createdAt", "DESC"]],
+  });
 
-    const rides = await Ride.findAll({
-      where: whereCondition,
-      order: orderBy,
+  // If accepted, filter future rides and sort by scheduled_time
+  if (status === "accepted") {
+    const now = new Date();
+
+    // Convert Sequelize instances to plain objects with proper Date conversion
+    const ridesWithDates = rides.map((ride) => {
+      const rideObj = ride.get({ plain: true });
+      rideObj.scheduled_time = new Date(rideObj.scheduled_time);
+      return rideObj;
     });
 
-    return rides;
+    // Filter future rides and sort by scheduled_time ascending
+    return ridesWithDates
+      .filter((ride) => ride.scheduled_time >= now)
+      .sort((a, b) => a.scheduled_time - b.scheduled_time);
+  }
+
+  // For completed/cancelled, sort by createdAt descending
+  return rides
+    .map((ride) => {
+      const rideObj = ride.get({ plain: true });
+      rideObj.createdAt = new Date(rideObj.createdAt);
+      return rideObj;
+    })
+    .sort((a, b) => b.createdAt - a.createdAt);
 };
 
 
@@ -321,6 +343,140 @@ const upsertRide = async (rideData) => {
 
 
 
+// const getDriverEarningsHistory = async (driver_id, filters) => {
+//   const where = { driver_id };
+
+//   // ------------------- FILTERS -------------------
+//   // Filter by months
+//   if (filters?.months?.length > 0) {
+//     const monthConditions = filters.months.map(month => {
+//       const [year, monthNum] = month.split("-");
+//       return {
+//         [Op.and]: [
+//           Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("Earnings.createdAt")), year),
+//           Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("Earnings.createdAt")), monthNum),
+//         ]
+//       };
+//     });
+//     where[Op.or] = [...(where[Op.or] || []), ...monthConditions];
+//   }
+
+//   // Filter by days
+//   if (filters?.days?.length > 0) {
+//     where[Op.or] = [
+//       ...(where[Op.or] || []),
+//       {
+//         [Op.or]: filters.days.map(day => ({
+//           [Op.and]: [
+//             Sequelize.where(Sequelize.fn("DATE", Sequelize.col("Earnings.createdAt")), day)
+//           ]
+//         }))
+//       }
+//     ];
+//   }
+
+//   // Filter by years
+//   if (filters?.years?.length > 0) {
+//     where[Op.or] = [
+//       ...(where[Op.or] || []),
+//       {
+//         [Op.or]: filters.years.map(year =>
+//           Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("Earnings.createdAt")), year)
+//         )
+//       }
+//     ];
+//   }
+
+//   // ------------------- HISTORY DATA -------------------
+//   const history = await Earnings.findAll({
+//     where,
+//     order: [["createdAt", "DESC"]],
+//     include: [
+//       {
+//         model: Ride,
+//         as: "Ride",
+//         attributes: [
+//           "pickup_address",
+//           "drop_address",
+//           "pickup_time",
+//           "dropoff_time",
+//           "status",
+//           "Total",
+//           "customer_name",
+//           "status"
+//         ]
+//       }
+//     ]
+//   });
+
+//   // ------------------- TOTAL CALCULATIONS -------------------
+//   const today = new Date();
+//   const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+//   const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+
+//   const startOfWeek = new Date();
+//   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+//   startOfWeek.setHours(0, 0, 0, 0);
+
+//   const endOfWeek = new Date(startOfWeek);
+//   endOfWeek.setDate(startOfWeek.getDate() + 6);
+//   endOfWeek.setHours(23, 59, 59, 999);
+
+//   const startOfMonth = new Date();
+//   startOfMonth.setDate(1);
+//   startOfMonth.setHours(0, 0, 0, 0);
+
+//   const endOfMonth = new Date(
+//     startOfMonth.getFullYear(),
+//     startOfMonth.getMonth() + 1,
+//     0,
+//     23,
+//     59,
+//     59,
+//     999
+//   );
+
+//   // Aggregate Queries
+//   const todayTotal = await Earnings.sum("amount", {
+//     where: {
+//       driver_id,
+//       createdAt: { [Op.between]: [startOfToday, endOfToday] }
+//     }
+//   }) || 0;
+
+//   const weekTotal = await Earnings.sum("amount", {
+//     where: {
+//       driver_id,
+//       createdAt: { [Op.between]: [startOfWeek, endOfWeek] }
+//     }
+//   }) || 0;
+
+//   const monthTotal = await Earnings.sum("amount", {
+//     where: {
+//       driver_id,
+//       createdAt: { [Op.between]: [startOfMonth, endOfMonth] }
+//     }
+//   }) || 0;
+
+//   return {
+//     history,
+//     totals: {
+//       today: todayTotal,
+//       week: weekTotal,
+//       month: monthTotal
+//     }
+//   };
+// };
+
+
+
+
+
+
+// Service for relieving driver from a ride
+
+
+
 const getDriverEarningsHistory = async (driver_id, filters) => {
   const where = { driver_id };
 
@@ -341,28 +497,20 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
 
   // Filter by days
   if (filters?.days?.length > 0) {
-    where[Op.or] = [
-      ...(where[Op.or] || []),
-      {
-        [Op.or]: filters.days.map(day => ({
-          [Op.and]: [
-            Sequelize.where(Sequelize.fn("DATE", Sequelize.col("Earnings.createdAt")), day)
-          ]
-        }))
-      }
-    ];
+    const dayConditions = filters.days.map(day => ({
+      [Op.and]: [
+        Sequelize.where(Sequelize.fn("DATE", Sequelize.col("Earnings.createdAt")), day)
+      ]
+    }));
+    where[Op.or] = [...(where[Op.or] || []), ...dayConditions];
   }
 
   // Filter by years
   if (filters?.years?.length > 0) {
-    where[Op.or] = [
-      ...(where[Op.or] || []),
-      {
-        [Op.or]: filters.years.map(year =>
-          Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("Earnings.createdAt")), year)
-        )
-      }
-    ];
+    const yearConditions = filters.years.map(year =>
+      Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("Earnings.createdAt")), year)
+    );
+    where[Op.or] = [...(where[Op.or] || []), ...yearConditions];
   }
 
   // ------------------- HISTORY DATA -------------------
@@ -380,68 +528,61 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
           "dropoff_time",
           "status",
           "Total",
-          "customer_name",
-          "status"
+          "customer_name"
         ]
       }
     ]
   });
 
-  // ------------------- TOTAL CALCULATIONS -------------------
-  const today = new Date();
-  const startOfToday = new Date(today.setHours(0, 0, 0, 0));
-  const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+  // ------------------- DATE RANGES -------------------
+  const now = new Date();
 
-  const startOfWeek = new Date();
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+  // Today
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
+
+  // This Week (Sunday - Saturday)
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
   startOfWeek.setHours(0, 0, 0, 0);
-
   const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
   endOfWeek.setHours(23, 59, 59, 999);
 
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
+  // This Month
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-  const endOfMonth = new Date(
-    startOfMonth.getFullYear(),
-    startOfMonth.getMonth() + 1,
-    0,
-    23,
-    59,
-    59,
-    999
-  );
+  // This Year
+  const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+  const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
 
-  // Aggregate Queries
-  const todayTotal = await Earnings.sum("amount", {
-    where: {
-      driver_id,
-      createdAt: { [Op.between]: [startOfToday, endOfToday] }
-    }
-  }) || 0;
+  // ------------------- TOTAL CALCULATIONS -------------------
+  const todayTotal = (await Earnings.sum("amount", {
+    where: { driver_id, createdAt: { [Op.between]: [startOfToday, endOfToday] } }
+  })) || 0;
 
-  const weekTotal = await Earnings.sum("amount", {
-    where: {
-      driver_id,
-      createdAt: { [Op.between]: [startOfWeek, endOfWeek] }
-    }
-  }) || 0;
+  const weekTotal = (await Earnings.sum("amount", {
+    where: { driver_id, createdAt: { [Op.between]: [startOfWeek, endOfWeek] } }
+  })) || 0;
 
-  const monthTotal = await Earnings.sum("amount", {
-    where: {
-      driver_id,
-      createdAt: { [Op.between]: [startOfMonth, endOfMonth] }
-    }
-  }) || 0;
+  const monthTotal = (await Earnings.sum("amount", {
+    where: { driver_id, createdAt: { [Op.between]: [startOfMonth, endOfMonth] } }
+  })) || 0;
+
+  const yearTotal = (await Earnings.sum("amount", {
+    where: { driver_id, createdAt: { [Op.between]: [startOfYear, endOfYear] } }
+  })) || 0;
 
   return {
     history,
     totals: {
       today: todayTotal,
       week: weekTotal,
-      month: monthTotal
+      month: monthTotal,
+      year: yearTotal
     }
   };
 };
@@ -450,8 +591,6 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
 
 
 
-
-// Service for relieving driver from a ride
 const releaseRide = async (rideId, driver_id) => {
     const ride = await Ride.findOne({
         where: {
