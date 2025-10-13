@@ -511,7 +511,7 @@ const getRidesByStatus = async (req, res) => {
       message: "Unauthorized access",
     });
   }
-  const { status } = req.query;
+  const { status } = req.params;
 
   try {
     const rides = await HomeService.getCompletedOrCancelledAndAcceptedRides(driver_id, status);
@@ -519,6 +519,7 @@ const getRidesByStatus = async (req, res) => {
       success: true,
       message: `Rides with status "${status}" fetched successfully`,
       data: rides,
+      count: rides.length
     });
   } catch (error) {
     return res.status(400).json({
