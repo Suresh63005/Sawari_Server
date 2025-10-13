@@ -159,7 +159,7 @@ const getTicketsById = async (data) => {
   try {
     const ticket = await Ticket.findOne({
       where: { id, raised_by: driver_id },
-      raw: true, 
+      raw: true,
     });
 
     if (!ticket) {

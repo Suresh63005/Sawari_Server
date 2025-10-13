@@ -5,5 +5,5 @@ const generateToken = async (driverId) => {
 };
 
 module.exports = {
-    generateToken
-}
+  generateToken,
+};

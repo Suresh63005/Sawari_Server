@@ -1,4 +1,4 @@
-const normalizePhone = async(phone) => {
+const normalizePhone = async (phone) => {
   phone = phone.trim();
   if (!phone.startsWith("+971")) {
     phone = phone.replace(/^(\+|0)*/, "");
@@ -7,5 +7,5 @@ const normalizePhone = async(phone) => {
   return phone;
 };
 module.exports = {
-    normalizePhone
-}
+  normalizePhone,
+};

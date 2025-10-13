@@ -22,7 +22,7 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const app = express();
 const port = process.env.PORT || 4445;
 
-const { API_VERSION } = require("../src/api/api"); 
+const { API_VERSION } = require("../src/api/api");
 
 console.log(
   "🚀 Starting app.js at",
@@ -99,7 +99,6 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
   }
 })();
 
-
 app.use((req, res, next) => {
   console.log(`📥 ${req.method} ${req.url}`);
   next();
@@ -139,7 +138,7 @@ const startServer = async () => {
       console.info(`Swagger UI available at http://localhost:${port}/api-docs`);
     });
 
-    console.log(server.requestTimeout,"server requestTimeout");
+    console.log(server.requestTimeout, "server requestTimeout");
   } catch (err) {
     console.error(`❌ Failed to start server: ${err.message}`);
     process.exit(1);

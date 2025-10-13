@@ -330,7 +330,6 @@ const updateDriverCar = async (driver_id, data, files) => {
   return vehicle;
 };
 
-
 // const updateDriverDocuments = async ({ driver, driverCar, files }) => {
 //   try {
 //     const s3Uploads = {};
@@ -391,12 +390,16 @@ const updateDriverDocuments = async ({ driver, driverCar, files }) => {
         if (file.size > maxSize) {
           throw new Error(`File too large for ${field}`);
         }
-        s3Uploads[field] = await uploadToS3(file, field === "license_front" ? "drivers" : "driver-cars");
+        s3Uploads[field] = await uploadToS3(
+          file,
+          field === "license_front" ? "drivers" : "driver-cars"
+        );
       }
     }
 
     if (s3Uploads.rc_doc) driverCar.rc_doc = s3Uploads.rc_doc;
-    if (s3Uploads.insurance_doc) driverCar.insurance_doc = s3Uploads.insurance_doc;
+    if (s3Uploads.insurance_doc)
+      driverCar.insurance_doc = s3Uploads.insurance_doc;
     if (s3Uploads.license_front) driver.license_front = s3Uploads.license_front;
 
     await Promise.all([driverCar.save(), driver.save()]);

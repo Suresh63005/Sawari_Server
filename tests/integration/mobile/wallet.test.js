@@ -26,19 +26,24 @@ describe("Wallet API", () => {
 
   beforeAll(async () => {
     await sequelize.sync({ force: true, logging: console.log });
-    const tables = await sequelize.query("SELECT name FROM sqlite_master WHERE type='table';");
-  console.log("Tables in database:", tables[0]);
+    const tables = await sequelize.query(
+      "SELECT name FROM sqlite_master WHERE type='table';"
+    );
+    console.log("Tables in database:", tables[0]);
   });
 
   beforeEach(async () => {
     jest.clearAllMocks();
     try {
-    await sequelize.query("DELETE FROM WalletReports;", { silent: true });
-    await sequelize.query("DELETE FROM Drivers;", { silent: true });
-    await sequelize.query("DELETE FROM sqlite_sequence WHERE name IN ('Driver', 'WalletReport');", { silent: true });
-  } catch (error) {
-    console.error("BeforeEach cleanup error:", error);
-  }
+      await sequelize.query("DELETE FROM WalletReports;", { silent: true });
+      await sequelize.query("DELETE FROM Drivers;", { silent: true });
+      await sequelize.query(
+        "DELETE FROM sqlite_sequence WHERE name IN ('Driver', 'WalletReport');",
+        { silent: true }
+      );
+    } catch (error) {
+      console.error("BeforeEach cleanup error:", error);
+    }
 
     const uniqueSuffix = Date.now();
     driver = await Driver.create({
@@ -70,15 +75,18 @@ describe("Wallet API", () => {
   });
 
   afterEach(async () => {
-  try {
-    await sequelize.query("DELETE FROM WalletReports;", { silent: true });
-    await sequelize.query("DELETE FROM Drivers;", { silent: true });
-    await sequelize.query("DELETE FROM sqlite_sequence WHERE name IN ('Driver', 'WalletReport');", { silent: true });
-  } catch (error) {
-    console.error("AfterEach cleanup error:", error);
-  }
-  jest.restoreAllMocks();
-});
+    try {
+      await sequelize.query("DELETE FROM WalletReports;", { silent: true });
+      await sequelize.query("DELETE FROM Drivers;", { silent: true });
+      await sequelize.query(
+        "DELETE FROM sqlite_sequence WHERE name IN ('Driver', 'WalletReport');",
+        { silent: true }
+      );
+    } catch (error) {
+      console.error("AfterEach cleanup error:", error);
+    }
+    jest.restoreAllMocks();
+  });
 
   afterAll(async () => {
     await sequelize.close();
@@ -93,7 +101,10 @@ describe("Wallet API", () => {
         .set("Accept", "application/json")
         .send(data);
 
-      console.log("Add money response:", JSON.stringify(response.body, null, 2));
+      console.log(
+        "Add money response:",
+        JSON.stringify(response.body, null, 2)
+      );
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -130,7 +141,10 @@ describe("Wallet API", () => {
         .set("Accept", "application/json")
         .send(data);
 
-      console.log("Invalid token response:", JSON.stringify(response.body, null, 2));
+      console.log(
+        "Invalid token response:",
+        JSON.stringify(response.body, null, 2)
+      );
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("Unauthorized: Invalid token");
@@ -143,7 +157,10 @@ describe("Wallet API", () => {
         .set("Accept", "application/json")
         .send({});
 
-      console.log("Missing amount response:", JSON.stringify(response.body, null, 2));
+      console.log(
+        "Missing amount response:",
+        JSON.stringify(response.body, null, 2)
+      );
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -158,7 +175,10 @@ describe("Wallet API", () => {
         .set("Accept", "application/json")
         .send(data);
 
-      console.log("Negative amount response:", JSON.stringify(response.body, null, 2));
+      console.log(
+        "Negative amount response:",
+        JSON.stringify(response.body, null, 2)
+      );
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -166,26 +186,29 @@ describe("Wallet API", () => {
     });
 
     // tests/integration/mobile/wallet.test.js, line ~174
-it("should handle edge case: Razorpay order creation failure", async () => {
-  const data = { amount: 500 };
-  jest.mock("razorpay", () => ({
-    orders: {
-      create: jest.fn().mockRejectedValue(new Error("Razorpay error")),
-    },
-  }));
+    it("should handle edge case: Razorpay order creation failure", async () => {
+      const data = { amount: 500 };
+      jest.mock("razorpay", () => ({
+        orders: {
+          create: jest.fn().mockRejectedValue(new Error("Razorpay error")),
+        },
+      }));
 
-  const response = await request(app)
-    .post("/api/v1/mobile/wallet/add-money")
-    .set("Authorization", `Bearer ${token}`)
-    .set("Accept", "application/json")
-    .send(data);
+      const response = await request(app)
+        .post("/api/v1/mobile/wallet/add-money")
+        .set("Authorization", `Bearer ${token}`)
+        .set("Accept", "application/json")
+        .send(data);
 
-  console.log("Razorpay failure response:", JSON.stringify(response.body, null, 2));
+      console.log(
+        "Razorpay failure response:",
+        JSON.stringify(response.body, null, 2)
+      );
 
-  expect(response.status).toBe(500);
-  expect(response.body.success).toBe(false);
-  expect(response.body.message).toBe("Razorpay order creation failed");
-});
+      expect(response.status).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe("Razorpay order creation failed");
+    });
   });
 
   describe("POST /api/v1/mobile/wallet/verify-payment", () => {
@@ -202,68 +225,94 @@ it("should handle edge case: Razorpay order creation failure", async () => {
     });
 
     // tests/integration/mobile/wallet.test.js, line ~209
-it("should verify payment and update wallet successfully", async () => {
-  const data = { order_id: orderId, payment_id: paymentId, signature, amount };
-  const response = await request(app)
-    .post("/api/v1/mobile/wallet/verify-payment")
-    .set("Authorization", `Bearer ${token}`)
-    .set("Accept", "application/json")
-    .send(data);
+    it("should verify payment and update wallet successfully", async () => {
+      const data = {
+        order_id: orderId,
+        payment_id: paymentId,
+        signature,
+        amount,
+      };
+      const response = await request(app)
+        .post("/api/v1/mobile/wallet/verify-payment")
+        .set("Authorization", `Bearer ${token}`)
+        .set("Accept", "application/json")
+        .send(data);
 
-  console.log("Verify payment response:", JSON.stringify(response.body, null, 2));
+      console.log(
+        "Verify payment response:",
+        JSON.stringify(response.body, null, 2)
+      );
 
-  const updatedDriver = await Driver.findByPk(driver.id);
-  const walletReport = await WalletReports.findOne({ where: { driver_id: driver.id } });
-  console.log("Wallet report:", walletReport ? walletReport.toJSON() : null);
+      const updatedDriver = await Driver.findByPk(driver.id);
+      const walletReport = await WalletReports.findOne({
+        where: { driver_id: driver.id },
+      });
+      console.log(
+        "Wallet report:",
+        walletReport ? walletReport.toJSON() : null
+      );
 
-  expect(response.status).toBe(200);
-  expect(response.body.success).toBe(true);
-  expect(response.body.message).toBe("Payment verified and wallet updated");
-  expect(updatedDriver).not.toBeNull();
-  expect(updatedDriver.wallet_balance).toBe(600); // 100 + 500
-  expect(walletReport).not.toBeNull();
-  if (walletReport) {
-    expect(walletReport).toMatchObject({
-      driver_id: driver.id,
-      transaction_type: "credit",
-      amount: "500.00",
-      balance_after: "600.00",
-      description: `Wallet top-up via Razorpay. Order: ${orderId}`,
-      status: "completed",
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe("Payment verified and wallet updated");
+      expect(updatedDriver).not.toBeNull();
+      expect(updatedDriver.wallet_balance).toBe(600); // 100 + 500
+      expect(walletReport).not.toBeNull();
+      if (walletReport) {
+        expect(walletReport).toMatchObject({
+          driver_id: driver.id,
+          transaction_type: "credit",
+          amount: "500.00",
+          balance_after: "600.00",
+          description: `Wallet top-up via Razorpay. Order: ${orderId}`,
+          status: "completed",
+        });
+      }
     });
-  }
-});
 
     // tests/integration/mobile/wallet.test.js, line ~235
-it("should return 401 if no token is provided", async () => {
-  const data = { order_id: orderId, payment_id: paymentId, signature, amount };
-  const response = await request(app)
-    .post("/api/v1/mobile/wallet/verify-payment")
-    .set("Accept", "application/json")
-    .send(data);
+    it("should return 401 if no token is provided", async () => {
+      const data = {
+        order_id: orderId,
+        payment_id: paymentId,
+        signature,
+        amount,
+      };
+      const response = await request(app)
+        .post("/api/v1/mobile/wallet/verify-payment")
+        .set("Accept", "application/json")
+        .send(data);
 
-  console.log("No token response:", JSON.stringify(response.body, null, 2));
+      console.log("No token response:", JSON.stringify(response.body, null, 2));
 
-  expect(response.status).toBe(401);
-  expect(response.body.success).toBe(false);
-  expect(response.body.message).toBe("Unauthorized: No token provided"); // Updated
-});
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe("Unauthorized: No token provided"); // Updated
+    });
 
     // tests/integration/mobile/wallet.test.js, line ~134
-it("should return 401 if invalid token", async () => {
-  const invalidToken = jwt.sign({}, "invalid-secret");
-  const data = { order_id: orderId, payment_id: paymentId, signature, amount };
-  const response = await request(app)
-    .post("/api/v1/mobile/wallet/verify-payment")
-    .set("Authorization", `Bearer ${invalidToken}`)
-    .set("Accept", "application/json")
-    .send(data);
+    it("should return 401 if invalid token", async () => {
+      const invalidToken = jwt.sign({}, "invalid-secret");
+      const data = {
+        order_id: orderId,
+        payment_id: paymentId,
+        signature,
+        amount,
+      };
+      const response = await request(app)
+        .post("/api/v1/mobile/wallet/verify-payment")
+        .set("Authorization", `Bearer ${invalidToken}`)
+        .set("Accept", "application/json")
+        .send(data);
 
-  console.log("Invalid token response:", JSON.stringify(response.body, null, 2));
+      console.log(
+        "Invalid token response:",
+        JSON.stringify(response.body, null, 2)
+      );
 
-  expect(response.status).toBe(401);
-  expect(response.body.message).toBe("Unauthorized: Invalid token");
-});
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe("Unauthorized: Invalid token");
+    });
 
     it("should return 400 if required fields are missing", async () => {
       const data = { order_id: orderId, payment_id: paymentId }; // Missing signature, amount
@@ -273,7 +322,10 @@ it("should return 401 if invalid token", async () => {
         .set("Accept", "application/json")
         .send(data);
 
-      console.log("Missing fields response:", JSON.stringify(response.body, null, 2));
+      console.log(
+        "Missing fields response:",
+        JSON.stringify(response.body, null, 2)
+      );
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -281,14 +333,22 @@ it("should return 401 if invalid token", async () => {
     });
 
     it("should return 401 if invalid signature", async () => {
-      const data = { order_id: orderId, payment_id: paymentId, signature: "invalid", amount };
+      const data = {
+        order_id: orderId,
+        payment_id: paymentId,
+        signature: "invalid",
+        amount,
+      };
       const response = await request(app)
         .post("/api/v1/mobile/wallet/verify-payment")
         .set("Authorization", `Bearer ${token}`)
         .set("Accept", "application/json")
         .send(data);
 
-      console.log("Invalid signature response:", JSON.stringify(response.body, null, 2));
+      console.log(
+        "Invalid signature response:",
+        JSON.stringify(response.body, null, 2)
+      );
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
@@ -296,45 +356,74 @@ it("should return 401 if invalid token", async () => {
     });
 
     // tests/integration/mobile/wallet.test.js, line ~289
-it("should handle edge case: driver not found", async () => {
-  jest.spyOn(require("../../../src/services/driver.service"), "getDriverById").mockResolvedValueOnce(null);
-  try {
-    await sequelize.query("DELETE FROM Drivers WHERE id = :id", { replacements: { id: driver.id }, silent: true });
-    await sequelize.query("DELETE FROM sqlite_sequence WHERE name = 'Driver'", { silent: true });
-  } catch (error) {
-    console.warn("Skipping driver deletion due to missing table:", error.message);
-  }
-  const data = { order_id: orderId, payment_id: paymentId, signature, amount };
-  const response = await request(app)
-    .post("/api/v1/mobile/wallet/verify-payment")
-    .set("Authorization", `Bearer ${token}`)
-    .set("Accept", "application/json")
-    .send(data);
+    it("should handle edge case: driver not found", async () => {
+      jest
+        .spyOn(require("../../../src/services/driver.service"), "getDriverById")
+        .mockResolvedValueOnce(null);
+      try {
+        await sequelize.query("DELETE FROM Drivers WHERE id = :id", {
+          replacements: { id: driver.id },
+          silent: true,
+        });
+        await sequelize.query(
+          "DELETE FROM sqlite_sequence WHERE name = 'Driver'",
+          { silent: true }
+        );
+      } catch (error) {
+        console.warn(
+          "Skipping driver deletion due to missing table:",
+          error.message
+        );
+      }
+      const data = {
+        order_id: orderId,
+        payment_id: paymentId,
+        signature,
+        amount,
+      };
+      const response = await request(app)
+        .post("/api/v1/mobile/wallet/verify-payment")
+        .set("Authorization", `Bearer ${token}`)
+        .set("Accept", "application/json")
+        .send(data);
 
-  console.log("Driver not found response:", JSON.stringify(response.body, null, 2));
+      console.log(
+        "Driver not found response:",
+        JSON.stringify(response.body, null, 2)
+      );
 
-  expect(response.status).toBe(500);
-  expect(response.body.success).toBe(false);
-  expect(response.body.message).toBe("Internal server error");
-  expect(response.body.error).toBe("Failed to update driver balance");
-});
+      expect(response.status).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe("Internal server error");
+      expect(response.body.error).toBe("Failed to update driver balance");
+    });
 
     // tests/integration/mobile/wallet.test.js, line ~306
-it("should handle edge case: database transaction failure", async () => {
-  jest.spyOn(Driver, "findByPk").mockRejectedValueOnce(new Error("Database error"));
-  const data = { order_id: orderId, payment_id: paymentId, signature, amount };
-  const response = await request(app)
-    .post("/api/v1/mobile/wallet/verify-payment")
-    .set("Authorization", `Bearer ${token}`)
-    .set("Accept", "application/json")
-    .send(data);
+    it("should handle edge case: database transaction failure", async () => {
+      jest
+        .spyOn(Driver, "findByPk")
+        .mockRejectedValueOnce(new Error("Database error"));
+      const data = {
+        order_id: orderId,
+        payment_id: paymentId,
+        signature,
+        amount,
+      };
+      const response = await request(app)
+        .post("/api/v1/mobile/wallet/verify-payment")
+        .set("Authorization", `Bearer ${token}`)
+        .set("Accept", "application/json")
+        .send(data);
 
-  console.log("Transaction failure response:", JSON.stringify(response.body, null, 2));
+      console.log(
+        "Transaction failure response:",
+        JSON.stringify(response.body, null, 2)
+      );
 
-  expect(response.status).toBe(500);
-  expect(response.body.success).toBe(false);
-  expect(response.body.message).toBe("Internal server error");
-  expect(response.body.error).toBe("Failed to update driver balance");
-});
+      expect(response.status).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe("Internal server error");
+      expect(response.body.error).toBe("Failed to update driver balance");
+    });
   });
 });

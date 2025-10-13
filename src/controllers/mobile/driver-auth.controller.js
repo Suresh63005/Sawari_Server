@@ -21,7 +21,6 @@ const verifyMobile = async (req, res) => {
   }
 };
 
-
 const blockDriverByIdentifier = async (req, res) => {
   const { phone, email } = req.body;
   console.log(req.body, "from bodyyyyyyyyyyyyyyyyyyyyyyyyyyyy");

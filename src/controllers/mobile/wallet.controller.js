@@ -17,7 +17,7 @@ const { v4: uuidv4 } = require("uuid");
 const walletHistory = async (req, res) => {
   const driver_id = req.driver?.id;
   if (!driver_id) {
-    return res.status(401).json({success: false, message: "Unauthorized" });
+    return res.status(401).json({ success: false, message: "Unauthorized" });
   }
 
   try {
@@ -42,9 +42,10 @@ const addMoneyToWallet = async (req, res) => {
   const driver_id = req.driver?.id;
   const { amount } = req.body;
 
-  if (!driver_id) return res.status(401).json({success: false, message: "Unauthorized" });
+  if (!driver_id)
+    return res.status(401).json({ success: false, message: "Unauthorized" });
   if (!amount || amount <= 0)
-    return res.status(400).json({success: false, message: "Invalid amount" });
+    return res.status(400).json({ success: false, message: "Invalid amount" });
 
   try {
     const options = {
@@ -81,9 +82,12 @@ const verifyPayment = async (req, res) => {
   const driver_id = req.driver?.id;
   const { order_id, payment_id, signature, amount } = req.body;
 
-  if (!driver_id) return res.status(401).json({success: false, message: "Unauthorized" });
+  if (!driver_id)
+    return res.status(401).json({ success: false, message: "Unauthorized" });
   if (!order_id || !payment_id || !signature || !amount) {
-    return res.status(400).json({success: false, message: "Missing required fields" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing required fields" });
   }
 
   let t;
@@ -114,15 +118,18 @@ const verifyPayment = async (req, res) => {
   } catch (error) {
     await t.rollback();
     console.error("Payment verification error:", error);
-    return res
-      .status(500)
-      .json({success: false, message: "Internal server error", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
 const myWalletBalance = async (req, res) => {
   const driver = req.driver?.id;
-  if (!driver) return res.status(401).json({success: false, message: "Unauthorized" });
+  if (!driver)
+    return res.status(401).json({ success: false, message: "Unauthorized" });
 
   try {
     const balance = await getWalletBalance(driver);

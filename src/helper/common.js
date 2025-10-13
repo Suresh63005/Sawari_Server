@@ -10,11 +10,10 @@ const isRideStatus = (status, validStatuses) => {
 const isValidPriority = (priority) => {
   const validPriority = ["low", "medium", "high", "urgent"];
   return validPriority.includes(priority);
-
 };
 
 module.exports = {
   isValidStatus,
   isRideStatus,
-  isValidPriority
+  isValidPriority,
 };

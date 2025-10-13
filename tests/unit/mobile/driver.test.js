@@ -22,24 +22,35 @@ jest.mock("../../../src/utils/phoneUtils", () => ({
   normalizePhone: jest.fn(), // Now mocking the correctly named function
 }));
 
-
 // Mock the index.js module to return mocked models
 jest.mock("../../../src/models/index", () => {
   const { Sequelize, DataTypes } = require("sequelize");
   const sequelize = new Sequelize("sqlite::memory:", { logging: false });
 
   const Driver = sequelize.define("Driver", {
-    id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+    id: {
+      type: DataTypes.UUID,
+      primaryKey: true,
+      defaultValue: DataTypes.UUIDV4,
+    },
     email: { type: DataTypes.STRING, unique: true },
     phone: { type: DataTypes.STRING, unique: true },
-    status: { type: DataTypes.ENUM("active", "inactive", "blocked", "rejected") },
+    status: {
+      type: DataTypes.ENUM("active", "inactive", "blocked", "rejected"),
+    },
     last_login: { type: DataTypes.DATE },
     social_login: { type: DataTypes.ENUM("google") },
     document_check_count: { type: DataTypes.INTEGER, defaultValue: 0 },
   });
 
   // Other models...
-  const Admin = sequelize.define("Admin", { id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 } });
+  const Admin = sequelize.define("Admin", {
+    id: {
+      type: DataTypes.UUID,
+      primaryKey: true,
+      defaultValue: DataTypes.UUIDV4,
+    },
+  });
   const Ride = sequelize.define("Ride", {});
   const DriverCar = sequelize.define("DriverCar", {});
   const Earnings = sequelize.define("Earnings", {});
@@ -52,11 +63,20 @@ jest.mock("../../../src/models/index", () => {
   const SubPackage = sequelize.define("SubPackage", {});
   const PackagePrice = sequelize.define("PackagePrice", {});
 
-
   return {
     Driver,
-    Admin, Ride, DriverCar, Earnings, PaymentReports, Permissions,
-    WalletReports, Review, Car, Package, SubPackage, PackagePrice,
+    Admin,
+    Ride,
+    DriverCar,
+    Earnings,
+    PaymentReports,
+    Permissions,
+    WalletReports,
+    Review,
+    Car,
+    Package,
+    SubPackage,
+    PackagePrice,
     sequelize,
     Sequelize,
   };
@@ -98,10 +118,17 @@ describe("verifyDriverMobile", () => {
       jest.spyOn(Driver, "findOne").mockResolvedValue(mockDriver);
       generateToken.mockReturnValue(mockJwtToken);
 
-      const result = await verifyDriverMobile(null, mockToken, mockEmail, "google");
+      const result = await verifyDriverMobile(
+        null,
+        mockToken,
+        mockEmail,
+        "google"
+      );
 
       expect(mockVerifyIdToken).toHaveBeenCalledWith(mockToken);
-      expect(Driver.findOne).toHaveBeenCalledWith({ where: { email: mockEmail } });
+      expect(Driver.findOne).toHaveBeenCalledWith({
+        where: { email: mockEmail },
+      });
       expect(mockDriver.save).toHaveBeenCalled();
       expect(generateToken).toHaveBeenCalledWith(mockDriver.id);
       expect(result).toEqual({
@@ -130,7 +157,12 @@ describe("verifyDriverMobile", () => {
       jest.spyOn(Driver, "create").mockResolvedValue(mockDriver);
       generateToken.mockReturnValue(mockJwtToken);
 
-      const result = await verifyDriverMobile(null, mockToken, mockEmail, "google");
+      const result = await verifyDriverMobile(
+        null,
+        mockToken,
+        mockEmail,
+        "google"
+      );
 
       expect(Driver.create).toHaveBeenCalledWith({
         email: mockEmail,
@@ -157,7 +189,9 @@ describe("verifyDriverMobile", () => {
       mockVerifyIdToken.mockResolvedValue({ email: mockEmail });
       jest.spyOn(Driver, "findOne").mockResolvedValue(mockDriver);
 
-      await expect(verifyDriverMobile(null, mockToken, mockEmail, "google")).rejects.toThrow(
+      await expect(
+        verifyDriverMobile(null, mockToken, mockEmail, "google")
+      ).rejects.toThrow(
         "Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance."
       );
     });
@@ -168,11 +202,15 @@ describe("verifyDriverMobile", () => {
 
       mockVerifyIdToken.mockResolvedValue({ email: "different@example.com" });
 
-      await expect(verifyDriverMobile(null, mockToken, mockEmail, "google")).rejects.toThrow("Email mismatch with token");
+      await expect(
+        verifyDriverMobile(null, mockToken, mockEmail, "google")
+      ).rejects.toThrow("Email mismatch with token");
     });
 
     it("should throw error if email is missing for Google login", async () => {
-      await expect(verifyDriverMobile(null, "valid-token", null, "google")).rejects.toThrow("Email is required");
+      await expect(
+        verifyDriverMobile(null, "valid-token", null, "google")
+      ).rejects.toThrow("Email is required");
     });
   });
 
@@ -199,7 +237,9 @@ describe("verifyDriverMobile", () => {
 
       expect(normalizePhone).toHaveBeenCalledWith(mockPhone); // Assert the correctly named function was called
       expect(mockVerifyIdToken).toHaveBeenCalledWith(mockToken);
-      expect(Driver.findOne).toHaveBeenCalledWith({ where: { phone: expectedNormalizedPhone } });
+      expect(Driver.findOne).toHaveBeenCalledWith({
+        where: { phone: expectedNormalizedPhone },
+      });
       expect(mockDriver.save).toHaveBeenCalled();
       expect(generateToken).toHaveBeenCalledWith(mockDriver.id);
       expect(result).toEqual({
@@ -224,7 +264,8 @@ describe("verifyDriverMobile", () => {
 
       normalizePhone.mockResolvedValue(expectedNormalizedPhone);
       mockVerifyIdToken.mockResolvedValue({ phone_number: "+91" + mockPhone });
-      jest.spyOn(Driver, "findOne")
+      jest
+        .spyOn(Driver, "findOne")
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null);
       jest.spyOn(Driver, "create").mockResolvedValue(mockDriver);
@@ -259,7 +300,9 @@ describe("verifyDriverMobile", () => {
       mockVerifyIdToken.mockResolvedValue({ phone_number: "+91" + mockPhone });
       jest.spyOn(Driver, "findOne").mockResolvedValue(mockDriver);
 
-      await expect(verifyDriverMobile(mockPhone, mockToken, null, null)).rejects.toThrow(
+      await expect(
+        verifyDriverMobile(mockPhone, mockToken, null, null)
+      ).rejects.toThrow(
         "Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance."
       );
     });
@@ -272,21 +315,29 @@ describe("verifyDriverMobile", () => {
       normalizePhone.mockResolvedValue(expectedNormalizedPhone);
       mockVerifyIdToken.mockResolvedValue({ phone_number: "+919876543210" }); // Different phone number in token
 
-      await expect(verifyDriverMobile(mockPhone, mockToken, null, null)).rejects.toThrow("Phone number mismatch with token");
+      await expect(
+        verifyDriverMobile(mockPhone, mockToken, null, null)
+      ).rejects.toThrow("Phone number mismatch with token");
     });
 
     it("should throw error if phone number is missing", async () => {
-      await expect(verifyDriverMobile(null, "valid-token", null, null)).rejects.toThrow("Phone number is required");
+      await expect(
+        verifyDriverMobile(null, "valid-token", null, null)
+      ).rejects.toThrow("Phone number is required");
     });
 
     it("should throw error for invalid phone number format", async () => {
       normalizePhone.mockResolvedValue(null); // Mock normalizePhone to return null
 
-      await expect(verifyDriverMobile("invalid-phone", "valid-token", null, null)).rejects.toThrow("Invalid phone number format");
+      await expect(
+        verifyDriverMobile("invalid-phone", "valid-token", null, null)
+      ).rejects.toThrow("Invalid phone number format");
     });
   });
 
   it("should throw error if token is missing", async () => {
-    await expect(verifyDriverMobile("1234567890", null, "test@example.com", "google")).rejects.toThrow("Token is required");
+    await expect(
+      verifyDriverMobile("1234567890", null, "test@example.com", "google")
+    ).rejects.toThrow("Token is required");
   });
 });
