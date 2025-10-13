@@ -188,8 +188,19 @@ const monthFilteredEarnings = async (dateRange, search = "", page = 1, limit = 5
   };
 };
 
-const getEarningsSum = async (where = {}) => {
-  const amount = await Earnings.sum("amount", where);
+// const getEarningsSum = async (conditions = {}) => {
+//   const amount = await Earnings.sum("amount", conditions);
+//   return amount || 0;
+// };
+
+const getEarningsSum = async (conditions = {}) => {
+  const amount = await Earnings.sum("amount", {
+    where: {
+      driver_id: conditions.driver_id, // Use driver_id instead of id
+      status: conditions.status || ["completed"], // Default to "completed" if not provided
+      updatedAt: conditions.updatedAt || {}, // Use provided date range
+    },
+  });
   return amount || 0;
 };
 

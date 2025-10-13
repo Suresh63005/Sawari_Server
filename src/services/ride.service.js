@@ -120,6 +120,7 @@ const createRide = async (data) => {
     const subtotal = isOneHourSubPackage(subPackage) ? baseFare * riderHours : baseFare;
     const tax = subtotal * (taxRate / 100);
     const total = subtotal + tax;
+    
 
     const ride_code = generateRideCode();
     const ride = await Ride.create(
@@ -541,17 +542,17 @@ const getRidesByStatusAndDriver = async (status, driverId) => {
       if (status === "accepted") {
         // Show both "accepted" and "on-route" rides
         where.status = { [Op.or]: ["accepted", "on-route"] };
-      } else if(status==="cancelled"){
+      } else if (status === "cancelled") {
         where.status = "cancelled";
-      }
-      else {
+      } else {
         where.status = status;
       }
     }
 
+    // Fetch rides from DB
     const rides = await Ride.findAll({
       where,
-      order: [["createdAt", "DESC"]],
+      order: [["createdAt", "DESC"]], // temporary order
       include: [
         { model: Package, as: "Package", attributes: ["id", "name"] },
         { model: SubPackage, as: "SubPackage", attributes: ["id", "name"] },
@@ -559,12 +560,37 @@ const getRidesByStatusAndDriver = async (status, driverId) => {
       ],
     });
 
-    return rides.map(ride => ({
-      ...rideResponseDTO(ride),
-      package_name: ride.Package ? ride.Package.name : null,
-      subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
-      car_name: ride.Car ? ride.Car.model : null,
-    }));
+    // Convert Sequelize instances to plain objects and scheduled_time to Date
+    const ridesWithDates = rides.map((ride) => {
+      const rideObj = ride.get({ plain: true });
+      rideObj.scheduled_time = rideObj.scheduled_time
+        ? new Date(rideObj.scheduled_time)
+        : null;
+      return rideObj;
+    });
+
+    // If accepted/on-route, sort by scheduled_time ascending
+    if (status === "accepted") {
+      return ridesWithDates
+        .filter((ride) => ride.scheduled_time) // only rides with scheduled_time
+        .sort((a, b) => a.scheduled_time - b.scheduled_time)
+        .map((ride) => ({
+          ...rideResponseDTO(ride),
+          package_name: ride.Package ? ride.Package.name : null,
+          subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
+          car_name: ride.Car ? ride.Car.model : null,
+        }));
+    }
+
+    // For other statuses, keep createdAt descending
+    return ridesWithDates
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((ride) => ({
+        ...rideResponseDTO(ride),
+        package_name: ride.Package ? ride.Package.name : null,
+        subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
+        car_name: ride.Car ? ride.Car.model : null,
+      }));
   } catch (error) {
     console.error("getRidesByStatusAndDriver error:", error);
     throw error;
