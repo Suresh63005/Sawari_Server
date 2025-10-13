@@ -86,7 +86,7 @@ const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
     const rides = await Ride.findAll({
         where: {
             [Op.or]: [
-                { driver_id: driver_id },
+                { driver_id: driver_id }, 
                 { initiated_by_driver_id: driver_id }],
             status: status
         },
