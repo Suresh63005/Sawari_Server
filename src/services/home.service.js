@@ -112,7 +112,7 @@ const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
     // Filter future rides and sort by scheduled_time ascending
     return ridesWithDates
       .filter((ride) => ride.scheduled_time >= now)
-      .sort((a, b) => a.scheduled_time - b.scheduled_time);
+      .sort((a, b) => a.scheduled_time - b.scheduled_time); 
   }
 
   // For completed/cancelled, sort by createdAt descending
