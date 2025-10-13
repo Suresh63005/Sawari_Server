@@ -65,7 +65,7 @@ const getAllHomeData = async (req, res) => {
       where: {
         driver_id,
         status: {
-          [Op.in]: ["completed", "accepted"]
+          [Op.in]: ["accepted"]
         }
       },
       attributes: [

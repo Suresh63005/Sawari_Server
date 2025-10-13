@@ -8,8 +8,6 @@ const Car = require("../models/cars.model");
 const Earnings = require("../models/earnings.model");
 const Settings = require("../models/settings.model");
 const { generateRideCode } = require("../utils/generateCode");
-const moment = require("moment-timezone");
-
 // Response DTO
 const rideResponseDTO = (ride) => ({
   id: ride.id,
@@ -121,11 +119,7 @@ const createRide = async (data) => {
     const subtotal = isOneHourSubPackage(subPackage) ? baseFare * riderHours : baseFare;
     const tax = subtotal * (taxRate / 100);
     const total = subtotal + tax;
-
-    // Convert times to Riyadh timezone string format
-    const scheduledTimeStr = data.scheduled_time
-      ? moment(new Date(data.scheduled_time)).tz("Asia/Riyadh").format("YYYY-MM-DD HH:mm:ss")
-      : null;
+    
 
     const ride_code = generateRideCode();
     const ride = await Ride.create(
@@ -141,8 +135,7 @@ const createRide = async (data) => {
         car_id: data.car_id,
         package_id: data.package_id,
         subpackage_id: data.subpackage_id,
-        // scheduled_time: scheduledTime ? scheduledTime.toISOString() : null,
-        scheduled_time:scheduledTimeStr,
+        scheduled_time: scheduledTime ? scheduledTime.toISOString() : null,
         notes: data.notes,
         Price: baseFare,
         tax: Number(tax.toFixed(2)), // Store tax amount
