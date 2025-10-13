@@ -55,7 +55,7 @@ const getAllHomeData = async (req, res) => {
         driver_id,
         updatedAt: {[Op.between]: [startOfDay, endOfDay],},
         status: {[Op.in]: ["completed"], },
-    });
+    }); 
 
     // 3. Driver profile with vehicle
     const driverProfile = await driverProfileWithCar(driver_id);
