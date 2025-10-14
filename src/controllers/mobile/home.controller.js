@@ -4,14 +4,10 @@ const {
   conditionalRides,
   getRideByIdData,
 } = require("../../services/ride.service");
-const {
-  getEarningsSum,
-  createEarnings,
-} = require("../../services/earnings.service");
+const { getEarningsSum } = require("../../services/earnings.service");
 const {
   driverProfileWithCar,
   getDriverById,
-  updateDriverBalance,
 } = require("../../services/driver.service");
 const Package = require("../../models/package.model");
 const SubPackage = require("../../models/sub-package.model");
@@ -21,13 +17,14 @@ const Driver = require("../../models/driver.model");
 // const { Transaction } = require("sequelize");
 const { sequelize } = require("../../models");
 const Settings = require("../../models/settings.model");
-// const WalletReports = require("../../models/wallet-report.model");
-// const { v4: uuid } = require("uuid");
+const WalletReports = require("../../models/wallet-report.model");
+const { v4: uuid } = require("uuid");
 // const DriverCar = require("../../models/driver-cars.model");
 const { isValidStatus, isRideStatus } = require("../../helper/common");
-const { createWalletReport } = require("../../services/wallet.service");
+// const { createWalletReport } = require("../../services/wallet.service");
 const moment = require("moment-timezone");
 const Ride = require("../../models/ride.model");
+const Earnings = require("../../models/earnings.model");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
@@ -631,11 +628,14 @@ const earningsHistory = async (req, res) => {
 // controller for revealing/after accepting ride
 const releaseDriverFromRide = async (req, res) => {
   const driver_id = req.driver?.id;
-  if (!driver_id) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
   const { rideId } = req.params;
+
+  if (!driver_id) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
+  }
 
   try {
     const ride = await HomeService.releaseRide(rideId, driver_id);
@@ -788,84 +788,108 @@ const cancelRideController = async (req, res) => {
 
 const endRide = async (req, res) => {
   const driver_id = req.driver?.id;
+  const { rideId } = req.params;
+  const dropoff_time = new Date().toISOString();
+
   if (!driver_id) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
   }
 
-  const { rideId } = req.params;
-
-  // Start a single transaction for the entire process
   const t = await sequelize.transaction();
 
   try {
-    // 1. End the ride (within the transaction)
-    const result = await HomeService.endRide(rideId, driver_id, t);
-    if (!result.success) {
-      await t.rollback(); // Rollback if ride ending fails
-      return res.status(404).json({ success: false, message: result.message });
-    }
-    const ride = result.ride;
+    // 1️⃣ Fetch ride
+    const ride = await Ride.findOne({
+      where: { id: rideId, driver_id },
+      transaction: t,
+      lock: t.LOCK.UPDATE,
+    });
 
-    // 2. Fetch settings and calculate commission
-    const settings = await Settings.findOne({ transaction: t });
-    const percentage = settings?.tax_rate || 0;
-    const amount = parseFloat(ride.Total) || 0;
-    const commission = (amount * percentage) / 100;
-    const netEarnings = amount - commission;
-
-    // 3. Fetch driver for current balance (within the transaction)
-    // Only fetch once at the beginning of the financial calculations
-    const driver = await Driver.findByPk(driver_id, { transaction: t });
-    if (!driver) {
-      await t.rollback(); // Rollback if driver not found
+    if (!ride) {
       return res.status(404).json({
         success: false,
-        message: "Driver not found",
+        message: "Ride not found or does not belong to driver.",
       });
     }
-    const currentBalance = parseFloat(driver.wallet_balance || 0);
-    const updatedBalance = currentBalance + netEarnings;
 
-    // 4. Update wallet balance (within the transaction)
-    await updateDriverBalance(driver_id, updatedBalance, t); // Pass the transaction
+    // 2️⃣ Fetch driver
+    const driver = await Driver.findByPk(driver_id, {
+      transaction: t,
+      lock: t.LOCK.UPDATE,
+    });
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: "Driver not found.",
+      });
+    }
 
-    // 5. Create earnings record (within the transaction)
-    await createEarnings(
+    // 3️⃣ Update ride status
+    await ride.update(
+      { status: "completed", dropoff_time },
+      { transaction: t }
+    );
+
+    // 4️⃣ Calculate earnings
+    const settings = await Settings.findOne({ transaction: t });
+    const taxRate = settings?.tax_rate || 0;
+    const amount = parseFloat(ride.Total) || 0;
+    const commission = (amount * taxRate) / 100;
+    // const netEarnings = amount - commission; // Not used for wallet update
+
+    // 5️⃣ Update driver wallet: Always deduct ride.Total
+    let updatedBalance = parseFloat(driver.wallet_balance || 0) - amount;
+
+    await driver.update({ wallet_balance: updatedBalance }, { transaction: t });
+
+    // 6️⃣ Create earnings record
+    const earnings = await Earnings.create(
       {
-        driver_id: driver_id,
+        driver_id,
         ride_id: ride.id,
         amount,
         commission,
-        percentage,
+        percentage: taxRate,
         status: "processed",
       },
-      t
-    ); // Pass the transaction
+      { transaction: t }
+    );
 
-    // 6. Create wallet report entry (within the transaction)
-    await createWalletReport(
-      driver_id,
-      netEarnings,
-      updatedBalance,
-      ride.id,
-      t
-    ); // Pass the transaction
+    // 7️⃣ Create wallet report: Always debit ride.Total
+    await WalletReports.create(
+      {
+        id: uuid(),
+        driver_id,
+        transaction_type: "debit",
+        amount: -amount,
+        balance_after: updatedBalance,
+        transaction_date: new Date(),
+        description: `Deducted ride amount for ride ${rideId}`,
+        status: "completed",
+      },
+      { transaction: t }
+    );
 
-    await t.commit(); // Commit the transaction if all steps succeed
+    await t.commit();
 
     return res.status(200).json({
       success: true,
-      message: "Ride ended successfully and earning recorded",
-      data: ride.id,
+      message: "Ride ended successfully, earnings recorded, and wallet updated",
+      data: {
+        ride,
+        earnings,
+        wallet_balance: updatedBalance,
+      },
     });
   } catch (error) {
-    await t.rollback(); // Rollback if any error occurs
-    console.error("Error in endRide transaction:", error); // Log the error for debugging
-    return res.status(500).json({
+    if (!t.finished) await t.rollback();
+    console.error("End ride error:", error);
+    return res.status(400).json({
       success: false,
-      message:
-        error.message ||
-        "An error occurred while processing the ride completion.",
+      message: error.message,
     });
   }
 };
