@@ -2,6 +2,7 @@ const {
   getDashboardStats,
   getRecentActivity,
   getPendingApprovals,
+  getOnlineDrivers,
 } = require("../../services/dashboard.service");
 
 const getDashboardStatsController = async (req, res) => {
@@ -33,8 +34,23 @@ const getPendingApprovalsController = async (req, res) => {
   }
 };
 
+const getOnlineDriversController = async (req, res) => {
+  try {
+    const onlineDrivers = await getOnlineDrivers();
+    res.json(onlineDrivers);
+  } catch (error) {
+    console.error("getOnlineDrivers error:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+    res.status(500).json({ message: "Failed to fetch online drivers", error });
+  }
+};
+
 module.exports = {
   getDashboardStats: getDashboardStatsController,
   getRecentActivity: getRecentActivityController,
   getPendingApprovals: getPendingApprovalsController,
+  getOnlineDrivers: getOnlineDriversController,
 };

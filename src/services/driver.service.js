@@ -6,6 +6,7 @@ const { Op } = require("sequelize");
 const Ride = require("../models/ride.model");
 const Car = require("../models/cars.model");
 const Earnings = require("../models/earnings.model");
+const { fn, col, where: sequelizeWhere } = require("sequelize");
 const { generateToken } = require("../utils/tokenUtils");
 const { normalizePhone } = require("../utils/phoneUtils");
 
@@ -386,13 +387,24 @@ const getAllDrivers = async (
 
   const safeSearch = (typeof search === "string" ? search : "").trim();
   if (safeSearch.length > 0) {
-    const searchTerm = `%${safeSearch.replace(/\*/g, "%")}%`;
+    const normalizedSearch = safeSearch.toLowerCase().replace(/\s+/g, "");
+
     where[Op.or] = [
-      { first_name: { [Op.like]: searchTerm } },
-      { last_name: { [Op.like]: searchTerm } },
-      { email: { [Op.like]: searchTerm } },
-      { phone: { [Op.like]: searchTerm } },
-      { experience: { [Op.like]: searchTerm } },
+      { first_name: { [Op.like]: `%${safeSearch}%` } },
+      { last_name: { [Op.like]: `%${safeSearch}%` } },
+      { email: { [Op.like]: `%${safeSearch}%` } },
+      { phone: { [Op.like]: `%${safeSearch}%` } },
+      { experience: { [Op.like]: `%${safeSearch}%` } },
+      // NEW: concatenate first_name + last_name and remove spaces
+      sequelizeWhere(
+        fn(
+          "REPLACE",
+          fn("LOWER", fn("CONCAT", col("first_name"), col("last_name"))),
+          " ",
+          ""
+        ),
+        { [Op.like]: `%${normalizedSearch}%` }
+      ),
     ];
   }
 

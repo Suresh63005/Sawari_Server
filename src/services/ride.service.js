@@ -156,7 +156,10 @@ const createRide = async (data) => {
         car_id: data.car_id,
         package_id: data.package_id,
         subpackage_id: data.subpackage_id,
-        scheduled_time: scheduledTime ? scheduledTime.toISOString() : null,
+        scheduled_time: scheduledTime
+          ? `${scheduledTime.getFullYear()}-${String(scheduledTime.getMonth() + 1).padStart(2, "0")}-${String(scheduledTime.getDate()).padStart(2, "0")}T${String(scheduledTime.getHours()).padStart(2, "0")}:${String(scheduledTime.getMinutes()).padStart(2, "0")}:${String(scheduledTime.getSeconds()).padStart(2, "0")}`
+          : null,
+
         notes: data.notes,
         Price: baseFare,
         tax: Number(tax.toFixed(2)), // Store tax amount
@@ -195,7 +198,7 @@ const updateRide = async (id, data) => {
           "Invalid scheduled_time: Must be a valid ISO datetime string"
         );
       }
-      scheduledTime = scheduledTime.toISOString();
+      scheduledTime = `${scheduledTime.getFullYear()}-${String(scheduledTime.getMonth() + 1).padStart(2, "0")}-${String(scheduledTime.getDate()).padStart(2, "0")}T${String(scheduledTime.getHours()).padStart(2, "0")}:${String(scheduledTime.getMinutes()).padStart(2, "0")}:${String(scheduledTime.getSeconds()).padStart(2, "0")}`;
     }
 
     // ✅ force numeric types right away
@@ -430,19 +433,29 @@ const getAllRides = async ({
 
     const where = {};
     if (search) {
+      const trimmedSearch = search.trim();
+
       where[Op.or] = [
-        { customer_name: { [Op.like]: `%${search}%` } },
-        { pickup_location: { [Op.like]: `%${search}%` } },
-        { drop_location: { [Op.like]: `%${search}%` } },
-        { pickup_address: { [Op.like]: `%${search}%` } },
-        { drop_address: { [Op.like]: `%${search}%` } },
-        { phone: { [Op.like]: `%${search}%` } },
-        { email: { [Op.like]: `%${search}%` } },
-        { "$Car.brand$": { [Op.like]: `%${search}%` } },
-        { "$Car.model$": { [Op.like]: `%${search}%` } },
-        // Scheduled_time formatted as date (dd-mm-yyyy)
+        { customer_name: { [Op.like]: `%${trimmedSearch}%` } },
+        { pickup_location: { [Op.like]: `%${trimmedSearch}%` } },
+        { drop_location: { [Op.like]: `%${trimmedSearch}%` } },
+        { pickup_address: { [Op.like]: `%${trimmedSearch}%` } },
+        { drop_address: { [Op.like]: `%${trimmedSearch}%` } },
+        { phone: { [Op.like]: `%${trimmedSearch}%` } },
+        { email: { [Op.like]: `%${trimmedSearch}%` } },
+        { "$Car.brand$": { [Op.like]: `%${trimmedSearch}%` } },
+        { "$Car.model$": { [Op.like]: `%${trimmedSearch}%` } },
+        sequelizeWhere(fn("REPLACE", col("customer_name"), " ", ""), {
+          [Op.like]: `%${trimmedSearch.replace(/\s+/g, "")}%`,
+        }),
+        sequelizeWhere(fn("REPLACE", col("pickup_address"), " ", ""), {
+          [Op.like]: `%${trimmedSearch.replace(/\s+/g, "")}%`,
+        }),
+        sequelizeWhere(fn("REPLACE", col("drop_address"), " ", ""), {
+          [Op.like]: `%${trimmedSearch.replace(/\s+/g, "")}%`,
+        }),
         sequelizeWhere(fn("DATE_FORMAT", col("scheduled_time"), "%d-%m-%Y"), {
-          [Op.like]: `%${search}%`,
+          [Op.like]: `%${trimmedSearch}%`,
         }),
       ];
     }
@@ -455,7 +468,7 @@ const getAllRides = async ({
 
     const { rows, count } = await Ride.findAndCountAll({
       where,
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [["createdAt", "DESC"]],
       limit: parsedLimit,
       offset,
       include: [
@@ -601,9 +614,10 @@ const getRidesByStatusAndDriver = async (status, driverId) => {
       }
     }
 
+    // Fetch rides from DB
     const rides = await Ride.findAll({
       where,
-      order: [["createdAt", "DESC"]],
+      order: [["createdAt", "DESC"]], // temporary order
       include: [
         { model: Package, as: "Package", attributes: ["id", "name"] },
         { model: SubPackage, as: "SubPackage", attributes: ["id", "name"] },
@@ -611,12 +625,37 @@ const getRidesByStatusAndDriver = async (status, driverId) => {
       ],
     });
 
-    return rides.map((ride) => ({
-      ...rideResponseDTO(ride),
-      package_name: ride.Package ? ride.Package.name : null,
-      subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
-      car_name: ride.Car ? ride.Car.model : null,
-    }));
+    // Convert Sequelize instances to plain objects and scheduled_time to Date
+    const ridesWithDates = rides.map((ride) => {
+      const rideObj = ride.get({ plain: true });
+      rideObj.scheduled_time = rideObj.scheduled_time
+        ? new Date(rideObj.scheduled_time)
+        : null;
+      return rideObj;
+    });
+
+    // If accepted/on-route, sort by scheduled_time ascending
+    if (status === "accepted") {
+      return ridesWithDates
+        .filter((ride) => ride.scheduled_time) // only rides with scheduled_time
+        .sort((a, b) => a.scheduled_time - b.scheduled_time)
+        .map((ride) => ({
+          ...rideResponseDTO(ride),
+          package_name: ride.Package ? ride.Package.name : null,
+          subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
+          car_name: ride.Car ? ride.Car.model : null,
+        }));
+    }
+
+    // For other statuses, keep createdAt descending
+    return ridesWithDates
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((ride) => ({
+        ...rideResponseDTO(ride),
+        package_name: ride.Package ? ride.Package.name : null,
+        subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
+        car_name: ride.Car ? ride.Car.model : null,
+      }));
   } catch (error) {
     console.error("getRidesByStatusAndDriver error:", error);
     throw error;
