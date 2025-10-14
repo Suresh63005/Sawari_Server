@@ -18,6 +18,7 @@ const {
   DeleteObjectCommand,
 } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const crypto = require("crypto");
 
 const app = express();
 const port = process.env.PORT || 4445;
@@ -33,7 +34,7 @@ console.log("🌍 API Version:", API_VERSION);
 // Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000000,
+  max: 10000000,
   message: "Too many requests from this IP, please try again later",
 });
 
@@ -161,6 +162,7 @@ const s3 = new S3Client({
 
 app.post("/upload-token", async (req, res) => {
   const folder = req.body.folder || "uploads";
+  // const folder = "sawari-drivers-02";
 
   // Expect `files` as JSON string in form-data
   let files;
@@ -192,7 +194,12 @@ app.post("/upload-token", async (req, res) => {
           .json({ message: "Each file must have fileName and fileType" });
       }
 
-      const key = `${folder}/${fileName}`;
+      // ✅ Generate unique SHA-256 hash based key
+      const hash = crypto.createHash("sha256");
+      hash.update(fileName + Date.now().toString() + Math.random().toString());
+      const hashedFileName = hash.digest("hex"); // 64 characters
+      const key = `${folder}/${hashedFileName}-${fileName}`;
+      // const key = `${folder}/${fileName}`;
       const command = new PutObjectCommand({
         Bucket: process.env.S3_BUCKET_NAME,
         Key: key,

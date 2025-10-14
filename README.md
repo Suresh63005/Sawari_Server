@@ -392,3 +392,7 @@ throw err;
 };
 
 for prettier check -> npx prettier --write .
+
+<!-- for single or multiple file check -->
+
+npx prettier --write README.md src/controllers/mobile/ticket.controller.js src/controllers/mobile/vehicle.controller.js src/controllers/mobile/wallet.controller.js

@@ -171,9 +171,9 @@ const endPoints = {
     getAllSettings: "/get-all-settings",
   },
   "mob-ticket": {
-    getAllSettings: "/create",
-    getTicketsByUser: "/",
-    ticketview: "/:id",
+    getAllSettings: "/ticket/create",
+    getTicketsByUser: "/ticket/",
+    ticketview: "/ticket/:id",
   },
   "mob-vehicle": {
     updateVehicle: "/update-vehicle",

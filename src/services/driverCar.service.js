@@ -1,5 +1,6 @@
 const { uploadToS3 } = require("../config/fileUpload.aws");
 const DriverCar = require("../models/driver-cars.model");
+const Driver = require("../models/driver.model");
 const Car = require("../models/cars.model");
 const { Op } = require("sequelize");
 const Admin = require("../models/admin.model");
@@ -18,6 +19,17 @@ const carDTO = (data) => {
     verified_by: data.verified_by || null,
     status: data.status || "active",
   };
+};
+
+const parseCarPhotos = (photos) => {
+  if (!photos) return [];
+  if (Array.isArray(photos)) return photos;
+  try {
+    return JSON.parse(photos);
+  } catch (e) {
+    console.error("Error parsing car_photos:", e);
+    return [];
+  }
 };
 
 const carResponseDTO = async (data) => {
@@ -68,18 +80,22 @@ const carResponseDTO = async (data) => {
 };
 
 const getVehiclesByDriver = async (driverId) => {
-  if (!driverId) {
-    throw new Error("Driver ID is required");
-  }
+  if (!driverId) throw new Error("Driver ID is required");
+
   try {
     const vehicles = await DriverCar.findAll({
       where: { driver_id: driverId },
       include: [
         {
           model: Car,
-          as: "Car", // Match the association alias
+          as: "Car",
           attributes: ["brand", "model"],
-          required: false, // Handle missing Car records
+        },
+        {
+          model: Admin,
+          as: "VerifierAdmin",
+          attributes: ["id", "first_name", "last_name", "role"],
+          required: false,
         },
       ],
     });
@@ -91,15 +107,21 @@ const getVehiclesByDriver = async (driverId) => {
       car_brand: v.Car?.brand || null,
       car_model: v.Car?.model || null,
       license_plate: v.license_plate,
-      car_photos: Array.isArray(v.car_photos) ? v.car_photos : [],
+      car_photos: parseCarPhotos(v.car_photos),
       rc_doc: v.rc_doc,
       rc_doc_back: v.rc_doc_back,
       insurance_doc: v.insurance_doc,
-      rc_doc_status: v.rc_doc_status || "pending",
-      insurance_doc_status: v.insurance_doc_status || "pending",
+      rc_doc_status: v.rc_doc_status,
+      insurance_doc_status: v.insurance_doc_status,
       is_approved: v.is_approved ?? false,
+      verified_by: v.VerifierAdmin
+        ? {
+            id: v.VerifierAdmin.id,
+            name: `${v.VerifierAdmin.first_name} ${v.VerifierAdmin.last_name}`,
+            role: v.VerifierAdmin.role,
+          }
+        : null,
       status: v.status || "active",
-      verified_by: v.verified_by || null,
       createdAt: v.createdAt,
       updatedAt: v.updatedAt,
     }));
@@ -223,7 +245,7 @@ const getAllVehicles = async ({
   const offset = (page - 1) * limit;
   const where = {};
 
-  // Add search filter for car_brand, car_model, and license_plate
+  // Add search filter
   if (search) {
     where[Op.or] = [
       { "$Car.brand$": { [Op.iLike]: `%${search}%` } },
@@ -246,7 +268,25 @@ const getAllVehicles = async ({
 
   const { rows, count } = await DriverCar.findAndCountAll({
     where,
-    include: [{ model: Car, as: "Car", attributes: [] }],
+    include: [
+      {
+        model: Car,
+        as: "Car",
+        attributes: ["brand", "model"],
+      },
+      {
+        model: Admin,
+        as: "VerifierAdmin", // Alias for clarity
+        attributes: ["id", "first_name", "last_name", "role"],
+        required: false,
+      },
+      {
+        model: Driver,
+        as: "Driver", // Alias for clarity
+        attributes: ["id", "first_name", "last_name"],
+        required: false,
+      },
+    ],
     limit,
     offset,
   });
@@ -258,6 +298,7 @@ const getAllVehicles = async ({
     total: count,
   };
 };
+
 // ... (previous imports and functions remain the same)
 
 const verifyRc = async (carId, verifiedBy) => {
@@ -329,44 +370,6 @@ const updateDriverCar = async (driver_id, data, files) => {
   await vehicle.save();
   return vehicle;
 };
-
-// const updateDriverDocuments = async ({ driver, driverCar, files }) => {
-//   try {
-//     const s3Uploads = {};
-//     if (files.rc_doc) {
-//       s3Uploads.rc_doc = await uploadToS3(files.rc_doc[0], "driver-cars");
-//     }
-//     if (files.insurance_doc) {
-//       s3Uploads.insurance_doc = await uploadToS3(
-//         files.insurance_doc[0],
-//         "driver-cars"
-//       );
-//     }
-//     if (files.license_front) {
-//       s3Uploads.license_front = await uploadToS3(
-//         files.license_front[0],
-//         "drivers"
-//       );
-//     }
-
-//     //update driver car
-//     if (s3Uploads.rc_doc) driverCar.rc_doc = s3Uploads.rc_doc;
-//     if (s3Uploads.insurance_doc)
-//       driverCar.insurance_doc = s3Uploads.insurance_doc;
-
-//     //update driver
-//     if (s3Uploads.license_front) driver.license_front = s3Uploads.license_front;
-
-//     await Promise.all([driverCar.save(), driver.save()]);
-
-//     return {
-//       driver,
-//       driverCar,
-//     };
-//   } catch (error) {
-//     console.error(error);
-//   }
-// };
 
 const updateDriverDocuments = async ({ driver, driverCar, files }) => {
   if (!driver) {

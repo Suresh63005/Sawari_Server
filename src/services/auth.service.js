@@ -1,6 +1,7 @@
 const Admin = require("../models/admin.model");
 const Permissions = require("../models/permissions.model");
 const { Op } = require("sequelize");
+const { sequelize } = require("../models");
 const { getAdminHierarchy } = require("../utils/adminHierarchy");
 const getAdminByEmail = async (email) => {
   return await Admin.findOne({
@@ -161,8 +162,6 @@ const getAllAdmins = async ({
   };
 };
 
-// auth.service.js
-const { sequelize } = require("../models"); // adjust to your export
 const updatePermissions = async (id, permissions) => {
   const updatedValues = {
     dashboard_access: permissions.dashboard_access ? 1 : 0,

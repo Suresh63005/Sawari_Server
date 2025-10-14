@@ -5,11 +5,19 @@ const Driver = require("../models/driver.model");
 const Package = require("../models/package.model");
 const SubPackage = require("../models/sub-package.model");
 const Car = require("../models/cars.model");
+const Settings = require("../models/settings.model");
 const { sequelize } = require("../models");
 const { sendPushNotification } = require("../helper/sendPushNotification");
 const DriverCar = require("../models/driver-cars.model");
+const { updateDriverBalance } = require("./driver.service");
+const { createWalletReport } = require("./wallet.service");
+const { sendNotificationService } = require("./notifications.service");
+const { generateRideCode } = require("../utils/generateCode");
+// const { formatToAST } = require("../utils/timezone");
+// const { generateRideCode } = require("../utils/generateCode");
+// const DriverCar = require("../models/driver-cars.model");
 
-const acceptRide = async (ride_id, driver_id) => {
+const acceptRide = async (ride_id, driver_id, accept_time) => {
   const ride = await Ride.findOne({
     where: {
       id: ride_id,
@@ -24,9 +32,16 @@ const acceptRide = async (ride_id, driver_id) => {
     throw new Error("Ride is not available or already accepted.");
   }
 
-  ride.driver_id = driver_id;
-  ride.status = "accepted";
-  await ride.save();
+  // ride.driver_id = driver_id;
+  // // ride.accept_time=new Date();
+  // ride.status = "accepted";
+  // await ride.save();
+
+  await ride.update({
+    driver_id,
+    status: "accepted",
+    accept_time, // this is already a string from controller
+  });
 
   return ride;
 };
@@ -60,6 +75,11 @@ const RideDetails = async (driver_id, ride_id) => {
 };
 
 const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
+  if (!["accepted", "completed", "cancelled"].includes(status)) {
+    throw new Error(
+      "Invalid status. Allowed values: 'accepted', 'cancelled','completed"
+    );
+  }
   const rides = await Ride.findAll({
     where: {
       [Op.or]: [
@@ -120,10 +140,37 @@ const upsertRide = async (rideData) => {
       throw new Error("Unauthorized: You can only update rides you initiated");
     }
 
-    if (ride.status !== "pending") {
-      throw new Error(
-        "Unauthorized: Can only update pending rides before acceptance"
-      );
+    if (["on-route", "completed", "cancelled"].includes(ride.status)) {
+      return {
+        success: false,
+        statusCode: 400,
+        message:
+          "Cannot edit ride once it is on-route, completed, or cancelled",
+      };
+    }
+
+    // ⏳ Check time limit (only applicable after ride is accepted)
+    if (ride.status === "accepted") {
+      const settings = await Settings.findOne({
+        attributes: ["ride_edit_time_limit"],
+      });
+
+      // ride_edit_time_limit is now in HOURS
+      const editTimeLimitHours = settings?.ride_edit_time_limit || 1; // default 1 hour
+
+      const acceptTime = new Date(ride.accept_time);
+      const now = new Date();
+
+      // Difference in hours
+      const diffHours = (now - acceptTime) / (1000 * 60 * 60);
+
+      if (diffHours > editTimeLimitHours) {
+        return {
+          success: false,
+          statusCode: 400,
+          message: `Edit time expired. You can edit the ride only within ${editTimeLimitHours} hour(s) after acceptance.`,
+        };
+      }
     }
 
     await ride.update({
@@ -149,9 +196,11 @@ const upsertRide = async (rideData) => {
       Total,
     });
 
-    return ride;
+    return ride.toJSON();
   } else {
+    const ride_code = generateRideCode();
     const newRide = await Ride.create({
+      ride_code,
       initiated_by_driver_id: driver_id,
       customer_name,
       phone,
@@ -175,6 +224,33 @@ const upsertRide = async (rideData) => {
       status: "pending",
     });
 
+    // Ride Auto Cancel Flow:
+    const settings = await Settings.findOne({
+      attributes: ["ride_auto_cancel_time_limit"],
+    });
+    const cancelTimeLimitHours = settings?.ride_auto_cancel_time_limit || 6;
+
+    // ⏳ Schedule auto-cancel check
+    setTimeout(
+      async () => {
+        try {
+          const rideToCheck = await Ride.findByPk(newRide.id);
+          if (rideToCheck && rideToCheck.status === "pending") {
+            await rideToCheck.update({
+              status: "cancelled",
+              cancellation_reason: `No driver accepted the ride within ${cancelTimeLimitHours} hour(s)`,
+            });
+            console.log(
+              `🚫 Ride ${rideToCheck.id} auto-cancelled after ${cancelTimeLimitHours} hour(s)`
+            );
+          }
+        } catch (error) {
+          console.error("❌ Auto-cancel check failed:", error.message);
+        }
+      },
+      cancelTimeLimitHours * 60 * 60 * 1000
+    );
+
     // Find drivers with matching car model
     const matchingDrivers = await Driver.findAll({
       include: [
@@ -197,24 +273,36 @@ const upsertRide = async (rideData) => {
       },
     });
 
-    // Send push notifications to matching drivers
     for (const driver of matchingDrivers) {
-      if (driver.one_signal_id) {
-        const carModel = driver.Vehicles[0]?.Car?.model || "N/A";
-        const heading = { en: "New Ride Available" };
-        const message = {
-          en: `A new ride with car model ${carModel} is available from ${pickup_address} to ${drop_address} on ${scheduled_time}.`,
-        };
-        try {
+      const carModel = driver.Vehicles[0]?.Car?.model || "N/A";
+
+      const heading = { en: "New Ride Available" };
+      const message = {
+        en: `A new ride with car model ${carModel} is available from ${pickup_address} to ${drop_address} on ${scheduled_time}.`,
+      };
+
+      try {
+        // ✅ Send push notification if driver has OneSignal ID
+        if (driver.one_signal_id) {
           await sendPushNotification(driver.one_signal_id, heading, message);
-        } catch (error) {
-          console.error(
-            `Failed to send notification to driver ${driver.id}:`,
-            error.message
-          );
+          console.log(`✅ Push notification sent to driver ${driver.id}`);
+        } else {
+          console.warn(`⚠️ Driver with ID ${driver.id} has no OneSignal ID`);
         }
-      } else {
-        console.warn(`⚠️ Driver with ID ${driver.id} has no OneSignal ID`);
+
+        // ✅ Create notification entry in the database
+        await sendNotificationService({
+          user_id: driver.id,
+          title: heading.en,
+          message: message.en,
+          is_read: false,
+          image: null,
+        });
+      } catch (error) {
+        console.error(
+          `❌ Failed to notify driver ${driver.id}:`,
+          error.message
+        );
       }
     }
 
@@ -384,7 +472,7 @@ const releaseRide = async (rideId, driver_id) => {
 };
 
 // Start the ride service
-const startRide = async (rideId, driver_id) => {
+const startRide = async (rideId, driver_id, pickup_time) => {
   const ride = await Ride.findOne({
     where: {
       id: rideId,
@@ -394,251 +482,27 @@ const startRide = async (rideId, driver_id) => {
   });
 
   if (!ride) {
-    return { success: false, message: "Ride not found or cannot be started." };
+    throw new Error("Ride not found or cannot be started.");
   }
 
-  ride.status = "on-route";
-  await ride.save();
+  // ride.status = "on-route";
+  // ride.pickup_time;
+  // // ride.pickup_time = new Date();
+  // await ride.save();
 
-  return {
-    success: true,
-    message: "Ride started successfully",
-    data: { id: ride.id, status: ride.status },
-  };
+  await ride.update({
+    driver_id,
+    status: "on-route",
+    pickup_time,
+  });
+
+  return ride;
 };
 
 // service for end the ride
-// const endRide = async (rideId, driver_id,transaction=null) => {
-//   // Use provided trasaction or create new one
-//   const t = transaction || await sequelize.transaction();
-//   try {
-//         const ride = await Ride.findOne({
-//             where: {
-//                 id: rideId,
-//                 driver_id: driver_id,
-//                 status: "on-route"
-//             }
-//         });
-
-//         if (!ride) {
-//             throw new Error("Ride not found or cannot be ended.");
-//         }
-
-//         ride.status = "completed";
-//         ride.dropoff_time = new Date();
-//         await ride.save();
-
-//         // get tax/commisstion percentage from settings table
-//         const settings = await Settings.findOne();
-//         const percentage = settings?.tax_rate || 0;
-
-//         // Calculate commission and driver's earnings
-//         const amount = parseFloat(ride.Total) || 0;
-//         const commission = (amount * percentage) / 100;
-//         const netEarnings = amount - commission;
-
-//         // Fetch current wallent balance
-//         const driver = await Driver.findByPk(driver_id,{transaction:t});
-//         if(!driver){
-//           throw new Error("Driver not found.");
-//         }
-//         const currentBalance = parseFloat(driver.wallet_balance || 0);
-//         const updatedBalance = currentBalance + netEarnings;
-
-//         // Update Wallet balance using service
-//         await updateDriverBalance(driver_id,updatedBalance.toFixed(2),t);
-
-//         // create earnings record
-//         const earnings = await Earnings.create({
-//             driver_id: driver_id,
-//             ride_id: ride.id,
-//             amount,
-//             commission,
-//             percentage,
-//             // payment_method:ride.payment_method,
-//             status: "pending"
-//         },{transaction:t});
-
-//         // Create wallet report
-//         await createWalletReport(driver_id,netEarnings,updatedBalance,ride.id,t,{
-//           transaction_type:"credit",
-//           description: `Earnings from ride ${rideId}`,
-//           status:"completed"
-//         });
-
-//         console.log(`EndRide: driver_id=${driver_id}, rideId=${rideId}, amount=${amount.toFixed(2)}, commission=${commission.toFixed(2)}, netEarnings=${netEarnings.toFixed(2)}, updatedBalance=${updatedBalance.toFixed(2)}`);
-
-//         if(!transaction){
-//           await t.commit();
-//         };
-
-//         return {ride,earnings,wallet_balance:updatedBalance.toFixed(2)};
-//   } catch (error) {
-//     if (!transaction && !t.finished) {
-//         await t.rollback();
-//       }
-//       console.error("Error ending ride:", error);
-//       throw new Error("Failed to end ride: " + error.message);
-//   }
-// };
-
-// service for fetch initiated_by_driver_id rides (my rides)
-// const fetchMyRides = async (driverId, { statuses, sortBy, sortOrder, page, limit }) => {
-//   const validStatuses = ["pending", "accepted", "on-route", "completed", "cancelled"];
-
-//   try {
-//     // Validate statuses
-//     if (statuses && Array.isArray(statuses)) {
-//       const invalidStatuses = statuses.filter(status => !validStatuses.includes(status));
-//       if (invalidStatuses.length > 0) {
-//         throw new Error(`Invalid status(es): ${invalidStatuses.join(", ")}`);
-//       }
-//     }
-
-//     // Validate sortBy and sortOrder
-//     const allowedSortFields = ["createdAt", "ride_date", "scheduled_time"];
-//     const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
-//     const order = sortOrder === "ASC" ? "ASC" : "DESC";
-
-//     // Pagination
-//     const pageNum = parseInt(page, 10) || 1;
-//     const pageSize = parseInt(limit, 10) || 10;
-//     const offset = (pageNum - 1) * pageSize;
-
-//     // Build query
-//     const where = {
-//       initiated_by_driver_id: driverId,
-//     };
-//     if (statuses && statuses.length > 0) {
-//       where.status = { [Op.in]: statuses };
-//     }
-
-//     // Fetch rides with related data
-//     const rides = await Ride.findAll({
-//       where,
-//       attributes: [
-//         "id",
-//         "customer_name",
-//         "phone",
-//         "email",
-//         "pickup_address",
-//         "drop_address",
-//         "pickup_location",
-//         "drop_location",
-//         "ride_date",
-//         "scheduled_time",
-//         "status",
-//         "Price",
-//         "tax",
-//         "Total",
-//         "payment_status",
-//         "accept_time",
-//         "pickup_time",
-//         "dropoff_time",
-//         "is_credit",
-//         "package_id",
-//         "subpackage_id",
-//         "car_id",
-//         "rider_hours",
-//       ],
-//       include: [
-//         {
-//           model: Car,
-//           attributes: ["model"],
-//           as: "Car",
-//         },
-//         {
-//           model: Package,
-//           attributes: ["name", "description"],
-//           as: "Package",
-//         },
-//         {
-//           model: SubPackage,
-//           attributes: ["name", "description"],
-//           as: "SubPackage",
-//         },
-//       ],
-//       order: [[sortField, order]],
-//       limit: pageSize,
-//       offset,
-//     });
-
-//     // Fetch status counts
-//     const statusCounts = await Ride.findAll({
-//       where: { initiated_by_driver_id: driverId },
-//       attributes: [
-//         "status",
-//         [sequelize.fn("COUNT", sequelize.col("status")), "count"],
-//       ],
-//       group: ["status"],
-//       raw: true,
-//     });
-
-//     // Format counts as an object
-//     const counts = validStatuses.reduce((acc, status) => {
-//       const found = statusCounts.find(count => count.status === status);
-//       acc[status] = found ? parseInt(found.count, 10) : 0;
-//       return acc;
-//     }, {});
-
-//     return {
-//       success: true,
-//       data: {
-//         rides,
-//         counts,
-//         pagination: {
-//           page: pageNum,
-//           limit: pageSize,
-//           total: await Ride.count({ where }),
-//         },
-//       },
-//     };
-//   } catch (error) {
-//     console.error("Error fetching my rides:", error);
-//     return {
-//       success: false,
-//       message: error.message || "Failed to fetch rides",
-//     };
-//   }
-// };
-
-// service for cancel the ride before its accept
-const canceRide = async (driverId, rideId) => {
-  try {
-    const ride = await Ride.findOne({
-      where: {
-        id: rideId,
-        initiated_by_driver_id: driverId,
-        status: "pending",
-      },
-    });
-    if (!ride) {
-      return {
-        success: false,
-        message: "Ride not found or cannot be cancelled.",
-      };
-    }
-
-    // Update the ride status to cancelled
-    await ride.update({ status: "cancelled" });
-
-    return {
-      success: true,
-      message: "Ride cancelled successfully.",
-      data: { rideId },
-    };
-  } catch (error) {
-    console.error("Error cancelling ride:", error);
-    return {
-      success: false,
-      message: error.message || "Failed to cancel ride",
-    };
-  }
-};
-
-const endRide = async (rideId, driver_id, transaction = null) => {
+const endRide = async (rideId, driver_id, transaction = null, dropoff_time) => {
+  // Use provided trasaction or create new one
   const t = transaction || (await sequelize.transaction());
-
   try {
     const ride = await Ride.findOne({
       where: {
@@ -646,27 +510,89 @@ const endRide = async (rideId, driver_id, transaction = null) => {
         driver_id: driver_id,
         status: "on-route",
       },
-      transaction: t,
     });
 
     if (!ride) {
-      return { success: false, message: "Ride not found or cannot be ended." };
+      throw new Error("Ride not found or cannot be ended.");
     }
 
-    ride.status = "completed";
-    ride.dropoff_time = new Date();
-    await ride.save({ transaction: t });
+    await ride.update({
+      status: "completed",
+      dropoff_time,
+    });
 
-    return { success: true, ride };
+    // ride.status = "completed";
+    // ride.dropoff_time;
+    // // ride.dropoff_time = new Date();
+    // await ride.save();
+
+    // get tax/commisstion percentage from settings table
+    const settings = await Settings.findOne();
+    const percentage = settings?.tax_rate || 0;
+
+    // Calculate commission and driver's earnings
+    const amount = parseFloat(ride.Total) || 0;
+    const commission = (amount * percentage) / 100;
+    const netEarnings = amount - commission;
+
+    // Fetch current wallent balance
+    const driver = await Driver.findByPk(driver_id, { transaction: t });
+    if (!driver) {
+      throw new Error("Driver not found.");
+    }
+    const currentBalance = parseFloat(driver.wallet_balance || 0);
+    const updatedBalance = currentBalance + netEarnings;
+
+    // Update Wallet balance using service
+    await updateDriverBalance(driver_id, updatedBalance.toFixed(2), t);
+
+    // create earnings record
+    const earnings = await Earnings.create(
+      {
+        driver_id: driver_id,
+        ride_id: ride.id,
+        amount,
+        commission,
+        percentage,
+        // payment_method:ride.payment_method,
+        status: "processed",
+      },
+      { transaction: t }
+    );
+
+    // Create wallet report
+    await createWalletReport(
+      driver_id,
+      netEarnings,
+      updatedBalance,
+      ride.id,
+      t,
+      {
+        transaction_type: "credit",
+        description: `Earnings from ride ${rideId}`,
+        status: "completed",
+      }
+    );
+
+    console.log(
+      `EndRide: driver_id=${driver_id}, rideId=${rideId}, amount=${amount.toFixed(2)}, commission=${commission.toFixed(2)}, netEarnings=${netEarnings.toFixed(2)}, updatedBalance=${updatedBalance.toFixed(2)}`
+    );
+
+    if (!transaction) {
+      await t.commit();
+    }
+
+    return { ride, earnings, wallet_balance: updatedBalance.toFixed(2) };
   } catch (error) {
     if (!transaction && !t.finished) {
       await t.rollback();
     }
     console.error("Error ending ride:", error);
-    return { success: false, message: "Failed to end ride: " + error.message };
+    throw new Error("Failed to end ride: " + error.message);
   }
 };
 
+// service for fetch initiated_by_driver_id rides (my rides)
 const fetchMyRides = async (
   driverId,
   { statuses, sortBy, sortOrder, page, limit }
@@ -679,27 +605,36 @@ const fetchMyRides = async (
     "cancelled",
   ];
 
-  // Pagination setup
-  const pageNum = parseInt(page, 10) || 1;
-  const pageSize = parseInt(limit, 10) || 10;
-  const offset = (pageNum - 1) * pageSize;
-
-  // Build the 'where' condition for the database query
-  const where = {
-    initiated_by_driver_id: driverId,
-  };
-
-  if (statuses && statuses.length > 0) {
-    where.status = { [Op.in]: statuses };
-  }
-
-  // Build the sorting parameters
-  const allowedSortFields = ["createdAt", "ride_date", "scheduled_time"];
-  const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
-  const order = sortOrder === "ASC" ? "ASC" : "DESC";
-
   try {
-    // Fetch rides
+    // Validate statuses
+    if (statuses && Array.isArray(statuses)) {
+      const invalidStatuses = statuses.filter(
+        (status) => !validStatuses.includes(status)
+      );
+      if (invalidStatuses.length > 0) {
+        throw new Error(`Invalid status(es): ${invalidStatuses.join(", ")}`);
+      }
+    }
+
+    // Validate sortBy and sortOrder
+    const allowedSortFields = ["createdAt", "ride_date", "scheduled_time"];
+    const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+    const order = sortOrder === "ASC" ? "ASC" : "DESC";
+
+    // Pagination
+    const pageNum = parseInt(page, 10) || 1;
+    const pageSize = parseInt(limit, 10) || 10;
+    const offset = (pageNum - 1) * pageSize;
+
+    // Build query
+    const where = {
+      initiated_by_driver_id: driverId,
+    };
+    if (statuses && statuses.length > 0) {
+      where.status = { [Op.in]: statuses };
+    }
+
+    // Fetch rides with related data
     const rides = await Ride.findAll({
       where,
       attributes: [
@@ -780,10 +715,43 @@ const fetchMyRides = async (
       },
     };
   } catch (error) {
-    console.error("Error fetching rides in service:", error);
+    console.error("Error fetching my rides:", error);
     return {
       success: false,
-      message: "Failed to fetch rides",
+      message: error.message || "Failed to fetch rides",
+    };
+  }
+};
+
+// service for cancel the ride before its accept
+const canceRide = async (driverId, rideId) => {
+  try {
+    const ride = await Ride.findOne({
+      where: {
+        id: rideId,
+        initiated_by_driver_id: driverId,
+        status: "pending",
+      },
+    });
+    if (!ride) {
+      throw new Error(
+        "Ride not found, not initiated by this driver, or not in pending status"
+      );
+    }
+
+    // Update the ride status to cancelled
+    await ride.update({ status: "cancelled" });
+
+    return {
+      success: true,
+      message: "Ride cancelled successfully.",
+      data: { rideId },
+    };
+  } catch (error) {
+    console.error("Error cancelling ride:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to cancel ride",
     };
   }
 };

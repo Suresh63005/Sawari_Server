@@ -36,10 +36,16 @@ const exportAllPaymentsController = async (req, res) => {
   try {
     const { search = "", status = "" } = req.query;
     const buffer = await exportAllPayments(search, status);
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=all_payment_reports_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`
-    );
+
+    // Create dynamic filename based on status
+    let fileName = "All_Payment_Reports.xlsx";
+    if (status && status.toLowerCase() !== "all") {
+      const capitalizedStatus =
+        status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+      fileName = `All_${capitalizedStatus}_Payment_Reports.xlsx`;
+    }
+
+    res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -54,10 +60,17 @@ const exportAllPaymentsController = async (req, res) => {
 const exportPaymentByIdController = async (req, res) => {
   try {
     const { paymentId } = req.params;
+    const payment = await getPaymentById(paymentId); // fetch payment to get customer name
     const buffer = await exportPaymentById(paymentId);
+
+    // Use customer name for filename, fallback to paymentId if not available
+    const customerName = payment?.ride?.customer_name
+      ? payment.ride.customer_name.replace(/\s+/g, "_") // replace spaces with _
+      : paymentId;
+
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=payment_report_${paymentId}.xlsx`
+      `attachment; filename=Payment_Report_${customerName}.xlsx`
     );
     res.setHeader(
       "Content-Type",

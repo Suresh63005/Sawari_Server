@@ -11,7 +11,7 @@ const Car = require("./cars.model");
 const Package = require("./package.model");
 const SubPackage = require("./sub-package.model");
 const PackagePrice = require("./packageprice.model");
-
+// const Ticket = require("./ticket.model");
 // Admin associations
 Admin.hasMany(Ride, {
   foreignKey: "admin_id",

@@ -1,4 +1,5 @@
 const { Op } = require("sequelize");
+const { fn, col, where: sequelizeWhere } = require("sequelize");
 const Ride = require("../models/ride.model");
 const PackagePrice = require("../models/packageprice.model");
 const Package = require("../models/package.model");
@@ -6,9 +7,11 @@ const SubPackage = require("../models/sub-package.model");
 const Car = require("../models/cars.model");
 const Earnings = require("../models/earnings.model");
 const Settings = require("../models/settings.model");
+const { generateRideCode } = require("../utils/generateCode");
 // Response DTO
 const rideResponseDTO = (ride) => ({
   id: ride.id,
+  ride_code: ride.ride_code,
   customer_name: ride.customer_name,
   phone: ride.phone,
   email: ride.email,
@@ -139,8 +142,10 @@ const createRide = async (data) => {
     const tax = subtotal * (taxRate / 100);
     const total = subtotal + tax;
 
+    const ride_code = generateRideCode();
     const ride = await Ride.create(
       {
+        ride_code,
         customer_name: data.customer_name,
         phone: data.phone,
         email: data.email,
@@ -350,7 +355,9 @@ const getAvailableCarsAndPrices = async (package_id, sub_package_id) => {
 
     const result = packagePrices.map((pp) => ({
       car_id: pp.car_id,
-      car_model: pp.Car ? pp.Car.model : `${pp.car_id} (Unknown)`,
+      car_model: pp.Car
+        ? `${pp.Car.brand} ${pp.Car.model}`.trim()
+        : `${pp.car_id} (Unknown)`,
       base_fare: pp.base_fare,
     }));
 
@@ -427,10 +434,19 @@ const getAllRides = async ({
         { customer_name: { [Op.like]: `%${search}%` } },
         { pickup_location: { [Op.like]: `%${search}%` } },
         { drop_location: { [Op.like]: `%${search}%` } },
+        { pickup_address: { [Op.like]: `%${search}%` } },
+        { drop_address: { [Op.like]: `%${search}%` } },
         { phone: { [Op.like]: `%${search}%` } },
         { email: { [Op.like]: `%${search}%` } },
+        { "$Car.brand$": { [Op.like]: `%${search}%` } },
+        { "$Car.model$": { [Op.like]: `%${search}%` } },
+        // Scheduled_time formatted as date (dd-mm-yyyy)
+        sequelizeWhere(fn("DATE_FORMAT", col("scheduled_time"), "%d-%m-%Y"), {
+          [Op.like]: `%${search}%`,
+        }),
       ];
     }
+
     if (status && status !== "all") {
       where.status = status;
     }
@@ -445,7 +461,7 @@ const getAllRides = async ({
       include: [
         { model: Package, as: "Package", attributes: ["id", "name"] },
         { model: SubPackage, as: "SubPackage", attributes: ["id", "name"] },
-        { model: Car, as: "Car", attributes: ["id", "model"] },
+        { model: Car, as: "Car", attributes: ["id", "brand", "model"] },
       ],
     });
 
@@ -485,7 +501,9 @@ const getAllRides = async ({
           ...rideResponseDTO(ride),
           package_name: ride.Package ? ride.Package.name : null,
           subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
-          car_name: ride.Car ? ride.Car.model : null,
+          car_name: ride.Car
+            ? `${ride.Car.brand} ${ride.Car.model}`.trim()
+            : null,
         })),
         counts: summary,
       },
@@ -504,7 +522,7 @@ const getRideById = async (id, transaction = null, lock = null) => {
       include: [
         { model: Package, as: "Package", attributes: ["id", "name"] },
         { model: SubPackage, as: "SubPackage", attributes: ["id", "name"] },
-        { model: Car, as: "Car", attributes: ["id", "model"] },
+        { model: Car, as: "Car", attributes: ["id", "brand", "model"] },
       ],
       transaction,
       lock,
@@ -516,7 +534,9 @@ const getRideById = async (id, transaction = null, lock = null) => {
         ...rideResponseDTO(ride),
         package_name: ride.Package ? ride.Package.name : null,
         subpackage_name: ride.SubPackage ? ride.SubPackage.name : null,
-        car_name: ride.Car ? ride.Car.model : null,
+        car_name: ride.Car
+          ? `${ride.Car.brand} ${ride.Car.model}`.trim()
+          : null,
       },
     };
   } catch (error) {

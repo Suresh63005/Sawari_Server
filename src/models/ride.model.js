@@ -10,6 +10,11 @@ const Ride = sequelize.define(
       allowNull: false,
       defaultValue: DataTypes.UUIDV4,
     },
+    ride_code: {
+      type: DataTypes.STRING(10),
+      allowNull: true,
+      comment: "Unique ride code for reference",
+    },
     admin_id: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -68,7 +73,7 @@ const Ride = sequelize.define(
       comment: "ID of the associated car",
     },
     scheduled_time: {
-      type: DataTypes.DATE,
+      type: DataTypes.STRING,
       allowNull: true,
     },
     driver_id: {
@@ -121,15 +126,15 @@ const Ride = sequelize.define(
         "Indicates if the ride was accepted on credit due to insufficient wallet balance",
     },
     accept_time: {
-      type: DataTypes.DATE,
+      type: DataTypes.STRING,
       allowNull: true,
     },
     pickup_time: {
-      type: DataTypes.DATE,
+      type: DataTypes.STRING,
       allowNull: true,
     },
     dropoff_time: {
-      type: DataTypes.DATE,
+      type: DataTypes.STRING,
       allowNull: true,
     },
     rider_hours: {

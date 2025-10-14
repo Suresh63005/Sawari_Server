@@ -1,7 +1,6 @@
-// backend/services/ticketService.js
-
 const { uploadToS3 } = require("../config/fileUpload.aws");
 const Ticket = require("../models/ticket.model");
+const Driver = require("../models/driver.model");
 const { Op } = require("sequelize");
 
 const getOpenTickets = async (filters = {}) => {
@@ -20,13 +19,47 @@ const getOpenTickets = async (filters = {}) => {
     const offset = (page - 1) * limit;
     const { count, rows } = await Ticket.findAndCountAll({
       where: whereClause,
+      include: [
+        {
+          model: Driver,
+          attributes: ["first_name", "last_name", "phone"],
+          as: "driver",
+        },
+      ],
       order: [["createdAt", "DESC"]],
       offset,
       limit: Number(limit),
     });
 
+    // Format the response to include driver details
+    const formattedRows = rows.map((ticket) => {
+      let images = [];
+      if (ticket.images) {
+        try {
+          const cleaned = ticket.images.startsWith('"')
+            ? JSON.parse(ticket.images)
+            : ticket.images;
+          images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
+        } catch (e) {
+          console.error(
+            "❌ Error parsing images for ticket",
+            ticket.id,
+            e.message
+          );
+        }
+      }
+      return {
+        ...ticket.get({ plain: true }),
+        images,
+        driver_name: ticket.driver
+          ? `${ticket.driver.first_name || ""} ${ticket.driver.last_name || ""}`.trim()
+          : "Unknown",
+        driver_phone: ticket.driver ? ticket.driver.phone || "N/A" : "N/A",
+      };
+    });
+
     return {
-      data: rows,
+      data: formattedRows,
       total: count,
     };
   } catch (error) {
@@ -61,13 +94,11 @@ const createTicket = async (ticketData) => {
     const ticketCount = await Ticket.count({ transaction });
     const ticketNumber = String(ticketCount + 1).padStart(6, "0");
 
-    // Upload images to S3 if present
     let uploadedUrls = [];
     if (files && files.length > 0) {
       uploadedUrls = await uploadToS3(files, "ticket-images");
     }
 
-    // Create ticket
     const ticket = await Ticket.create(
       {
         ticket_number: ticketNumber,
@@ -173,7 +204,6 @@ const getTicketsById = async (data) => {
         const cleaned = ticket.images.startsWith('"')
           ? JSON.parse(ticket.images)
           : ticket.images;
-
         images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
       } catch (e) {
         console.error(

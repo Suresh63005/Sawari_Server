@@ -55,6 +55,14 @@ const Settings = sequelize.define(
       allowNull: true,
       defaultValue: 0.0,
     },
+    ride_edit_time_limit: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    ride_auto_cancel_time_limit: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
   },
   { tableName: "Settings", timestamps: true, paranoid: true }
 );
