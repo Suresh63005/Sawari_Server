@@ -8,7 +8,12 @@ const {
 const getAllPaymentsController = async (req, res) => {
   try {
     const { search = "", status = "", page = 1, limit = 10 } = req.query;
-    const data = await getAllPayments(search, status, parseInt(page), parseInt(limit));
+    const data = await getAllPayments(
+      search,
+      status,
+      parseInt(page),
+      parseInt(limit)
+    );
     res.status(200).json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -27,7 +32,6 @@ const getPaymentByIdController = async (req, res) => {
   }
 };
 
-
 const exportAllPaymentsController = async (req, res) => {
   try {
     const { search = "", status = "" } = req.query;
@@ -36,7 +40,8 @@ const exportAllPaymentsController = async (req, res) => {
     // Create dynamic filename based on status
     let fileName = "All_Payment_Reports.xlsx";
     if (status && status.toLowerCase() !== "all") {
-      const capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+      const capitalizedStatus =
+        status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
       fileName = `All_${capitalizedStatus}_Payment_Reports.xlsx`;
     }
 
@@ -51,7 +56,6 @@ const exportAllPaymentsController = async (req, res) => {
     console.log(error, "error in exportAllPaymentsController");
   }
 };
-
 
 const exportPaymentByIdController = async (req, res) => {
   try {
@@ -78,7 +82,6 @@ const exportPaymentByIdController = async (req, res) => {
     console.log(error, "error in exportPaymentByIdController");
   }
 };
-
 
 module.exports = {
   getAllPaymentsController,

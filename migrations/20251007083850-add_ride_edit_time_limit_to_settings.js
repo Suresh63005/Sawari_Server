@@ -7,7 +7,8 @@ module.exports = {
       allowNull: true,
       defaultValue: 15,
       after: "min_wallet_percentage",
-      comment: "Maximum time (in minutes) allowed for editing a ride after booking",
+      comment:
+        "Maximum time (in minutes) allowed for editing a ride after booking",
     });
   },
 

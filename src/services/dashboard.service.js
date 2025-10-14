@@ -13,7 +13,11 @@ const calculateTrend = (current, previous) => {
 const getDashboardStats = async () => {
   const now = new Date();
   const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const startOfPreviousMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() - 1,
+    1
+  );
   const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
   // Current stats
@@ -33,13 +37,14 @@ const getDashboardStats = async () => {
     },
   });
 
-  const revenue = await Ride.sum("Total", {
-    where: {
-      status: "completed",
-      createdAt: { [Op.gte]: startOfCurrentMonth },
-      deletedAt: null,
-    },
-  }) || 0;
+  const revenue =
+    (await Ride.sum("Total", {
+      where: {
+        status: "completed",
+        createdAt: { [Op.gte]: startOfCurrentMonth },
+        deletedAt: null,
+      },
+    })) || 0;
 
   const drivers = await Driver.count({
     where: { status: "active", is_approved: true, deletedAt: null },
@@ -52,7 +57,10 @@ const getDashboardStats = async () => {
   // Previous month stats
   const previousTotalRides = await Ride.count({
     where: {
-      createdAt: { [Op.gte]: startOfPreviousMonth, [Op.lte]: endOfPreviousMonth },
+      createdAt: {
+        [Op.gte]: startOfPreviousMonth,
+        [Op.lte]: endOfPreviousMonth,
+      },
       deletedAt: null,
     },
   });
@@ -60,7 +68,10 @@ const getDashboardStats = async () => {
   const previousActiveRides = await Ride.count({
     where: {
       status: { [Op.in]: ["on-route", "accepted"] },
-      createdAt: { [Op.gte]: startOfPreviousMonth, [Op.lte]: endOfPreviousMonth },
+      createdAt: {
+        [Op.gte]: startOfPreviousMonth,
+        [Op.lte]: endOfPreviousMonth,
+      },
       deletedAt: null,
     },
   });
@@ -68,18 +79,25 @@ const getDashboardStats = async () => {
   const previousCompletedRides = await Ride.count({
     where: {
       status: "completed",
-      createdAt: { [Op.gte]: startOfPreviousMonth, [Op.lte]: endOfPreviousMonth },
+      createdAt: {
+        [Op.gte]: startOfPreviousMonth,
+        [Op.lte]: endOfPreviousMonth,
+      },
       deletedAt: null,
     },
   });
 
-  const previousRevenue = await Ride.sum("Total", {
-    where: {
-      status: "completed",
-      createdAt: { [Op.gte]: startOfPreviousMonth, [Op.lte]: endOfPreviousMonth },
-      deletedAt: null,
-    },
-  }) || 0;
+  const previousRevenue =
+    (await Ride.sum("Total", {
+      where: {
+        status: "completed",
+        createdAt: {
+          [Op.gte]: startOfPreviousMonth,
+          [Op.lte]: endOfPreviousMonth,
+        },
+        deletedAt: null,
+      },
+    })) || 0;
 
   const previousDrivers = await Driver.count({
     where: {
@@ -153,7 +171,14 @@ const getRecentActivity = async () => {
       where: { deletedAt: null },
       order: [["createdAt", "DESC"]],
       limit: 5,
-      attributes: ["id", "pickup_address", "drop_address", "status", "createdAt", "scheduled_time"],
+      attributes: [
+        "id",
+        "pickup_address",
+        "drop_address",
+        "status",
+        "createdAt",
+        "scheduled_time",
+      ],
       include: [
         {
           model: Driver,

@@ -1,4 +1,9 @@
-const { getOpenTickets, resolveTicket, createTicket, updateTicketStatus } = require("../../services/ticket.service");
+const {
+  getOpenTickets,
+  resolveTicket,
+  createTicket,
+  updateTicketStatus,
+} = require("../../services/ticket.service");
 
 const getOpenTicketsHandler = async (req, res) => {
   try {
@@ -24,9 +29,16 @@ const createTicketHandler = async (req, res) => {
   try {
     const { title, description, priority, raised_by } = req.body;
     if (!title || !priority || !raised_by) {
-      return res.status(400).json({ message: "Title, priority, and raised_by are required" });
+      return res
+        .status(400)
+        .json({ message: "Title, priority, and raised_by are required" });
     }
-    const ticket = await createTicket({ title, description, priority, raised_by });
+    const ticket = await createTicket({
+      title,
+      description,
+      priority,
+      raised_by,
+    });
     res.status(201).json(ticket);
   } catch (error) {
     res.status(500).json({ message: error.message });

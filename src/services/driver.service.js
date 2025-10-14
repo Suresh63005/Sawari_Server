@@ -1,25 +1,27 @@
 const Driver = require("../models/driver.model");
-const jwt = require("jsonwebtoken");
+// const jwt = require("jsonwebtoken");
 const { driverFirebase } = require("../config/firebase-config");
 const DriverCar = require("../models/driver-cars.model");
-const { Op } = require("sequelize");  
+const { Op } = require("sequelize");
 const Ride = require("../models/ride.model");
 const Car = require("../models/cars.model");
 const Earnings = require("../models/earnings.model");
 const { fn, col, where: sequelizeWhere } = require("sequelize");
+const { generateToken } = require("../utils/tokenUtils");
+const { normalizePhone } = require("../utils/phoneUtils");
 
-const generateToken = (driverId) => {
-  return jwt.sign({ id: driverId }, process.env.JWT_SECRET);
-};
+// const generateToken = (driverId) => {
+//   return jwt.sign({ id: driverId }, process.env.JWT_SECRET);
+// };
 
-const normalizePhone = (phone) => {
-  phone = phone.trim();
-  if (!phone.startsWith("+971")) {
-    phone = phone.replace(/^(\+|0)*/, "");
-    phone = "+971" + phone;
-  }
-  return phone;
-};
+// const normalizePhone = (phone) => {
+//   phone = phone.trim();
+//   if (!phone.startsWith("+971")) {
+//     phone = phone.replace(/^(\+|0)*/, "");
+//     phone = "+971" + phone;
+//   }
+//   return phone;
+// };
 
 const verifyDriverMobile = async (phone, token, email, social_login) => {
   if (!token) throw new Error("Token is required");
@@ -45,7 +47,9 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
     if (driver) {
       // check driver status
       if (driver && driver.status === "blocked") {
-        throw new Error("Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance.");
+        throw new Error(
+          "Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance."
+        );
       }
       console.log(driver.status, "sssssssssssssssssssss");
       //// ✅ If status is active, allow login directly
@@ -53,27 +57,24 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
         driver.last_login = new Date();
         await driver.save();
 
-        const jwtToken = generateToken(driver.id);
+        const jwtToken = await generateToken(driver.id);
 
         return {
           message: "Driver verified",
           token: jwtToken,
-          driver
+          driver,
         };
-
       }
-
     }
 
     if (!driver) {
       console.log("cccccccccccccccccccccc:");
       driver = await Driver.create({
-
         email: firebaseEmail,
         social_login: "google",
         last_login: new Date(),
         status: "inactive",
-        document_check_count: 0
+        document_check_count: 0,
       });
     }
   } else {
@@ -82,7 +83,7 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
     // ----------------------------
     if (!phone) throw new Error("Phone number is required");
 
-    normalizedPhone = normalizePhone(phone);
+    normalizedPhone = await normalizePhone(phone);
     console.log(normalizedPhone, "nnnnnnnnnnnnnnnnnnnnn");
     if (!normalizedPhone) throw new Error("Invalid phone number format");
 
@@ -90,23 +91,25 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
     // const firebasePhone = decoded.phone_number;
     const firebasePhone = decoded.phone_number?.replace("+91", "");
 
-
-
     // Find driver first
     driver = await Driver.findOne({ where: { phone: normalizedPhone } });
     if (driver && driver.status === "blocked") {
-      throw new Error("Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance.");
+      throw new Error(
+        "Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance."
+      );
     }
 
     if (firebasePhone !== normalizedPhone) {
       throw new Error("Phone number mismatch with token");
     }
 
-    //no driver , create 
+    //no driver , create
     driver = await Driver.findOne({ where: { phone: normalizedPhone } });
     if (driver) {
       if (driver.status === "blocked") {
-        throw new Error("Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance.");
+        throw new Error(
+          "Your account has been blocked due to multiple failed login / document upload attempts. Please contact the administrator for assistance."
+        );
       }
 
       // ✅ If status is active, allow login directly
@@ -124,7 +127,6 @@ const verifyDriverMobile = async (phone, token, email, social_login) => {
     }
     if (!driver) {
       driver = await Driver.create({
-
         phone: normalizedPhone,
 
         email: email || null,
@@ -149,9 +151,11 @@ const blockDriverByPhoneOrEmail = async (phone, email) => {
 
   if (phone) {
     const normalizedPhone = normalizePhone(phone);
+    console.log("recived phoneeeeeeeeeeeeeeeeeee");
     driver = await Driver.findOne({ where: { phone: normalizedPhone } });
   } else if (email) {
     driver = await Driver.findOne({ where: { email } });
+    console.log("recived emailllllllllllllllllllllllllllll");
   }
 
   if (!driver) {
@@ -160,20 +164,16 @@ const blockDriverByPhoneOrEmail = async (phone, email) => {
 
   driver.status = "blocked";
   await driver.save();
-
+  console.log("updatedddddddddddddddddddddd");
   return driver;
 };
 
 const updateDriverProfile = async (driverId, data) => {
   const driver = await Driver.findByPk(driverId);
-  if (!driver) throw new Error("Driver not found");
+  if (!driver) return null;
 
   await driver.update(data);
-
-  return {
-    message: "Profile updated successfully",
-    driver,
-  };
+  return driver;
 };
 
 const getDriverById = async (driverId) => {
@@ -216,9 +216,11 @@ const getDriverById = async (driverId) => {
     ],
   });
 
-  if (!driverInstance) throw new Error("Driver not found");
+  if (!driverInstance) return null;
 
-    console.log(`getDriverById: driverId=${driverId}, raw_credit_ride_count=${driverInstance.credit_ride_count}, driverInstance_fields=${JSON.stringify(Object.keys(driverInstance.toJSON()))}`);
+  console.log(
+    `getDriverById: driverId=${driverId}, raw_credit_ride_count=${driverInstance.credit_ride_count}, driverInstance_fields=${JSON.stringify(Object.keys(driverInstance.toJSON()))}`
+  );
 
   // Fetch total completed rides
   const completedRidesCount = await Ride.count({
@@ -232,12 +234,17 @@ const getDriverById = async (driverId) => {
   const totalRidesCount = await Ride.count({
     where: {
       driver_id: driverId,
-      status: { [Op.in]: ["pending", "accepted", "on-route", "completed", "cancelled"] },
+      status: {
+        [Op.in]: ["pending", "accepted", "on-route", "completed", "cancelled"],
+      },
     },
   });
 
   // Calculate completion rate
-  const completionRate = totalRidesCount > 0 ? ((completedRidesCount / totalRidesCount) * 100).toFixed(2) : "0.00";
+  const completionRate =
+    totalRidesCount > 0
+      ? ((completedRidesCount / totalRidesCount) * 100).toFixed(2)
+      : "0.00";
 
   // Fetch the most recent completed ride
   const lastRide = await Ride.findOne({
@@ -250,12 +257,13 @@ const getDriverById = async (driverId) => {
   });
 
   // Fetch total earnings for the driver
-  const totalEarnings = await Earnings.sum("amount", {
-    where: {
-      driver_id: driverId,
-      status: "processed", // Only consider processed earnings
-    },
-  }) || 0;
+  const totalEarnings =
+    (await Earnings.sum("amount", {
+      where: {
+        driver_id: driverId,
+        status: "processed", // Only consider processed earnings
+      },
+    })) || 0;
 
   // Construct a plain object with attributes + computed fields
   const driver = {
@@ -298,7 +306,9 @@ const getDriverById = async (driverId) => {
 };
 
 const getStatusByDriver = async (driverId) => {
-  const driver = await Driver.findByPk(driverId, { attributes: ["ride_request", "system_alerts", "earning_updates"] });
+  const driver = await Driver.findByPk(driverId, {
+    attributes: ["ride_request", "system_alerts", "earning_updates"],
+  });
   if (!driver) throw new Error("Driver not found");
   return driver;
 };
@@ -315,7 +325,11 @@ const deactivateDriver = async (driverId) => {
 const approveDriver = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error("Driver not found");
-  await driver.update({ is_approved: true, status: "active", verified_by: verifiedBy });
+  await driver.update({
+    is_approved: true,
+    status: "active",
+    verified_by: verifiedBy,
+  });
   return { message: "Driver approved" };
 };
 
@@ -348,7 +362,6 @@ const rejectDriver = async (driverId, reason, verifiedBy) => {
   };
 };
 
-
 const blockDriver = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error("Driver not found");
@@ -363,36 +376,37 @@ const unblockDriver = async (driverId, verifiedBy) => {
   return { message: "Driver unblocked" };
 };
 
-const getAllDrivers = async (page = 1, limit = 10, search = "", status = "") => {
+const getAllDrivers = async (
+  page = 1,
+  limit = 10,
+  search = "",
+  status = ""
+) => {
   const offset = (page - 1) * limit;
   const where = {};
 
   const safeSearch = (typeof search === "string" ? search : "").trim();
   if (safeSearch.length > 0) {
-  const normalizedSearch = safeSearch.toLowerCase().replace(/\s+/g, "");
+    const normalizedSearch = safeSearch.toLowerCase().replace(/\s+/g, "");
 
-  where[Op.or] = [
-    { first_name: { [Op.like]: `%${safeSearch}%` } },
-    { last_name: { [Op.like]: `%${safeSearch}%` } },
-    { email: { [Op.like]: `%${safeSearch}%` } },
-    { phone: { [Op.like]: `%${safeSearch}%` } },
-    { experience: { [Op.like]: `%${safeSearch}%` } },
-    // NEW: concatenate first_name + last_name and remove spaces
-    sequelizeWhere(
-      fn(
-        "REPLACE",
+    where[Op.or] = [
+      { first_name: { [Op.like]: `%${safeSearch}%` } },
+      { last_name: { [Op.like]: `%${safeSearch}%` } },
+      { email: { [Op.like]: `%${safeSearch}%` } },
+      { phone: { [Op.like]: `%${safeSearch}%` } },
+      { experience: { [Op.like]: `%${safeSearch}%` } },
+      // NEW: concatenate first_name + last_name and remove spaces
+      sequelizeWhere(
         fn(
-          "LOWER",
-          fn("CONCAT", col("first_name"), col("last_name"))
+          "REPLACE",
+          fn("LOWER", fn("CONCAT", col("first_name"), col("last_name"))),
+          " ",
+          ""
         ),
-        " ",
-        ""
+        { [Op.like]: `%${normalizedSearch}%` }
       ),
-      { [Op.like]: `%${normalizedSearch}%` }
-    ),
-  ];
-}
-
+    ];
+  }
 
   if (status === "pending") {
     where.is_approved = false;
@@ -454,12 +468,23 @@ const getAllDrivers = async (page = 1, limit = 10, search = "", status = "") => 
       const totalRidesCount = await Ride.count({
         where: {
           driver_id: driver.id,
-          status: { [Op.in]: ["pending", "accepted", "on-route", "completed", "cancelled"] },
+          status: {
+            [Op.in]: [
+              "pending",
+              "accepted",
+              "on-route",
+              "completed",
+              "cancelled",
+            ],
+          },
         },
       });
 
       // Calculate completion rate
-      const completionRate = totalRidesCount > 0 ? ((completedRidesCount / totalRidesCount) * 100).toFixed(2) : "0.00";
+      const completionRate =
+        totalRidesCount > 0
+          ? ((completedRidesCount / totalRidesCount) * 100).toFixed(2)
+          : "0.00";
 
       // Fetch the most recent completed ride
       const lastRide = await Ride.findOne({
@@ -492,8 +517,6 @@ const getAllDrivers = async (page = 1, limit = 10, search = "", status = "") => 
   return { drivers: driversWithStats, total: count };
 };
 
-
-
 const verifyLicense = async (driverId, verifiedBy) => {
   const driver = await Driver.findByPk(driverId);
   if (!driver) throw new Error("Driver not found");
@@ -501,7 +524,7 @@ const verifyLicense = async (driverId, verifiedBy) => {
   await driver.update({
     license_verification_status: "verified",
     verified_by: verifiedBy,
-    document_check_count: 0 // reset on success
+    document_check_count: 0, // reset on success
   });
 
   return { message: "License verified" };
@@ -529,7 +552,7 @@ const verifyEmirates = async (driverId, verifiedBy) => {
   await driver.update({
     emirates_verification_status: "verified",
     verified_by: verifiedBy,
-    document_check_count: 0 // reset on success
+    document_check_count: 0, // reset on success
   });
 
   return { message: "Emirates ID verified" };
@@ -552,7 +575,16 @@ const rejectEmirates = async (driverId, reason, verifiedBy) => {
 
 const driverProfileWithCar = async (driver_id) => {
   return await Driver.findByPk(driver_id, {
-    attributes: ["first_name", "last_name", "email", "phone", "experience", "wallet_balance", "availability_status", "ride_count"],
+    attributes: [
+      "first_name",
+      "last_name",
+      "email",
+      "phone",
+      "experience",
+      "wallet_balance",
+      "availability_status",
+      "ride_count",
+    ],
     include: [
       {
         model: DriverCar,
@@ -562,20 +594,19 @@ const driverProfileWithCar = async (driver_id) => {
           {
             model: Car,
             as: "Car",
-            attributes: ["id", "brand", "model"]
-          }
-        ]
-      }
-    ]
+            attributes: ["id", "brand", "model"],
+          },
+        ],
+      },
+    ],
   });
 };
-
 
 const updateDriverBalance = async (driver_id, balance, transaction = null) => {
   try {
     const driver = await Driver.findByPk(driver_id, { transaction });
     if (!driver) {
-      throw new Error("Driver not found");
+      return null;
     }
     await driver.update({ wallet_balance: balance }, { transaction });
     return driver;
@@ -585,15 +616,18 @@ const updateDriverBalance = async (driver_id, balance, transaction = null) => {
   }
 };
 
-const checkActiveRide = async (driver_id, status = ["pending", "accepted", "on-route"]) => {
+const checkActiveRide = async (
+  driver_id,
+  status = ["pending", "accepted", "on-route"]
+) => {
   try {
     const activeRides = await Ride.findAll({
       where: {
         driver_id,
         status: {
-          [Op.in]: status
-        }
-      }
+          [Op.in]: status,
+        },
+      },
     });
     return activeRides;
   } catch (error) {
@@ -602,11 +636,9 @@ const checkActiveRide = async (driver_id, status = ["pending", "accepted", "on-r
   }
 };
 
-
 // Service to update onesign player ID
 const updateOneSignalPlayerId = async (driver_id, player_id) => {
   const driver = await Driver.findByPk(driver_id);
-  if (!driver) throw new Error("Driver not found");
 
   await driver.update({ one_signal_id: player_id });
   return driver;
@@ -615,13 +647,10 @@ const updateOneSignalPlayerId = async (driver_id, player_id) => {
 // Service to delete onesignal player ID on logout
 const deleteOneSignalPlayerId = async (driver_id) => {
   const driver = await Driver.findByPk(driver_id);
-  if (!driver) throw new Error("Driver not found");
 
   await driver.update({ one_signal_id: null });
   return driver;
 };
-
-
 
 module.exports = {
   verifyDriverMobile,
@@ -643,5 +672,5 @@ module.exports = {
   checkActiveRide,
   getStatusByDriver,
   updateOneSignalPlayerId,
-  deleteOneSignalPlayerId
+  deleteOneSignalPlayerId,
 };

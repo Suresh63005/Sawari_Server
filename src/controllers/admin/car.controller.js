@@ -25,7 +25,11 @@ const upsertCar = async (req, res) => {
     // Delete the old image if updating with a new image
     if (req.body.id && req.file && req.body.image_url) {
       const oldCar = await carService.getCarById(req.body.id);
-      if (oldCar && oldCar.image_url && oldCar.image_url !== req.body.image_url) {
+      if (
+        oldCar &&
+        oldCar.image_url &&
+        oldCar.image_url !== req.body.image_url
+      ) {
         await deleteFromS3(oldCar.image_url);
       }
     }
@@ -45,7 +49,14 @@ const upsertCar = async (req, res) => {
  */
 const getAllCars = async (req, res) => {
   try {
-    const { search = "", limit = 10, page = 1, sortBy = "createdAt", sortOrder = "DESC", status } = req.query;
+    const {
+      search = "",
+      limit = 10,
+      page = 1,
+      sortBy = "createdAt",
+      sortOrder = "DESC",
+      status,
+    } = req.query;
 
     const result = await carService.getAllCars({
       search,
@@ -147,5 +158,5 @@ module.exports = {
   deleteCarById,
   toggleCarStatus,
   getCarsBySubPackageId,
-  getCarsForListController
+  getCarsForListController,
 };

@@ -1,10 +1,10 @@
-
 // Import necessary modules from ESLint and other packages.
 import js from "@eslint/js";
 import globals from "globals";
 import { defineConfig } from "eslint/config";
 // Import the boundaries plugin. Make sure you have installed it (`npm install --save-dev eslint-plugin-boundaries`).
 import boundaries from "eslint-plugin-boundaries";
+import prettier from "eslint-config-prettier";
 
 // Export the ESLint configuration using defineConfig for type safety.
 export default defineConfig([
@@ -21,7 +21,7 @@ export default defineConfig([
     // 'boundaries' is for the element-types rule you want to use.
     plugins: { js, boundaries },
     // Extend the recommended ESLint JavaScript rules.
-    extends: ["js/recommended"],
+    extends: ["js/recommended", prettier],
     languageOptions: {
       // Define global variables available in the environment.
       globals: {

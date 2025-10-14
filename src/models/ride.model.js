@@ -82,7 +82,13 @@ const Ride = sequelize.define(
       comment: "ID of the assigned driver",
     },
     status: {
-      type: DataTypes.ENUM("pending", "accepted", "on-route", "completed", "cancelled"),
+      type: DataTypes.ENUM(
+        "pending",
+        "accepted",
+        "on-route",
+        "completed",
+        "cancelled"
+      ),
       allowNull: false,
       defaultValue: "pending",
     },
@@ -95,27 +101,29 @@ const Ride = sequelize.define(
       allowNull: false,
       comment: "Base fare for the ride, sourced from PackagePrice",
     },
-    tax:{
+    tax: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
-      defaultValue:0.0,
+      defaultValue: 0.0,
       comment: "Tax amount for the ride",
     },
     Total: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
-      comment: "Total cost for the ride, calculated as Price * rider_hours for 1-hour sub-packages, otherwise equals Price",
+      comment:
+        "Total cost for the ride, calculated as Price * rider_hours for 1-hour sub-packages, otherwise equals Price",
     },
     payment_status: {
       type: DataTypes.ENUM("pending", "completed", "failed"),
       allowNull: true,
       defaultValue: "pending",
     },
-    is_credit:{
+    is_credit: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
-      comment: "Indicates if the ride was accepted on credit due to insufficient wallet balance",
+      comment:
+        "Indicates if the ride was accepted on credit due to insufficient wallet balance",
     },
     accept_time: {
       type: DataTypes.STRING,
@@ -133,7 +141,8 @@ const Ride = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 1,
-      comment: "Number of hours for the ride, applicable only for 1-hour sub-packages",
+      comment:
+        "Number of hours for the ride, applicable only for 1-hour sub-packages",
     },
   },
   {

@@ -2,7 +2,6 @@ const packagePriceService = require("../../services/packageprice.service");
 
 // Create or Update
 const upsertPackagePrice = async (req, res) => {
-    
   try {
     const result = await packagePriceService.upsertPackagePrice(req.body);
     res.status(200).json(result);
@@ -15,10 +14,12 @@ const upsertPackagePrice = async (req, res) => {
 const getAllPackagePrices = async (req, res) => {
   try {
     const result = await packagePriceService.getAllPackagePrices(req.query);
-    res.status(200).json({ message: "Package Prices retrieved successfully", result });
+    res
+      .status(200)
+      .json({ message: "Package Prices retrieved successfully", result });
   } catch (error) {
     res.status(400).json({ error: error.message });
-    console.log(error,"eeeeeeeeeeeeeeeeeeeeeeee");
+    console.log(error, "eeeeeeeeeeeeeeeeeeeeeeee");
   }
 };
 
@@ -26,7 +27,9 @@ const getAllPackagePrices = async (req, res) => {
 const getPackagePriceById = async (req, res) => {
   try {
     const result = await packagePriceService.getPackagePriceById(req.params.id);
-    res.status(200).json({ message: "Package Price retrieved successfully", data: result });
+    res
+      .status(200)
+      .json({ message: "Package Price retrieved successfully", data: result });
   } catch (error) {
     res.status(404).json({ error: error.message });
   }
@@ -35,8 +38,12 @@ const getPackagePriceById = async (req, res) => {
 // Delete by ID
 const deletePackagePriceById = async (req, res) => {
   try {
-    const result = await packagePriceService.deletePackagePriceById(req.params.id);
-    res.status(200).json({ message: "Package Price deleted successfully", data: result });
+    const result = await packagePriceService.deletePackagePriceById(
+      req.params.id
+    );
+    res
+      .status(200)
+      .json({ message: "Package Price deleted successfully", data: result });
   } catch (error) {
     res.status(404).json({ error: error.message });
   }
@@ -45,7 +52,9 @@ const deletePackagePriceById = async (req, res) => {
 // Toggle package price status
 const togglePackagePriceStatus = async (req, res) => {
   try {
-    const result = await packagePriceService.togglePackagePriceStatus(req.params.id);
+    const result = await packagePriceService.togglePackagePriceStatus(
+      req.params.id
+    );
     res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -54,10 +63,14 @@ const togglePackagePriceStatus = async (req, res) => {
 
 // Get sub-packages by package_id
 const getSubPackagesByPackageId = async (req, res) => {
-    console.log(req.params.package_id,"eeeeeeeeeeeeeeeeeeeeeeee");
+  console.log(req.params.package_id, "eeeeeeeeeeeeeeeeeeeeeeee");
   try {
-    const result = await packagePriceService.getSubPackagesByPackageId(req.params.package_id);
-    res.status(200).json({ message: "Sub-Packages retrieved successfully", result });
+    const result = await packagePriceService.getSubPackagesByPackageId(
+      req.params.package_id
+    );
+    res
+      .status(200)
+      .json({ message: "Sub-Packages retrieved successfully", result });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

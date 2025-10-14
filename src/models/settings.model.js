@@ -50,12 +50,12 @@ const Settings = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    min_wallet_percentage:{
+    min_wallet_percentage: {
       type: DataTypes.FLOAT,
       allowNull: true,
       defaultValue: 0.0,
     },
-    ride_edit_time_limit:{
+    ride_edit_time_limit: {
       type: DataTypes.INTEGER,
       allowNull: true,
     },

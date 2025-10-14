@@ -6,7 +6,9 @@ const isAuthenticated = async (req, res, next) => {
     // Extract the token from Authorization header
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
-      return res.status(401).json({ message: "Unauthorized: No token provided" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized: No token provided" });
     }
 
     // Verify the token using your JWT secret
@@ -17,7 +19,9 @@ const isAuthenticated = async (req, res, next) => {
     const driver = await Driver.findByPk(decoded.id);
     if (!driver) {
       console.log("Driver not found for ID:", decoded.id);
-      return res.status(401).json({ message: "Invalid or blocked account - Driver not found" });
+      return res
+        .status(401)
+        .json({ message: "Invalid or blocked account - Driver not found" });
     }
 
     // Check if driver exists and is not blocked

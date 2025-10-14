@@ -20,7 +20,6 @@ const packagePriceResponseDTO = (pp) => ({
   updatedAt: pp.updatedAt,
 });
 
-
 // Response DTO for SubPackage
 const subPackageResponseDTO = (subpackage) => ({
   id: subpackage.id,
@@ -46,7 +45,8 @@ const upsertPackagePrice = async (data) => {
   if (data.id) {
     // Update flow
     const existingPackagePrice = await PackagePrice.findByPk(data.id);
-    if (!existingPackagePrice) throw new Error("Package Price not found with the given ID");
+    if (!existingPackagePrice)
+      throw new Error("Package Price not found with the given ID");
 
     // Check for duplicate combination, excluding the current package price
     if (
@@ -62,7 +62,10 @@ const upsertPackagePrice = async (data) => {
           id: { [Op.ne]: data.id },
         },
       });
-      if (duplicate) throw new Error("A package price with the same package, sub-package, and car already exists");
+      if (duplicate)
+        throw new Error(
+          "A package price with the same package, sub-package, and car already exists"
+        );
     }
 
     await existingPackagePrice.update(dto);
@@ -79,7 +82,10 @@ const upsertPackagePrice = async (data) => {
         car_id: data.car_id,
       },
     });
-    if (exists) throw new Error("A package price with the same package, sub-package, and car already exists");
+    if (exists)
+      throw new Error(
+        "A package price with the same package, sub-package, and car already exists"
+      );
 
     const created = await PackagePrice.create(dto);
     return {
@@ -103,8 +109,8 @@ const getAllPackagePrices = async ({
   if (search) {
     where[Op.or] = [
       { "$Package.name$": { [Op.like]: `%${search}%` } }, //package name
-      { "$SubPackage.name$": { [Op.like]: `%${search}%` } },//sub package name
-      { "$Car.model$": { [Op.like]: `%${search}%` } },//car model
+      { "$SubPackage.name$": { [Op.like]: `%${search}%` } }, //sub package name
+      { "$Car.model$": { [Op.like]: `%${search}%` } }, //car model
       { description: { [Op.like]: `%${search}%` } },
     ];
   }
@@ -178,13 +184,14 @@ const getSubPackagesByPackageId = async (package_id) => {
   };
 };
 
-
 // Fetch Price by package_id, sub_package_id, car_id
 const getPrice = async (package_id, sub_package_id, car_id) => {
+  // Validate parameters (optional depending on how strict you want your service to be)
   if (!package_id || !sub_package_id || !car_id) {
     throw new Error("Missing required parameters");
   }
 
+  // Fetch the price from the database
   const price = await PackagePrice.findOne({
     where: {
       package_id,
@@ -193,10 +200,12 @@ const getPrice = async (package_id, sub_package_id, car_id) => {
     },
   });
 
+  // If no price is found, throw an error
   if (!price) {
     throw new Error("Price not found");
   }
 
+  // Return the transformed price data
   return packagePriceResponseDTO(price);
 };
 

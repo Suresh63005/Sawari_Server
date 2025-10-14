@@ -19,14 +19,11 @@
 // // console.log("PRIVATE KEY ===>");
 // // console.log(process.env.CUSTOMER_PRIVATE_KEY.replace(/\\n/g, "\n"));
 
-
 // const driverFirebase = admin.initializeApp({
 //     credential:admin.credential.cert(driverServiceAccount)
 // });
 
 // module.exports = {driverFirebase};
-
-
 
 require("dotenv").config();
 const admin = require("firebase-admin");
@@ -39,7 +36,9 @@ if (!isTestMode) {
     type: process.env.DRIVER_TYPE,
     project_id: process.env.DRIVER_PROJECT_ID,
     private_key_id: process.env.DRIVER_PRIVATE_KEY_ID,
-    private_key: process.env.DRIVER_PRIVATE_KEY ? process.env.DRIVER_PRIVATE_KEY.replace(/\\n/g, "\n") : undefined,
+    private_key: process.env.DRIVER_PRIVATE_KEY
+      ? process.env.DRIVER_PRIVATE_KEY.replace(/\\n/g, "\n")
+      : undefined,
     client_email: process.env.DRIVER_CLIENT_EMAIL,
     client_id: process.env.DRIVER_CLIENT_ID,
     auth_uri: process.env.DRIVER_AUTH_URI,

@@ -7,6 +7,9 @@ router.get(endPoints.ride.getAllRides, rideController.getAllRides);
 router.get(endPoints.ride.getRideById, rideController.getRideById);
 router.post(endPoints.ride.createRide, rideController.createRide);
 router.put(endPoints.ride.updateRide, rideController.updateRide);
-router.get(endPoints.ride.getAvailableCarsAndPrices, rideController.getAvailableCarsAndPrices);
+router.get(
+  endPoints.ride.getAvailableCarsAndPrices,
+  rideController.getAvailableCarsAndPrices
+);
 
 module.exports = router;

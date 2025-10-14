@@ -6,7 +6,16 @@ const wallet = async (driver_id) => {
     where: {
       driver_id: driver_id,
     },
-    attributes: ["driver_id", "amount", "transaction_type", "transaction_date", "description", "status", "createdAt", "balance_after"],
+    attributes: [
+      "driver_id",
+      "amount",
+      "transaction_type",
+      "transaction_date",
+      "description",
+      "status",
+      "createdAt",
+      "balance_after",
+    ],
     order: [["createdAt", "DESC"]],
   });
 };
@@ -20,7 +29,13 @@ const bulkCreateWalletTransactions = async (transactions) => {
   }
 };
 
-const createWalletReport = async (driver_id, amount, newBalance, order_id, transaction) => {
+const createWalletReport = async (
+  driver_id,
+  amount,
+  newBalance,
+  order_id,
+  transaction = null
+) => {
   try {
     const walletReport = await WalletReports.create(
       {
@@ -35,12 +50,14 @@ const createWalletReport = async (driver_id, amount, newBalance, order_id, trans
       },
       { transaction }
     );
+
     console.log("Created WalletReports entry:", {
       driver_id,
       amount: walletReport.amount,
       balance_after: walletReport.balance_after,
       order_id,
     });
+
     return walletReport;
   } catch (error) {
     console.error("Wallet report creation failed:", error);
@@ -54,11 +71,15 @@ const getWalletBalance = async (driver_id) => {
     const walletEntry = await WalletReports.findOne({
       where: { driver_id },
       attributes: ["balance_after"],
-      order: [["createdAt", "DESC"]], // Ensure latest entry is fetched
+      order: [["createdAt", "DESC"]],
     });
 
-    const balance = walletEntry ? parseFloat(walletEntry.balance_after || 0).toFixed(2) : "0.00";
-    console.log(`Fetched wallet balance for driver ${driver_id}: ${balance} AED`);
+    const balance = walletEntry
+      ? parseFloat(walletEntry.balance_after || 0).toFixed(2)
+      : "0.00";
+    console.log(
+      `Fetched wallet balance for driver ${driver_id}: ${balance} AED`
+    );
     return balance;
   } catch (error) {
     console.error("Error fetching wallet balance:", error);

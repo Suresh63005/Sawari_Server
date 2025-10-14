@@ -1,4 +1,3 @@
-
 const multer = require("multer");
 
 // Initialize memory storage
@@ -37,8 +36,7 @@ const handleMulterError = (err, req, res, next) => {
     });
   }
   if (
-    err.message ===
-    "Only JPEG, JPG, PNG, GIF, WEBP, and SVG files are allowed."
+    err.message === "Only JPEG, JPG, PNG, GIF, WEBP, and SVG files are allowed."
   ) {
     return res.status(400).json({
       ResponseCode: "400",

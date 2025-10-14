@@ -14,8 +14,8 @@ const getAllSettingService = async () => {
       "weblogo",
       "web_name",
       "currency",
-      "timezone"
-    ]
+      "timezone",
+    ],
   });
 };
 
@@ -48,15 +48,20 @@ const upsertSettings = async (data, file) => {
 
     const settingsData = {
       ...data,
-      weblogo: weblogoUrl
+      weblogo: weblogoUrl,
     };
 
     const [settings] = await Settings.upsert(settingsData, {
-      returning: true
+      returning: true,
     });
 
     // Delete old logo from S3 if a new one was uploaded
-    if (existingSettings && file && existingSettings.weblogo && existingSettings.weblogo !== weblogoUrl) {
+    if (
+      existingSettings &&
+      file &&
+      existingSettings.weblogo &&
+      existingSettings.weblogo !== weblogoUrl
+    ) {
       await deleteFromS3(existingSettings.weblogo);
     }
 
@@ -66,9 +71,8 @@ const upsertSettings = async (data, file) => {
   }
 };
 
-
 module.exports = {
   getAllSettingService,
   getSettings,
-  upsertSettings
+  upsertSettings,
 };

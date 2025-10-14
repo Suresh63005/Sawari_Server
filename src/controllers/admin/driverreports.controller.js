@@ -8,7 +8,12 @@ const {
 const getAllDriversController = async (req, res) => {
   try {
     const { search = "", status = "", page = 1, limit = 10 } = req.query;
-    const data = await getAllDrivers(search, status, parseInt(page), parseInt(limit));
+    const data = await getAllDrivers(
+      search,
+      status,
+      parseInt(page),
+      parseInt(limit)
+    );
     res.status(200).json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -27,8 +32,6 @@ const getDriverByIdController = async (req, res) => {
   }
 };
 
-
-
 const exportAllDriversController = async (req, res) => {
   try {
     const { search = "", status = "" } = req.query;
@@ -39,7 +42,8 @@ const exportAllDriversController = async (req, res) => {
     let fileName = "All_Driver_Reports.xlsx";
     if (status && status.toLowerCase() !== "all") {
       // Capitalize first letter for neatness
-      const capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+      const capitalizedStatus =
+        status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
       fileName = `All_${capitalizedStatus}_Driver_Reports.xlsx`;
     }
 
@@ -55,14 +59,15 @@ const exportAllDriversController = async (req, res) => {
   }
 };
 
-
 const exportDriverByIdController = async (req, res) => {
   try {
     const { driverId } = req.params;
     const driver = await getDriverById(driverId); // Fetch driver first to get name
 
     if (!driver) {
-      return res.status(404).json({ success: false, message: "Driver not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Driver not found" });
     }
 
     const buffer = await exportDriverById(driverId);
@@ -83,7 +88,6 @@ const exportDriverByIdController = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-
 
 module.exports = {
   getAllDriversController,

@@ -6,7 +6,7 @@ module.exports = async (app) => {
   const isTestMode = process.env.NODE_ENV === "test";
   try {
     const versionPath = path.join(__dirname, "../api");
-    if(!isTestMode) console.log(`Loading routes from: ${versionPath}`);
+    if (!isTestMode) console.log(`Loading routes from: ${versionPath}`);
 
     const versions = await fs.readdir(versionPath, { withFileTypes: true });
 
@@ -33,7 +33,10 @@ module.exports = async (app) => {
               const route = require(routePath);
 
               if (!(route instanceof express.Router)) {
-                if(!isTestMode) console.warn(`⚠️ Skipping ${file.name}: Not a valid Express router`);
+                if (!isTestMode)
+                  console.warn(
+                    `⚠️ Skipping ${file.name}: Not a valid Express router`
+                  );
                 continue;
               }
 
@@ -41,20 +44,22 @@ module.exports = async (app) => {
               const routeUrl = `/api/${version}/${groupName}/${routeName}`;
 
               app.use(routeUrl, route);
-              if(!isTestMode) console.log(`✅ Registered route: ${routeUrl}`);
+              if (!isTestMode) console.log(`✅ Registered route: ${routeUrl}`);
             } catch (err) {
-              if(!isTestMode) console.error(`❌ Failed to load route ${file.name}: ${err.message}`);
+              if (!isTestMode)
+                console.error(
+                  `❌ Failed to load route ${file.name}: ${err.message}`
+                );
             }
           }
         }
       }
     }
   } catch (err) {
-    if(!isTestMode) console.error(`❌ Failed to load routes: ${err.message}`);
+    if (!isTestMode) console.error(`❌ Failed to load routes: ${err.message}`);
     throw err;
   }
 };
-
 
 // const fs = require("fs").promises;
 // const path = require("path");
