@@ -39,7 +39,7 @@ const acceptRide = async (ride_id, driver_id, accept_time) => {
   await ride.update({
     driver_id,
     status: "accepted",
-    accept_time, // this is already a string from controller
+    accept_time: new Date().toISOString(),
   });
 
   return ride;
