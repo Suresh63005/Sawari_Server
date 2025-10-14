@@ -767,18 +767,18 @@ const startRide = async (req, res) => {
 
   try {
     const result = await HomeService.startRide(rideId, driver_id);
-    if (!result.success) {
+    if (!result) {
       // If the service returns an error (failure), handle it here
       return res.status(404).json({
         success: false,
-        message: result.message,
+        message: "Ride not found or not in accepted status",
       });
     }
 
     return res.status(200).json({
       success: true,
       message: result.message,
-      data: result.data,
+      data: result,
     });
   } catch (error) {
     return res.status(500).json({

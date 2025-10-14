@@ -646,7 +646,7 @@ const startRide = async (rideId, driver_id, pickup_time) => {
   });
 
   if (!ride) {
-    throw new Error("Ride not found or cannot be started.");
+    return null;
   }
 
   // ride.status = "on-route";
