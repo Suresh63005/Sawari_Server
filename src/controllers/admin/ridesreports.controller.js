@@ -8,7 +8,12 @@ const {
 const getAllRidesController = async (req, res) => {
   try {
     const { search = "", status = "", page = 1, limit = 10 } = req.query;
-    const data = await getAllRides(search, status, parseInt(page), parseInt(limit));
+    const data = await getAllRides(
+      search,
+      status,
+      parseInt(page),
+      parseInt(limit)
+    );
     res.status(200).json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -35,7 +40,8 @@ const exportAllRidesController = async (req, res) => {
     // Create a dynamic filename based on status
     let fileName = "All_Ride_Reports.xlsx";
     if (status && status.toLowerCase() !== "all") {
-      const capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+      const capitalizedStatus =
+        status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
       fileName = `All_${capitalizedStatus}_Ride_Reports.xlsx`;
     }
 
@@ -51,7 +57,6 @@ const exportAllRidesController = async (req, res) => {
   }
 };
 
-
 const exportRideByIdController = async (req, res) => {
   try {
     const { rideId } = req.params;
@@ -59,7 +64,9 @@ const exportRideByIdController = async (req, res) => {
     // Fetch the ride first to get customer name
     const ride = await getRideById(rideId);
     if (!ride) {
-      return res.status(404).json({ success: false, message: "Ride not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Ride not found" });
     }
 
     const buffer = await exportRideById(rideId);
@@ -80,8 +87,6 @@ const exportRideByIdController = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-
-
 
 module.exports = {
   getAllRidesController,

@@ -2,7 +2,10 @@ const DriverCar = require("../../models/driver-cars.model");
 const vehicleService = require("../../services/driverCar.service");
 const driverService = require("../../services/driver.service");
 const { sendPushNotification } = require("../../helper/sendPushNotification");
-const { sendNotificationService } = require("../../services/notifications.service");
+const {
+  sendNotificationService,
+} = require("../../services/notifications.service");
+// const { sendNotificationService } = require("../../services/notifications.service");
 
 exports.getAllVehicles = async (req, res) => {
   try {
@@ -11,7 +14,7 @@ exports.getAllVehicles = async (req, res) => {
       page: parseInt(page, 10),
       limit: parseInt(limit, 10),
       search,
-      status
+      status,
     });
 
     console.log("vehiclessssssssssssss:", vehicles);
@@ -41,10 +44,11 @@ exports.getVehiclesByDriver = async (req, res) => {
       return res.status(404).json({ message: "Driver not found" });
     }
 
-    const fullName = `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
+    const fullName =
+      `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
 
     // Add driver name to every vehicle
-    const vehiclesWithDriver = vehicles.map(vehicle => ({
+    const vehiclesWithDriver = vehicles.map((vehicle) => ({
       ...vehicle,
       driver_name: fullName,
     }));
@@ -60,20 +64,25 @@ exports.getVehiclesByDriver = async (req, res) => {
   }
 };
 
-
 exports.approveVehicle = async (req, res) => {
   try {
     const { id } = req.params; // vehicle ID
     const car = await DriverCar.findByPk(id, {
-      attributes: ["id", "driver_id", "license_plate"]
+      attributes: ["id", "driver_id", "license_plate"],
     });
     if (!car) throw new Error("Vehicle not found");
 
-    await car.update({ is_approved: true, status: "active", verified_by: req.user.id, reason: null });
+    await car.update({
+      is_approved: true,
+      status: "active",
+      verified_by: req.user.id,
+      reason: null,
+    });
 
     // Correctly fetch driver by driver_id
     const driver = await driverService.getDriverById(car.driver_id);
-    const fullName = `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
+    const fullName =
+      `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
     const heading = { en: "Vehicle Approved" };
     const message = {
       en: `Hi ${fullName}, your vehicle (License Plate: ${car.license_plate}) has been approved!`,
@@ -88,10 +97,14 @@ exports.approveVehicle = async (req, res) => {
     });
     console.log(`🗂️ Notification saved for driver (${driver.id})`);
     if (driver?.one_signal_id) {
-      await sendPushNotification(driver.one_signal_id,heading,message);
-      console.log(`📢 Push notification sent to driver (${fullName}) for vehicle approval`);
+      await sendPushNotification(driver.one_signal_id, heading, message);
+      console.log(
+        `📢 Push notification sent to driver (${fullName}) for vehicle approval`
+      );
     } else {
-      console.warn(`⚠️ Driver with ID ${car.driver_id} has no OneSignal ID, skipping push notification`);
+      console.warn(
+        `⚠️ Driver with ID ${car.driver_id} has no OneSignal ID, skipping push notification`
+      );
     }
 
     res.status(200).json({ message: "Vehicle approved" });
@@ -100,22 +113,28 @@ exports.approveVehicle = async (req, res) => {
   }
 };
 
-
-
 exports.rejectVehicle = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    const car = await DriverCar.findByPk(id,{
-      attributes:["id","driver_id","license_plate"]
+    const car = await DriverCar.findByPk(id, {
+      attributes: ["id", "driver_id", "license_plate"],
     });
     if (!car) throw new Error("Vehicle not found");
-    await car.update({ is_approved: false, status: "rejected", reason, verified_by: req.user.id });
+    await car.update({
+      is_approved: false,
+      status: "rejected",
+      reason,
+      verified_by: req.user.id,
+    });
     // Fetch driver to get one_signal_id
     const driver = await driverService.getDriverById(id);
-    const fullName = `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
-    const heading = {en:"Vehicle Rejected"};
-    const message = {en:`Hi ${fullName}, your vehicle (License Plate: ${car.license_plate}) has been rejected!`};
+    const fullName =
+      `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "Driver";
+    const heading = { en: "Vehicle Rejected" };
+    const message = {
+      en: `Hi ${fullName}, your vehicle (License Plate: ${car.license_plate}) has been rejected!`,
+    };
     await sendNotificationService({
       user_id: driver.id,
       title: heading.en,
@@ -124,18 +143,21 @@ exports.rejectVehicle = async (req, res) => {
       image: null,
     });
     console.log(`🗂️ Notification saved for driver (${driver.id})`);
-    if(driver?.one_signal_id){
-      await sendPushNotification(driver.one_signal_id,heading,message);
-      console.log(`📢 Push notification sent to driver (${fullName}) for vehicle approval`);
-    }else{ 
-      console.warn(`⚠️ Driver with ID ${car.driver_id} has no OneSignal ID, skipping push notification`);
+    if (driver?.one_signal_id) {
+      await sendPushNotification(driver.one_signal_id, heading, message);
+      console.log(
+        `📢 Push notification sent to driver (${fullName}) for vehicle approval`
+      );
+    } else {
+      console.warn(
+        `⚠️ Driver with ID ${car.driver_id} has no OneSignal ID, skipping push notification`
+      );
     }
     res.status(200).json({ message: "Vehicle rejected" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 exports.verifyRc = async (req, res) => {
   try {

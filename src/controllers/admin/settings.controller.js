@@ -1,5 +1,7 @@
-const { getSettings, upsertSettings } = require("../../services/settings.service");
-
+const {
+  getSettings,
+  upsertSettings,
+} = require("../../services/settings.service");
 
 const getSettingsController = async (req, res) => {
   try {
@@ -24,7 +26,7 @@ const upsertSettingsController = async (req, res) => {
       about_us: req.body.about_us,
       terms_conditions: req.body.terms_conditions,
       privacy_policy: req.body.privacy_policy,
-      min_wallet_percentage: parseFloat(req.body.min_wallet_percentage) || 0.0
+      min_wallet_percentage: parseFloat(req.body.min_wallet_percentage) || 0.0,
     };
 
     const result = await upsertSettings(settingsData, req.file);
@@ -38,5 +40,5 @@ const upsertSettingsController = async (req, res) => {
 
 module.exports = {
   getSettingsController,
-  upsertSettingsController
+  upsertSettingsController,
 };

@@ -30,7 +30,7 @@ const Driver = sequelize.define(
     phone: {
       type: DataTypes.STRING,
       allowNull: true,
-      unique: true
+      unique: true,
     },
     profile_pic: {
       type: DataTypes.STRING,
@@ -163,11 +163,11 @@ const Driver = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
-    credit_ride_count:{
+    credit_ride_count: {
       type: DataTypes.INTEGER,
       allowNull: true,
       defaultValue: 0,
-    }
+    },
   },
   {
     tableName: "Driver",

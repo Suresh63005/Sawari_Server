@@ -2,7 +2,7 @@ const Admin = require("../models/admin.model");
 const Permissions = require("../models/permissions.model");
 const { Op } = require("sequelize");
 const { sequelize } = require("../models");
-const {getAdminHierarchy} = require("../utils/adminHierarchy");
+const { getAdminHierarchy } = require("../utils/adminHierarchy");
 const getAdminByEmail = async (email) => {
   return await Admin.findOne({
     where: { email },
@@ -77,7 +77,9 @@ const updateAdminStatus = async (id, status) => {
   const admin = await Admin.findByPk(id);
   if (admin) {
     if (!["active", "inactive", "blocked"].includes(status)) {
-      throw new Error("Invalid status. Must be \"active\", \"inactive\", or \"blocked\"");
+      throw new Error(
+        'Invalid status. Must be "active", "inactive", or "blocked"'
+      );
     }
     admin.status = status;
     await admin.save();
@@ -85,7 +87,6 @@ const updateAdminStatus = async (id, status) => {
   }
   throw new Error("Admin not found");
 };
-
 
 const getAllAdmins = async ({
   search = "",
@@ -98,8 +99,19 @@ const getAllAdmins = async ({
   // Validate query parameters
   const parsedPage = parseInt(page) > 0 ? parseInt(page) : 1;
   const parsedLimit = parseInt(limit) > 0 ? parseInt(limit) : 10;
-  const validSortBy = ["createdAt", "first_name", "last_name", "email", "role"].includes(sortBy) ? sortBy : "createdAt";
-  const validSortOrder = sortOrder && ["ASC", "DESC"].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : "DESC";
+  const validSortBy = [
+    "createdAt",
+    "first_name",
+    "last_name",
+    "email",
+    "role",
+  ].includes(sortBy)
+    ? sortBy
+    : "createdAt";
+  const validSortOrder =
+    sortOrder && ["ASC", "DESC"].includes(sortOrder.toUpperCase())
+      ? sortOrder.toUpperCase()
+      : "DESC";
   const offset = (parsedPage - 1) * parsedLimit;
 
   // Build where clause with role-based filtering
@@ -130,15 +142,17 @@ const getAllAdmins = async ({
   }
 
   const { rows, count } = await Admin.findAndCountAll({
-  where,
-  include: [{ model: Permissions, as: "AdminPermissions" }],
-  order: [[validSortBy, validSortOrder]],
-  limit: parsedLimit,
-  offset,
-  distinct: true // 👈 tells Sequelize to count only distinct Admins
-});
+    where,
+    include: [{ model: Permissions, as: "AdminPermissions" }],
+    order: [[validSortBy, validSortOrder]],
+    limit: parsedLimit,
+    offset,
+    distinct: true, // 👈 tells Sequelize to count only distinct Admins
+  });
 
-  console.log(`getAllAdmins: page=${parsedPage}, limit=${parsedLimit}, count=${count}, rows=${rows.length}`);
+  console.log(
+    `getAllAdmins: page=${parsedPage}, limit=${parsedLimit}, count=${count}, rows=${rows.length}`
+  );
 
   return {
     total: count,
@@ -147,8 +161,6 @@ const getAllAdmins = async ({
     data: rows,
   };
 };
-
-
 
 const updatePermissions = async (id, permissions) => {
   const updatedValues = {
@@ -189,8 +201,6 @@ const updatePermissions = async (id, permissions) => {
     return perm;
   });
 };
-
-
 
 module.exports = {
   getAdminByEmail,

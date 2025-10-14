@@ -11,73 +11,67 @@ const { sendPushNotification } = require("../helper/sendPushNotification");
 const DriverCar = require("../models/driver-cars.model");
 // const { updateDriverBalance } = require("./driver.service");
 // const { createWalletReport } = require("./wallet.service");
-const {sendNotificationService}=require("./notifications.service");
+const { sendNotificationService } = require("./notifications.service");
 const { generateRideCode } = require("../utils/generateCode");
 // const { generateRideCode } = require("../utils/generateCode");
 // const DriverCar = require("../models/driver-cars.model");
 
-const acceptRide = async (ride_id, driver_id,accept_time) => {
-    const ride = await Ride.findOne({
-        where: {
-            id: ride_id,
-            status: "pending",
-            driver_id: {
-                [Op.or]: [null, ""], // handles both null and empty string
-            }
-        }
-    });
-
-    if (!ride) {
-        throw new Error("Ride is not available or already accepted.");
-    }
-
-    // ride.driver_id = driver_id;
-    // // ride.accept_time=new Date();
-    // ride.status = "accepted";
-    // await ride.save();
-
-    await ride.update(
-    {
-      driver_id,
-      status: "accepted",
-      accept_time, // this is already a string from controller
+const acceptRide = async (ride_id, driver_id, accept_time) => {
+  const ride = await Ride.findOne({
+    where: {
+      id: ride_id,
+      status: "pending",
+      driver_id: {
+        [Op.or]: [null, ""], // handles both null and empty string
+      },
     },
-  );
+  });
 
+  if (!ride) {
+    throw new Error("Ride is not available or already accepted.");
+  }
 
-    return ride;
+  // ride.driver_id = driver_id;
+  // // ride.accept_time=new Date();
+  // ride.status = "accepted";
+  // await ride.save();
+
+  await ride.update({
+    driver_id,
+    status: "accepted",
+    accept_time, // this is already a string from controller
+  });
+
+  return ride;
 };
 
 const DriverStatus = async (driver_id, status) => {
-    // Validate status
-    if (!["active", "inactive"].includes(status)) {
-        throw new Error("Invalid status. Only 'active' or 'inactive' allowed.");
-    }
-    // Find the driver by ID
-    const driver = await Driver.findOne({ where: { id: driver_id } });
+  // Validate status
+  if (!["active", "inactive"].includes(status)) {
+    throw new Error("Invalid status. Only 'active' or 'inactive' allowed.");
+  }
+  // Find the driver by ID
+  const driver = await Driver.findOne({ where: { id: driver_id } });
 
-    if (!driver) {
-        throw new Error("Driver not found.");
-    }
+  if (!driver) {
+    throw new Error("Driver not found.");
+  }
 
-    // Update the status
-    driver.status = status;
-    await driver.save();
-    return driver;
+  // Update the status
+  driver.status = status;
+  await driver.save();
+  return driver;
 };
 
 const RideDetails = async (driver_id, ride_id) => {
-    console.log(driver_id, ride_id, "hhhhhhhhhhhhhhhhhhhhhhhhh");
-    
+  console.log(driver_id, ride_id, "hhhhhhhhhhhhhhhhhhhhhhhhh");
 
-    // if (!ride) {
-    //     throw new Error("Ride not found");
-    // }
+  // if (!ride) {
+  //     throw new Error("Ride not found");
+  // }
 
-    // return ride;
+  // return ride;
 };
-
-
 
 const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
   if (!["accepted", "completed", "cancelled"].includes(status)) {
@@ -85,7 +79,6 @@ const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
       "Invalid status. Allowed values: 'accepted', 'cancelled', 'completed'"
     );
   }
-
 
   const whereCondition = {
     driver_id,
@@ -112,7 +105,7 @@ const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
     // Filter future rides and sort by scheduled_time ascending
     return ridesWithDates
       .filter((ride) => ride.scheduled_time >= now)
-      .sort((a, b) => a.scheduled_time - b.scheduled_time); 
+      .sort((a, b) => a.scheduled_time - b.scheduled_time);
   }
 
   // For completed/cancelled, sort by createdAt descending
@@ -124,7 +117,6 @@ const getCompletedOrCancelledAndAcceptedRides = async (driver_id, status) => {
     })
     .sort((a, b) => b.createdAt - a.createdAt);
 };
-
 
 const upsertRide = async (rideData) => {
   const {
@@ -148,12 +140,12 @@ const upsertRide = async (rideData) => {
     car_id,
     Price,
     tax,
-    Total
+    Total,
   } = rideData;
 
   // ✅ Validate related IDs
   const pkg = await Package.findByPk(package_id);
-  if (!pkg) throw new Error("Invalid package_id"); 
+  if (!pkg) throw new Error("Invalid package_id");
 
   const subPkg = await SubPackage.findByPk(subpackage_id);
   if (!subPkg) throw new Error("Invalid subpackage_id");
@@ -174,11 +166,11 @@ const upsertRide = async (rideData) => {
 
     if (["on-route", "completed", "cancelled"].includes(ride.status)) {
       return {
-          success: false,
-          statusCode: 400,
-          message:
-            "Cannot edit ride once it is on-route, completed, or cancelled",
-        };
+        success: false,
+        statusCode: 400,
+        message:
+          "Cannot edit ride once it is on-route, completed, or cancelled",
+      };
     }
 
     // ⏳ Check time limit (only applicable after ride is accepted)
@@ -197,11 +189,11 @@ const upsertRide = async (rideData) => {
       const diffHours = (now - acceptTime) / (1000 * 60 * 60);
 
       if (diffHours > editTimeLimitHours) {
-       return {
-            success: false,
-            statusCode: 400,
-            message: `Edit time expired. You can edit the ride only within ${editTimeLimitHours} hour(s) after acceptance.`,
-       };
+        return {
+          success: false,
+          statusCode: 400,
+          message: `Edit time expired. You can edit the ride only within ${editTimeLimitHours} hour(s) after acceptance.`,
+        };
       }
     }
 
@@ -214,7 +206,7 @@ const upsertRide = async (rideData) => {
       pickup_time,
       pickup_address,
       pickup_location,
-      drop_location,    
+      drop_location,
       drop_address,
       ride_type,
       accept_time,
@@ -229,10 +221,9 @@ const upsertRide = async (rideData) => {
     });
 
     return ride.toJSON();
-
   } else {
     const ride_code = generateRideCode();
-    const newRide = await Ride.create({ 
+    const newRide = await Ride.create({
       ride_code,
       initiated_by_driver_id: driver_id,
       customer_name,
@@ -254,53 +245,56 @@ const upsertRide = async (rideData) => {
       Price,
       tax,
       Total,
-      status:"pending",
+      status: "pending",
     });
-    
 
     // Ride Auto Cancel Flow:
     const settings = await Settings.findOne({
-      attributes:["ride_auto_cancel_time_limit"]
+      attributes: ["ride_auto_cancel_time_limit"],
     });
     const cancelTimeLimitHours = settings?.ride_auto_cancel_time_limit || 6;
 
     // ⏳ Schedule auto-cancel check
-    setTimeout(async()=>{
-      try {
-        const rideToCheck = await Ride.findByPk(newRide.id);
-        if(rideToCheck && rideToCheck.status === "pending"){
-          await rideToCheck.update({
-            status:"cancelled",
-            cancellation_reason:`No driver accepted the ride within ${cancelTimeLimitHours} hour(s)`,
-          });
-          console.log(`🚫 Ride ${rideToCheck.id} auto-cancelled after ${cancelTimeLimitHours} hour(s)`);
+    setTimeout(
+      async () => {
+        try {
+          const rideToCheck = await Ride.findByPk(newRide.id);
+          if (rideToCheck && rideToCheck.status === "pending") {
+            await rideToCheck.update({
+              status: "cancelled",
+              cancellation_reason: `No driver accepted the ride within ${cancelTimeLimitHours} hour(s)`,
+            });
+            console.log(
+              `🚫 Ride ${rideToCheck.id} auto-cancelled after ${cancelTimeLimitHours} hour(s)`
+            );
+          }
+        } catch (error) {
+          console.error("❌ Auto-cancel check failed:", error.message);
         }
-      } catch (error) {
-        console.error("❌ Auto-cancel check failed:", error.message);
-      }
-    },cancelTimeLimitHours * 60 * 60 * 1000);
-
+      },
+      cancelTimeLimitHours * 60 * 60 * 1000
+    );
 
     // Find drivers with matching car model
     const matchingDrivers = await Driver.findAll({
-      include:[
+      include: [
         {
-          model:DriverCar,
-          as:"Vehicles",
-          attributes:["car_id"],
-          where:{car_id:car_id},
-          include:[
+          model: DriverCar,
+          as: "Vehicles",
+          attributes: ["car_id"],
+          where: { car_id: car_id },
+          include: [
             {
-              model:Car,
-              as:"Car",
-              attributes:["model"],
-            }
-          ]
-        }
+              model: Car,
+              as: "Car",
+              attributes: ["model"],
+            },
+          ],
+        },
       ],
-      where:{
-        status:"active"
-      }
+      where: {
+        status: "active",
+      },
     });
 
     for (const driver of matchingDrivers) {
@@ -339,9 +333,6 @@ const upsertRide = async (rideData) => {
     return newRide;
   }
 };
-
-
-
 
 // const getDriverEarningsHistory = async (driver_id, filters) => {
 //   const where = { driver_id };
@@ -468,14 +459,7 @@ const upsertRide = async (rideData) => {
 //   };
 // };
 
-
-
-
-
-
 // Service for relieving driver from a ride
-
-
 
 const getDriverEarningsHistory = async (driver_id, filters) => {
   const where = { driver_id };
@@ -483,13 +467,19 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
   // ------------------- FILTERS -------------------
   // Filter by months
   if (filters?.months?.length > 0) {
-    const monthConditions = filters.months.map(month => {
+    const monthConditions = filters.months.map((month) => {
       const [year, monthNum] = month.split("-");
       return {
         [Op.and]: [
-          Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("Earnings.createdAt")), year),
-          Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("Earnings.createdAt")), monthNum),
-        ]
+          Sequelize.where(
+            Sequelize.fn("YEAR", Sequelize.col("Earnings.createdAt")),
+            year
+          ),
+          Sequelize.where(
+            Sequelize.fn("MONTH", Sequelize.col("Earnings.createdAt")),
+            monthNum
+          ),
+        ],
       };
     });
     where[Op.or] = [...(where[Op.or] || []), ...monthConditions];
@@ -497,18 +487,24 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
 
   // Filter by days
   if (filters?.days?.length > 0) {
-    const dayConditions = filters.days.map(day => ({
+    const dayConditions = filters.days.map((day) => ({
       [Op.and]: [
-        Sequelize.where(Sequelize.fn("DATE", Sequelize.col("Earnings.createdAt")), day)
-      ]
+        Sequelize.where(
+          Sequelize.fn("DATE", Sequelize.col("Earnings.createdAt")),
+          day
+        ),
+      ],
     }));
     where[Op.or] = [...(where[Op.or] || []), ...dayConditions];
   }
 
   // Filter by years
   if (filters?.years?.length > 0) {
-    const yearConditions = filters.years.map(year =>
-      Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("Earnings.createdAt")), year)
+    const yearConditions = filters.years.map((year) =>
+      Sequelize.where(
+        Sequelize.fn("YEAR", Sequelize.col("Earnings.createdAt")),
+        year
+      )
     );
     where[Op.or] = [...(where[Op.or] || []), ...yearConditions];
   }
@@ -528,10 +524,10 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
           "dropoff_time",
           "status",
           "Total",
-          "customer_name"
-        ]
-      }
-    ]
+          "customer_name",
+        ],
+      },
+    ],
   });
 
   // ------------------- DATE RANGES -------------------
@@ -552,29 +548,61 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
   endOfWeek.setHours(23, 59, 59, 999);
 
   // This Month
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const startOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1,
+    0,
+    0,
+    0,
+    0
+  );
+  const endOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0,
+    23,
+    59,
+    59,
+    999
+  );
 
   // This Year
   const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
   const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
 
   // ------------------- TOTAL CALCULATIONS -------------------
-  const todayTotal = (await Earnings.sum("amount", {
-    where: { driver_id, createdAt: { [Op.between]: [startOfToday, endOfToday] } }
-  })) || 0;
+  const todayTotal =
+    (await Earnings.sum("amount", {
+      where: {
+        driver_id,
+        createdAt: { [Op.between]: [startOfToday, endOfToday] },
+      },
+    })) || 0;
 
-  const weekTotal = (await Earnings.sum("amount", {
-    where: { driver_id, createdAt: { [Op.between]: [startOfWeek, endOfWeek] } }
-  })) || 0;
+  const weekTotal =
+    (await Earnings.sum("amount", {
+      where: {
+        driver_id,
+        createdAt: { [Op.between]: [startOfWeek, endOfWeek] },
+      },
+    })) || 0;
 
-  const monthTotal = (await Earnings.sum("amount", {
-    where: { driver_id, createdAt: { [Op.between]: [startOfMonth, endOfMonth] } }
-  })) || 0;
+  const monthTotal =
+    (await Earnings.sum("amount", {
+      where: {
+        driver_id,
+        createdAt: { [Op.between]: [startOfMonth, endOfMonth] },
+      },
+    })) || 0;
 
-  const yearTotal = (await Earnings.sum("amount", {
-    where: { driver_id, createdAt: { [Op.between]: [startOfYear, endOfYear] } }
-  })) || 0;
+  const yearTotal =
+    (await Earnings.sum("amount", {
+      where: {
+        driver_id,
+        createdAt: { [Op.between]: [startOfYear, endOfYear] },
+      },
+    })) || 0;
 
   return {
     history,
@@ -582,62 +610,57 @@ const getDriverEarningsHistory = async (driver_id, filters) => {
       today: todayTotal,
       week: weekTotal,
       month: monthTotal,
-      year: yearTotal
-    }
+      year: yearTotal,
+    },
   };
 };
 
-
-
-
-
 const releaseRide = async (rideId, driver_id) => {
-    const ride = await Ride.findOne({
-        where: {
-            id: rideId,
-            driver_id: driver_id,
-            status: "accepted"
-        }
-    });
+  const ride = await Ride.findOne({
+    where: {
+      id: rideId,
+      driver_id: driver_id,
+      status: "accepted",
+    },
+  });
 
-    if (!ride) {
-        throw new Error("Ride not found or cannot be released.");
-    }
+  if (!ride) {
+    throw new Error("Ride not found or cannot be released.");
+  }
 
-    ride.driver_id = null;
-    ride.status = "pending";
-    await ride.save();
+  ride.driver_id = null;
+  ride.status = "pending";
+  await ride.save();
 
-    return ride;
+  return ride;
 };
 
 // Start the ride service
-const startRide = async (rideId, driver_id,pickup_time) => {
-    const ride = await Ride.findOne({
-        where: {
-            id: rideId,
-            driver_id: driver_id,
-            status: "accepted"
-        } 
-    });
+const startRide = async (rideId, driver_id, pickup_time) => {
+  const ride = await Ride.findOne({
+    where: {
+      id: rideId,
+      driver_id: driver_id,
+      status: "accepted",
+    },
+  });
 
-    if (!ride) {
-        throw new Error("Ride not found or cannot be started.");
-    }
+  if (!ride) {
+    throw new Error("Ride not found or cannot be started.");
+  }
 
-    // ride.status = "on-route";
-    // ride.pickup_time;
-    // // ride.pickup_time = new Date();
-    // await ride.save();
+  // ride.status = "on-route";
+  // ride.pickup_time;
+  // // ride.pickup_time = new Date();
+  // await ride.save();
 
-    await ride.update(
-    {
-      driver_id,
-      status: "on-route",
-      pickup_time, 
-    });
+  await ride.update({
+    driver_id,
+    status: "on-route",
+    pickup_time,
+  });
 
-    return ride;
+  return ride;
 };
 
 // service for end the ride
@@ -652,7 +675,7 @@ const startRide = async (rideId, driver_id,pickup_time) => {
 //                 status: "on-route"
 //             }
 //         });
-    
+
 //         if (!ride) {
 //             throw new Error("Ride not found or cannot be ended.");
 //         }
@@ -662,21 +685,21 @@ const startRide = async (rideId, driver_id,pickup_time) => {
 //           dropoff_time,
 
 //         });
-    
+
 //         // ride.status = "completed";
 //         // ride.dropoff_time;
 //         // // ride.dropoff_time = new Date();
 //         // await ride.save();
-    
+
 //         // get tax/commisstion percentage from settings table
 //         const settings = await Settings.findOne();
 //         const percentage = settings?.tax_rate || 0;
-     
+
 //         // Calculate commission and driver's earnings
 //         const amount = parseFloat(ride.Total) || 0;
 //         const commission = (amount * percentage) / 100;
 //         const netEarnings = amount - commission;
-    
+
 //         // Fetch current wallent balance
 //         const driver = await Driver.findByPk(driver_id,{transaction:t});
 //         if(!driver){
@@ -684,10 +707,10 @@ const startRide = async (rideId, driver_id,pickup_time) => {
 //         }
 //         const currentBalance = parseFloat(driver.wallet_balance || 0);
 //         const updatedBalance = currentBalance + netEarnings;
-    
+
 //         // Update Wallet balance using service
 //         await updateDriverBalance(driver_id,updatedBalance.toFixed(2),t);
-    
+
 //         // create earnings record
 //         const earnings = await Earnings.create({
 //             driver_id: driver_id,
@@ -730,13 +753,24 @@ const endRide = async (rideId, driver_id) => {
 };
 
 // service for fetch initiated_by_driver_id rides (my rides)
-const fetchMyRides = async (driverId, { statuses, sortBy, sortOrder, page, limit }) => {
-  const validStatuses = ["pending", "accepted", "on-route", "completed", "cancelled"];
+const fetchMyRides = async (
+  driverId,
+  { statuses, sortBy, sortOrder, page, limit }
+) => {
+  const validStatuses = [
+    "pending",
+    "accepted",
+    "on-route",
+    "completed",
+    "cancelled",
+  ];
 
   try {
     // Validate statuses
     if (statuses && Array.isArray(statuses)) {
-      const invalidStatuses = statuses.filter(status => !validStatuses.includes(status));
+      const invalidStatuses = statuses.filter(
+        (status) => !validStatuses.includes(status)
+      );
       if (invalidStatuses.length > 0) {
         throw new Error(`Invalid status(es): ${invalidStatuses.join(", ")}`);
       }
@@ -823,7 +857,7 @@ const fetchMyRides = async (driverId, { statuses, sortBy, sortOrder, page, limit
 
     // Format counts as an object
     const counts = validStatuses.reduce((acc, status) => {
-      const found = statusCounts.find(count => count.status === status);
+      const found = statusCounts.find((count) => count.status === status);
       acc[status] = found ? parseInt(found.count, 10) : 0;
       return acc;
     }, {});
@@ -850,26 +884,28 @@ const fetchMyRides = async (driverId, { statuses, sortBy, sortOrder, page, limit
 };
 
 // service for cancel the ride before its accept
-const canceRide = async(driverId,rideId)=>{
+const canceRide = async (driverId, rideId) => {
   try {
     const ride = await Ride.findOne({
-      where:{
-        id:rideId,
-        initiated_by_driver_id:driverId,
-        status:"pending"
-      }
-    }); 
-    if(!ride){
-      throw new Error("Ride not found, not initiated by this driver, or not in pending status");
+      where: {
+        id: rideId,
+        initiated_by_driver_id: driverId,
+        status: "pending",
+      },
+    });
+    if (!ride) {
+      throw new Error(
+        "Ride not found, not initiated by this driver, or not in pending status"
+      );
     }
 
     // Update the ride status to cancelled
-    await ride.update({status:"cancelled"});
+    await ride.update({ status: "cancelled" });
 
     return {
-      success:true,
-      message:"Ride cancelled successfully.",
-      data:{rideId}
+      success: true,
+      message: "Ride cancelled successfully.",
+      data: { rideId },
     };
   } catch (error) {
     console.error("Error cancelling ride:", error);
@@ -881,15 +917,15 @@ const canceRide = async(driverId,rideId)=>{
 };
 
 module.exports = {
-    releaseRide,
-    startRide,
-    endRide,
-    acceptRide,
-    canceRide,
-    DriverStatus,
-    RideDetails,
-    getCompletedOrCancelledAndAcceptedRides,
-    upsertRide,
-    getDriverEarningsHistory,
-    fetchMyRides
+  releaseRide,
+  startRide,
+  endRide,
+  acceptRide,
+  canceRide,
+  DriverStatus,
+  RideDetails,
+  getCompletedOrCancelledAndAcceptedRides,
+  upsertRide,
+  getDriverEarningsHistory,
+  fetchMyRides,
 };

@@ -63,7 +63,8 @@ const getAllRides = async (search = "", status = "", page = 1, limit = 10) => {
         onRoute: await Ride.count({ where: { status: "on-route" } }),
         completed: await Ride.count({ where: { status: "completed" } }),
         cancelled: await Ride.count({ where: { status: "cancelled" } }),
-        totalRevenue: await Ride.sum("Total", { where: { status: "completed" } }) || 0,
+        totalRevenue:
+          (await Ride.sum("Total", { where: { status: "completed" } })) || 0,
       },
     };
   } catch (error) {
@@ -122,7 +123,6 @@ const getRideById = async (rideId) => {
 
 //   return `${day}/${month}/${year} ${hours}:${minutes}`;
 // };
-
 
 const exportAllRides = async (search = "", status = "") => {
   const where = {};
@@ -199,7 +199,9 @@ const exportAllRides = async (search = "", status = "") => {
         drop_address: ride.drop_address || "-",
         // rideDate: formatDateTimeExcel(ride.ride_date)||"-",
         scheduled_time: ride.scheduled_time || "-",
-        driver_name: ride.AssignedDriver ? `${ride.AssignedDriver.first_name} ${ride.AssignedDriver.last_name}` : "-",
+        driver_name: ride.AssignedDriver
+          ? `${ride.AssignedDriver.first_name} ${ride.AssignedDriver.last_name}`
+          : "-",
         vehicle_model: ride.Car ? ride.Car.model : "-",
         package_name: ride.Package ? ride.Package.name : "-",
         subpackage_name: ride.SubPackage ? ride.SubPackage.name : "-",
@@ -251,7 +253,9 @@ const exportRideById = async (rideId) => {
       drop_address: ride.drop_address || "-",
       // ride_date: formatDateTimeExcel(ride.ride_date)||"-",
       scheduled_time: ride.scheduled_time || "-",
-      driver_name: ride.AssignedDriver ? `${ride.AssignedDriver.first_name} ${ride.AssignedDriver.last_name}` : "-",
+      driver_name: ride.AssignedDriver
+        ? `${ride.AssignedDriver.first_name} ${ride.AssignedDriver.last_name}`
+        : "-",
       vehicle_model: ride.Car ? ride.Car.model : "-",
       package_name: ride.Package ? ride.Package.name : "-",
       subpackage_name: ride.SubPackage ? ride.SubPackage.name : "-",

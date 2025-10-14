@@ -23,8 +23,8 @@ const getOpenTickets = async (filters = {}) => {
         {
           model: Driver,
           attributes: ["first_name", "last_name", "phone"],
-          as: "driver"
-        }
+          as: "driver",
+        },
       ],
       order: [["createdAt", "DESC"]],
       offset,
@@ -32,21 +32,29 @@ const getOpenTickets = async (filters = {}) => {
     });
 
     // Format the response to include driver details
-    const formattedRows = rows.map(ticket => {
+    const formattedRows = rows.map((ticket) => {
       let images = [];
       if (ticket.images) {
         try {
-          const cleaned = ticket.images.startsWith("\"") ? JSON.parse(ticket.images) : ticket.images;
+          const cleaned = ticket.images.startsWith('"')
+            ? JSON.parse(ticket.images)
+            : ticket.images;
           images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
         } catch (e) {
-          console.error("❌ Error parsing images for ticket", ticket.id, e.message);
+          console.error(
+            "❌ Error parsing images for ticket",
+            ticket.id,
+            e.message
+          );
         }
       }
       return {
         ...ticket.get({ plain: true }),
         images,
-        driver_name: ticket.driver ? `${ticket.driver.first_name || ""} ${ticket.driver.last_name || ""}`.trim() : "Unknown",
-        driver_phone: ticket.driver ? ticket.driver.phone || "N/A" : "N/A"
+        driver_name: ticket.driver
+          ? `${ticket.driver.first_name || ""} ${ticket.driver.last_name || ""}`.trim()
+          : "Unknown",
+        driver_phone: ticket.driver ? ticket.driver.phone || "N/A" : "N/A",
       };
     });
 
@@ -78,25 +86,17 @@ const resolveTicket = async (id) => {
 };
 
 const createTicket = async (ticketData) => {
+  const { title, description, priority, raised_by, files } = ticketData;
   const transaction = await Ticket.sequelize.transaction();
+
   try {
-    const { title, description, priority, raised_by, files } = ticketData;
-
-    if (!title || !priority || !raised_by) {
-      throw new Error("Title, priority, and raised_by are required");
-    }
-
+    // Generate ticket_number
     const ticketCount = await Ticket.count({ transaction });
     const ticketNumber = String(ticketCount + 1).padStart(6, "0");
 
     let uploadedUrls = [];
     if (files && files.length > 0) {
-      try {
-        uploadedUrls = await uploadToS3(files, "ticket-images");
-      } catch (err) {
-        console.error("S3 upload failed:", err);
-        throw new Error("Image upload failed");
-      }
+      uploadedUrls = await uploadToS3(files, "ticket-images");
     }
 
     const ticket = await Ticket.create(
@@ -106,7 +106,7 @@ const createTicket = async (ticketData) => {
         description,
         priority,
         raised_by,
-        images: uploadedUrls.length > 0 ? JSON.stringify(uploadedUrls) : null
+        images: uploadedUrls.length > 0 ? JSON.stringify(uploadedUrls) : null,
       },
       { transaction }
     );
@@ -144,11 +144,11 @@ const updateTicketStatus = async (id, status) => {
 
 const getTickets = async (filters = {}) => {
   try {
-    const { raised_by } = filters;
+    const { driver_id } = filters;
     const whereClause = {};
 
-    if (raised_by) {
-      whereClause.raised_by = raised_by;
+    if (driver_id) {
+      whereClause.raised_by = driver_id;
     }
 
     const tickets = await Ticket.findAll({
@@ -157,14 +157,22 @@ const getTickets = async (filters = {}) => {
       raw: true,
     });
 
-    const formattedTickets = tickets.map(ticket => {
+    // ✅ Force parse images
+    const formattedTickets = tickets.map((ticket) => {
       let images = [];
       if (ticket.images) {
         try {
-          const cleaned = ticket.images.startsWith("\"") ? JSON.parse(ticket.images) : ticket.images;
+          // First remove extra escaping if it"s double-stringified
+          const cleaned = ticket.images.startsWith('"')
+            ? JSON.parse(ticket.images)
+            : ticket.images;
           images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
         } catch (e) {
-          console.error("❌ Error parsing images for ticket", ticket.id, e.message);
+          console.error(
+            "❌ Error parsing images for ticket",
+            ticket.id,
+            e.message
+          );
         }
       }
       return { ...ticket, images };
@@ -177,27 +185,32 @@ const getTickets = async (filters = {}) => {
 };
 
 const getTicketsById = async (data) => {
-  const { raised_by, id } = data;
+  const { driver_id, id } = data;
 
   try {
     const ticket = await Ticket.findOne({
-      where: { id, raised_by },
+      where: { id, raised_by: driver_id },
       raw: true,
     });
 
     if (!ticket) {
-      throw new Error("Ticket not found");
+      return null;
     }
 
     let images = [];
     if (ticket.images) {
       try {
-        const cleaned = ticket.images.startsWith("\"")
+        // Remove extra escaping if it"s double-stringified
+        const cleaned = ticket.images.startsWith('"')
           ? JSON.parse(ticket.images)
           : ticket.images;
         images = Array.isArray(cleaned) ? cleaned : JSON.parse(cleaned);
       } catch (e) {
-        console.error("❌ Error parsing images for ticket", ticket.id, e.message);
+        console.error(
+          "❌ Error parsing images for ticket",
+          ticket.id,
+          e.message
+        );
       }
     }
 
@@ -207,4 +220,11 @@ const getTicketsById = async (data) => {
   }
 };
 
-module.exports = { getOpenTickets, resolveTicket, createTicket, updateTicketStatus, getTickets, getTicketsById };
+module.exports = {
+  getOpenTickets,
+  resolveTicket,
+  createTicket,
+  updateTicketStatus,
+  getTickets,
+  getTicketsById,
+};

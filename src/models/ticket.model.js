@@ -12,11 +12,10 @@ const Ticket = sequelize.define(
       primaryKey: true,
     },
     ticket_number: {
-  type: DataTypes.STRING(6),
-  allowNull: false,
-  unique: true,
-}
-,
+      type: DataTypes.STRING(6),
+      allowNull: false,
+      unique: true,
+    },
     title: {
       type: DataTypes.STRING(255),
       allowNull: false,
@@ -37,7 +36,7 @@ const Ticket = sequelize.define(
       defaultValue: "open",
       allowNull: false,
     },
-    images:{
+    images: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],

@@ -31,7 +31,9 @@ const getAllPackages = async (req, res) => {
       status,
     });
 
-    res.status(200).json({ message: "Packages retrieved successfully", result });
+    res
+      .status(200)
+      .json({ message: "Packages retrieved successfully", result });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -50,7 +52,9 @@ const getActivePackagesController = async (req, res) => {
 const getPackageById = async (req, res) => {
   try {
     const pkg = await packageService.getPackageById(req.params.id);
-    res.status(200).json({ message: "Package retrieved successfully", data: pkg });
+    res
+      .status(200)
+      .json({ message: "Package retrieved successfully", data: pkg });
   } catch (error) {
     res.status(404).json({ error: error.message });
   }
@@ -60,7 +64,9 @@ const getPackageById = async (req, res) => {
 const deletePackageById = async (req, res) => {
   try {
     const result = await packageService.deletePackageById(req.params.id);
-    res.status(200).json({ message: "Package deleted successfully", data: result });
+    res
+      .status(200)
+      .json({ message: "Package deleted successfully", data: result });
   } catch (err) {
     res.status(404).json({ error: err.message });
   }
@@ -82,5 +88,5 @@ module.exports = {
   getPackageById,
   deletePackageById,
   togglePackageStatus,
-  getActivePackagesController
+  getActivePackagesController,
 };

@@ -14,9 +14,9 @@ async function seed() {
         id: uuidv4(),
         driver_id: "bf69aeb0-40c6-4e72-89ae-8161328cbdb0",
         ride_id: "9909f52f-db97-492c-8971-0e95ef13fda1",
-        amount: 500.00,
-        commission: 50.00,
-        percentage: 10.00,
+        amount: 500.0,
+        commission: 50.0,
+        percentage: 10.0,
         payment_method: "bank_transfer",
         status: "processed",
         createdAt: new Date("2025-07-10T10:00:00Z"),
@@ -26,9 +26,9 @@ async function seed() {
         id: uuidv4(),
         driver_id: "bf69aeb0-40c6-4e72-89ae-8161328cbdb0",
         ride_id: "8023d5bd-4dd7-4340-ac40-e3e23e3cdf29",
-        amount: 1000.00,
-        commission: 100.00,
-        percentage: 10.00,
+        amount: 1000.0,
+        commission: 100.0,
+        percentage: 10.0,
         payment_method: "upi",
         status: "pending",
         createdAt: new Date("2025-07-15T14:00:00Z"),
@@ -45,8 +45,6 @@ async function seed() {
 }
 
 seed();
-
-
 
 // // My SQL Database
 // require("dotenv").config();

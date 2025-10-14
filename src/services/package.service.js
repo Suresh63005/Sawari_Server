@@ -51,7 +51,9 @@ const upsertPackage = async (data) => {
     };
   } else {
     // Create flow
-    const existingByName = await Package.findOne({ where: { name: data.name } });
+    const existingByName = await Package.findOne({
+      where: { name: data.name },
+    });
     if (existingByName) {
       throw new Error("Package with the same name already exists");
     }
@@ -65,7 +67,13 @@ const upsertPackage = async (data) => {
 };
 
 // Service to get all packages with filtering, search, pagination, sorting
-const getAllPackages = async ({ search, limit = 10, page = 1, sortBy = "createdAt", sortOrder = "DESC" }) => {
+const getAllPackages = async ({
+  search,
+  limit = 10,
+  page = 1,
+  sortBy = "createdAt",
+  sortOrder = "DESC",
+}) => {
   const where = {};
 
   // Search by name or description
@@ -94,7 +102,7 @@ const getAllPackages = async ({ search, limit = 10, page = 1, sortBy = "createdA
     total: count,
     page: parseInt(page),
     limit: parseInt(limit),
-    data: rows.map(pkg => packageResponseDTO(pkg)),
+    data: rows.map((pkg) => packageResponseDTO(pkg)),
   };
 };
 
@@ -104,7 +112,7 @@ const getActivePackages = async () => {
     order: [["createdAt", "DESC"]],
   });
 
-  return packages.map(pkg => packageResponseDTO(pkg));
+  return packages.map((pkg) => packageResponseDTO(pkg));
 };
 // Service to get a package by ID
 const getPackageById = async (id) => {
@@ -142,5 +150,5 @@ module.exports = {
   getPackageById,
   deletePackageById,
   togglePackageStatus,
-  getActivePackages
+  getActivePackages,
 };

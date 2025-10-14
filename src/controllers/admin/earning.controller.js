@@ -1,5 +1,13 @@
 const { Op } = require("sequelize");
-const { monthFilteredEarnings, getEarningsSum, getPendingPayouts, getTotalCommission, generateExcel, singleEarnings, allEarnings } = require("../../services/earnings.service");
+const {
+  monthFilteredEarnings,
+  getEarningsSum,
+  getPendingPayouts,
+  getTotalCommission,
+  generateExcel,
+  singleEarnings,
+  allEarnings,
+} = require("../../services/earnings.service");
 const { AbortController } = require("node-abort-controller");
 
 const earningsHistory = async (req, res) => {
@@ -27,7 +35,12 @@ const earningsHistory = async (req, res) => {
       },
     };
 
-    const { earningsList, total } = await monthFilteredEarnings(dateRange, search, page, limit);
+    const { earningsList, total } = await monthFilteredEarnings(
+      dateRange,
+      search,
+      page,
+      limit
+    );
 
     const processedTotal = await getEarningsSum({
       ...dateRange,
@@ -97,13 +110,18 @@ const Download = async (req, res) => {
     }
 
     if (!earnings || (Array.isArray(earnings) && earnings.length === 0)) {
-      return res.status(404).json({ message: "No earnings data available to download" });
+      return res
+        .status(404)
+        .json({ message: "No earnings data available to download" });
     }
 
     const buffer = await generateExcel(earnings, controller.signal);
     clearTimeout(timeout);
 
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(buffer);
     res.end();
@@ -113,7 +131,9 @@ const Download = async (req, res) => {
       return res.status(408).json({ message: "Request timed out or aborted" });
     }
     console.error("Error downloading earnings report:", error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
 

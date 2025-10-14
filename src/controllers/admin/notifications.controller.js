@@ -117,7 +117,9 @@ const sendNotificationController = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Notification saved. Push " + (pushError ? "failed" : "sent successfully."),
+      message:
+        "Notification saved. Push " +
+        (pushError ? "failed" : "sent successfully."),
       oneSignalResponse: oneSignalResponse || null,
       pushError: pushError || null,
       data: result.data,
@@ -132,15 +134,17 @@ const sendNotificationController = async (req, res) => {
   }
 };
 
-
 const getAllNotificationsController = async (req, res) => {
-  const result = await notificationService.fetchAllNotifcationsService(req.query);
+  const result = await notificationService.fetchAllNotifcationsService(
+    req.query
+  );
   res.status(result.success ? 200 : 500).json(result);
 };
 
-
 const getSingleNotificationController = async (req, res) => {
-  const result = await notificationService.fetchSingleNotificationService(req.params.id);
+  const result = await notificationService.fetchSingleNotificationService(
+    req.params.id
+  );
   res.status(result.success ? 200 : 404).json(result);
 };
 const deleteNotificationController = async (req, res) => {
@@ -149,7 +153,7 @@ const deleteNotificationController = async (req, res) => {
     if (!id) {
       return res.status(400).json({
         success: false,
-        message: "Notification ID is required"
+        message: "Notification ID is required",
       });
     }
     const result = await notificationService.deleteNotificationService(id);
@@ -164,7 +168,6 @@ const deleteNotificationController = async (req, res) => {
       message: "Failed to delete notification",
       error: error.message,
     });
-
   }
 };
 
@@ -172,5 +175,5 @@ module.exports = {
   sendNotificationController,
   getAllNotificationsController,
   getSingleNotificationController,
-  deleteNotificationController
+  deleteNotificationController,
 };

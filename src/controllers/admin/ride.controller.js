@@ -55,14 +55,19 @@ const getAvailableCarsAndPrices = async (req, res) => {
     console.log("yyyyyyyyyyyyyyyyyyyyy", req.params);
     const { package_id, sub_package_id } = req.params;
     if (!package_id || !sub_package_id) {
-      return res.status(400).json({ error: "Missing required query parameters: package_id, sub_package_id" });
+      return res.status(400).json({
+        error: "Missing required query parameters: package_id, sub_package_id",
+      });
     }
-    const result = await rideService.getAvailableCarsAndPrices(package_id, sub_package_id);
+    const result = await rideService.getAvailableCarsAndPrices(
+      package_id,
+      sub_package_id
+    );
     // Fetch tax rate from Settings
     const settings = await Settings.findOne();
     const taxRate = settings ? parseFloat(settings.tax_rate) || 0 : 0;
     // Include tax_rate in the response
-    const responseData = result.data.map(item => ({
+    const responseData = result.data.map((item) => ({
       ...item,
       tax_rate: taxRate,
     }));
