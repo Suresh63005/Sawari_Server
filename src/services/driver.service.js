@@ -7,21 +7,22 @@ const Ride = require("../models/ride.model");
 const Car = require("../models/cars.model");
 const Earnings = require("../models/earnings.model");
 const { fn, col, where: sequelizeWhere } = require("sequelize");
-const { generateToken } = require("../utils/tokenUtils");
-const { normalizePhone } = require("../utils/phoneUtils");
+// const { generateToken } = require("../utils/tokenUtils");
+// const { normalizePhone } = require("../utils/phoneUtils");
+const jwt = require("jsonwebtoken");
 
-// const generateToken = (driverId) => {
-//   return jwt.sign({ id: driverId }, process.env.JWT_SECRET);
-// };
+const generateToken = (driverId) => {
+  return jwt.sign({ id: driverId }, process.env.JWT_SECRET);
+};
 
-// const normalizePhone = (phone) => {
-//   phone = phone.trim();
-//   if (!phone.startsWith("+971")) {
-//     phone = phone.replace(/^(\+|0)*/, "");
-//     phone = "+971" + phone;
-//   }
-//   return phone;
-// };
+const normalizePhone = (phone) => {
+  phone = phone.trim();
+  if (!phone.startsWith("+971")) {
+    phone = phone.replace(/^(\+|0)*/, "");
+    phone = "+971" + phone;
+  }
+  return phone;
+};
 
 const verifyDriverMobile = async (phone, token, email, social_login) => {
   if (!token) throw new Error("Token is required");
