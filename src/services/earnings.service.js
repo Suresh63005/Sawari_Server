@@ -194,15 +194,26 @@ const monthFilteredEarnings = async (dateRange, search = "", page = 1, limit = 5
 // };
 
 const getEarningsSum = async (conditions = {}) => {
-  const amount = await Earnings.sum("amount", {
-    where: {
-      driver_id: conditions.driver_id, // Use driver_id instead of id
-      status: conditions.status || ["completed"], // Default to "completed" if not provided
-      updatedAt: conditions.updatedAt || {}, // Use provided date range
-    },
-  });
+  const where = {};
+
+  if (conditions.driver_id) {
+    where.driver_id = conditions.driver_id;
+  }
+
+  if (conditions.status) {
+    where.status = conditions.status;
+  } else {
+    where.status = "completed"; // default status
+  }
+
+  if (conditions.updatedAt) {
+    where.updatedAt = conditions.updatedAt; // e.g., { [Op.between]: [start, end] }
+  }
+
+  const amount = await Earnings.sum("amount", { where });
   return amount || 0;
 };
+
 
 const getPendingPayouts = async (where = {}) => {
   const amount = await Earnings.sum("amount", { where });
