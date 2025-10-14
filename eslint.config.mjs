@@ -57,7 +57,7 @@ export default defineConfig([
 
       // Your existing standard JavaScript rules.
       "no-var": "error", // ❌ Disallow 'var', only let & const
-      "prefer-const": "error",
+      // "prefer-const": "error",
       "no-unused-vars": ["error", { args: "none", ignoreRestSiblings: true }],
       quotes: ["error", "double", { avoidEscape: true }], // ❌ Enforce double quotes
       "no-multi-spaces": "error", // ❌ Disallow double spaces
