@@ -27,23 +27,25 @@ const { v4: uuid } = require("uuid");
 const DriverCar = require("../../models/driver-cars.model");
 const { isValidStatus, isRideStatus } = require("../../helper/common");
 const { createWalletReport } = require("../../services/wallet.service");
+const moment = require("moment-timezone");
 
 // 1. Get Dashboard/Home Data
 const getAllHomeData = async (req, res) => {
   const driver_id = req.driver?.id;
 
   if (!driver_id) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Unauthorized: Missing driver ID" });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
   try {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    // const startOfDay = new Date();
+    // startOfDay.setHours(0, 0, 0, 0);
 
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    // const endOfDay = new Date();
+    // endOfDay.setHours(23, 59, 59, 999);
+
+    const startOfDay = moment.tz("Asia/Dubai").startOf("day").utc().toDate();
+    const endOfDay = moment.tz("Asia/Dubai").endOf("day").utc().toDate();
 
     // 1. Get Today"s Completed Rides
     const todayRides = await conditionalRides({
@@ -58,33 +60,24 @@ const getAllHomeData = async (req, res) => {
 
     // 2. Get Today"s Earnings
     const todayEarnings = await getEarningsSum({
-      where: {
-        driver_id,
-        createdAt: {
-          [Op.between]: [startOfDay, endOfDay],
-        },
-        status: "completed",
-      },
+      driver_id,
+      updatedAt: { [Op.between]: [startOfDay, endOfDay] },
+      status: { [Op.in]: ["completed"] },
     });
 
     // 3. Driver profile with vehicle
     const driverProfile = await driverProfileWithCar(driver_id);
-    if (!driverProfile) {
-      return res.status(404).json({
-        success: false,
-        message: "Driver profile not found",
-      });
-    }
 
     // 4. Accepted & Completed Rides
     const acceptedRides = await conditionalRides({
       where: {
         driver_id,
         status: {
-          [Op.in]: ["completed", "accepted"],
+          [Op.in]: ["accepted"],
         },
       },
       attributes: [
+        "ride_code",
         "customer_name",
         "email",
         "phone",
@@ -98,7 +91,7 @@ const getAllHomeData = async (req, res) => {
         "dropoff_time",
       ],
       limit: 10,
-      order: [["scheduled_time", "ASC"]],
+      order: [["scheduled_time", "DESC"]],
     });
 
     // 5. Available Rides (unassigned)
@@ -110,12 +103,17 @@ const getAllHomeData = async (req, res) => {
       });
     }
 
+    const now = new Date();
     const availableRides = await conditionalRides({
       where: {
         driver_id: null,
         status: "pending",
+        scheduled_time: {
+          [Op.gte]: now,
+        },
       },
       attributes: [
+        "ride_code",
         "id",
         "customer_name",
         "email",
@@ -158,22 +156,24 @@ const getAllHomeData = async (req, res) => {
 
     console.log("DriverCar with Car:", JSON.stringify(driverCar, null, 2));
 
+    console.log({ startOfDay, endOfDay, todayEarnings });
+
     return res.status(200).json({
       success: true,
       message: "Home data fetched successfully!",
       data: {
-        todayRides: todayRides || [],
-        todayEarnings: todayEarnings || 0,
-        driverProfile: driverProfile || null,
-        acceptedRides: acceptedRides || [],
-        availableRides: availableRides || [],
+        todayRides,
+        todayEarnings,
+        driverProfile,
+        acceptedRides,
+        availableRides,
       },
     });
   } catch (error) {
-    console.error("Error fetching home data:", error.message);
+    console.error("Error fetching home data:", error);
     return res.status(500).json({
       success: false,
-      message: `Internal server error: ${error.message}`,
+      message: "Internal server error",
     });
   }
 };
