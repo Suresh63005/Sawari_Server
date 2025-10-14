@@ -242,7 +242,6 @@ const getEarningsSum = async (conditions = {}) => {
   return amount || 0;
 };
 
-
 const getPendingPayouts = async (where = {}) => {
   const amount = await Earnings.sum("amount", { where });
   return amount || 0;
