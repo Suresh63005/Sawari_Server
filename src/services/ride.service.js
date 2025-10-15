@@ -454,7 +454,7 @@ const getAllRides = async ({
         sequelizeWhere(fn("REPLACE", col("drop_address"), " ", ""), {
           [Op.like]: `%${trimmedSearch.replace(/\s+/g, "")}%`,
         }),
-        sequelizeWhere(fn("DATE_FORMAT", col("scheduled_time"), "%d-%m-%Y"), {
+        sequelizeWhere(fn("DATE_FORMAT", col("scheduled_time"), "%Y-%m-%d"), {
           [Op.like]: `%${trimmedSearch}%`,
         }),
       ];
