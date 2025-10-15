@@ -38,7 +38,7 @@ module.exports.clearDatabase = async () => {
   await Promise.all(
     models.map((model) => model.destroy({ truncate: true, cascade: true }))
   );
-};
+}; 
 
 beforeAll(async () => {
   await module.exports.connect();
