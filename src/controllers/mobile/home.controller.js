@@ -59,7 +59,7 @@ const getAllHomeData = async (req, res) => {
     const todayEarnings = await getEarningsSum({
       driver_id,
       updatedAt: { [Op.between]: [startOfDay, endOfDay] },
-      status: { [Op.in]: ["completed"] },
+      status: { [Op.in]: ["processed"] },
     });
 
     // 3. Driver profile with vehicle
