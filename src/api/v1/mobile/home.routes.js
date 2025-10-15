@@ -1,8 +1,8 @@
 const router = require("express").Router();
 const homeController = require("../../../controllers/mobile/home.controller");
 const middleware = require("../../../middlewares/mobile/authMiddleware");
-const { validateRequest } = require("../../../middlewares/validateRequest");
-const { startRideSchema } = require("../../../validators/mobile/home");
+// const { validateRequest } = require("../../../middlewares/validateRequest");
+// const { startRideSchema } = require("../../../validators/mobile/home");
 const { endPoints } = require("../../api");
 
 router.get(
@@ -48,13 +48,11 @@ router.put(
 router.put(
   endPoints.home.startRide,
   middleware.isAuthenticated,
-  validateRequest(startRideSchema, "params"),
   homeController.startRide
 );
 router.put(
   endPoints.home.endRide,
   middleware.isAuthenticated,
-  validateRequest(startRideSchema, "params"),
   homeController.endRide
 );
 router.put(

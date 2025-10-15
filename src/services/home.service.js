@@ -39,7 +39,7 @@ const acceptRide = async (ride_id, driver_id, accept_time) => {
   await ride.update({
     driver_id,
     status: "accepted",
-    accept_time, // this is already a string from controller
+    accept_time: new Date().toISOString(),
   });
 
   return ride;
@@ -646,7 +646,7 @@ const startRide = async (rideId, driver_id, pickup_time) => {
   });
 
   if (!ride) {
-    throw new Error("Ride not found or cannot be started.");
+    return null;
   }
 
   // ride.status = "on-route";

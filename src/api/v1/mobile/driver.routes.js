@@ -5,7 +5,6 @@ const authMiddleware = require("../../../middlewares/mobile/authMiddleware");
 const { endPoints } = require("../../api");
 const { validateRequest } = require("../../../middlewares/validateRequest");
 const {
-  updateDriverProfileSchema,
   blockDriverSchema,
   updateStatusSchema,
 } = require("../../../validators/mobile/driver");
@@ -22,7 +21,6 @@ router.post(
 router.post(
   endPoints["mob-driver"].updateProfileAndCarDetails,
   authMiddleware.isAuthenticated,
-  validateRequest(updateDriverProfileSchema),
   driverAuthController.updateProfileAndCarDetails
 );
 router.get(
